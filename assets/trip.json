@@ -1,0 +1,393 @@
+{
+  "city": "Birmingham",
+  "year": "26",
+  "tagline": "It's going to be a big gay",
+  "datesLabel": "Fri 17 → Sun 19 July · Jewellery Quarter HQ",
+  "footerLabel": "Birmingham · 17–19 July 2026",
+  "houseCode": "brum26",
+  "dates": {
+    "start": "2026-07-17T12:00",
+    "end": "2026-07-19T13:00"
+  },
+  "hq": {
+    "label": "HQ · Airbnb",
+    "address": "9 Sloane Street, Birmingham, B1 3DZ",
+    "mapsQuery": "9 Sloane Street Birmingham B1 3DZ"
+  },
+  "weather": {
+    "lat": 52.4862,
+    "lon": -1.8904,
+    "bbc": "https://www.bbc.co.uk/weather/2655603",
+    "start": "2026-07-17",
+    "end": "2026-07-19"
+  },
+  "crew": [
+    {
+      "name": "Mitul",
+      "emoji": "🧑‍✈️",
+      "role": "The Ringleader"
+    },
+    {
+      "name": "Big Ben",
+      "emoji": "🔔",
+      "role": "The Timekeeper"
+    },
+    {
+      "name": "Director",
+      "emoji": "🎬",
+      "role": "The Director"
+    },
+    {
+      "name": "Mr Science",
+      "emoji": "🔬",
+      "role": "Mr Science"
+    }
+  ],
+  "itinerary": [
+    {
+      "name": "Friday",
+      "date": "17 July",
+      "stops": [
+        {
+          "t": "12:00",
+          "iso": "2026-07-17T12:00",
+          "emoji": "🚆",
+          "title": "Arrive Birmingham",
+          "desc": "Mitul, Big Ben & Director hit town."
+        },
+        {
+          "t": "12:30",
+          "iso": "2026-07-17T12:30",
+          "emoji": "🍺",
+          "title": "The Indian Brewery",
+          "desc": "Snow Hill arches · Birmingham Lager & fat naans.",
+          "tag": "booked",
+          "map": "The Indian Brewery Snow Hill Birmingham",
+          "menu": "https://www.indianbrewery.com/menu"
+        },
+        {
+          "t": "15:00",
+          "iso": "2026-07-17T15:00",
+          "emoji": "🔑",
+          "title": "Check into Airbnb",
+          "desc": "9 Sloane Street — HQ. Mr Science arrives.",
+          "map": "9 Sloane Street Birmingham B1 3DZ"
+        },
+        {
+          "t": "17:30",
+          "iso": "2026-07-17T17:30",
+          "emoji": "🎯",
+          "title": "TOCA Social",
+          "desc": "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43",
+          "tag": "booked",
+          "map": "TOCA Social Bullring Birmingham"
+        },
+        {
+          "t": "19:15",
+          "iso": "2026-07-17T19:15",
+          "emoji": "🚕",
+          "title": "Uber to Balti Triangle",
+          "desc": "Leave in good time — it's a 20-25 min drive PLUS the off-licence stop for cold beers (BYOB!)."
+        },
+        {
+          "t": "19:45",
+          "iso": "2026-07-17T19:45",
+          "emoji": "🍛",
+          "title": "Royal Watan Kashmiri",
+          "desc": "BYOB balti feast.",
+          "tag": "booked",
+          "map": "Royal Watan Kashmiri Birmingham",
+          "menu": "https://www.royal-watan.co.uk/"
+        },
+        {
+          "t": "21:30",
+          "iso": "2026-07-17T21:30",
+          "emoji": "🍷",
+          "title": "Arch 13",
+          "desc": "Another wine bar. Naturally.",
+          "map": "Arch 13 Birmingham"
+        }
+      ]
+    },
+    {
+      "name": "Saturday",
+      "date": "18 July",
+      "stops": [
+        {
+          "t": "10:00",
+          "iso": "2026-07-18T10:00",
+          "emoji": "🥏",
+          "title": "Disc Golf @ Ackers",
+          "desc": "Ackers Adventure · shake off the balti.",
+          "tag": "booked",
+          "map": "Ackers Adventure Birmingham"
+        },
+        {
+          "t": "12:30",
+          "iso": "2026-07-18T12:30",
+          "emoji": "🌮",
+          "title": "El Azteca (The Loft, 1000 Trades)",
+          "desc": "Tacos at The Loft — upstairs at 1000 Trades, JQ.",
+          "tag": "walkin",
+          "map": "1000 Trades Birmingham",
+          "menu": "https://1000trades.org.uk/food/"
+        },
+        {
+          "t": "14:00",
+          "iso": "2026-07-18T14:00",
+          "emoji": "🏎️",
+          "title": "F1 Arcade",
+          "desc": "Chamberlain Sq · race sims & rounds.",
+          "tag": "booked",
+          "map": "F1 Arcade Birmingham"
+        },
+        {
+          "t": "16:00",
+          "iso": "2026-07-18T16:00",
+          "emoji": "🔄",
+          "title": "F1 done — free time",
+          "desc": "2½hr gap: a pub near Chamberlain Sq, a nap at HQ, or a wander. Reconvene 18:30 for food."
+        },
+        {
+          "t": "18:30",
+          "iso": "2026-07-18T18:30",
+          "emoji": "🍔",
+          "title": "Alfred Works Food Hall",
+          "desc": "Big feed, many options.",
+          "tag": "walkin",
+          "map": "Alfred Works food hall Birmingham",
+          "menu": "https://alfredworks.co.uk/food-partners/"
+        },
+        {
+          "t": "20:00",
+          "iso": "2026-07-18T20:00",
+          "emoji": "🤠",
+          "title": "Low Places",
+          "desc": "Honky-tonk. Yeehaw.",
+          "map": "Low Places Birmingham"
+        },
+        {
+          "t": "22:00",
+          "iso": "2026-07-18T22:00",
+          "emoji": "⚽",
+          "title": "World Cup 3rd Place Playoff",
+          "desc": "Luna Springs, Digbeth · big screen.",
+          "map": "Luna Springs Digbeth Birmingham"
+        }
+      ]
+    },
+    {
+      "name": "Sunday",
+      "date": "19 July",
+      "stops": [
+        {
+          "t": "10:30",
+          "iso": "2026-07-19T10:30",
+          "emoji": "🥐",
+          "title": "Medicine Bakery",
+          "desc": "Pastries & coffee. Gentle recovery.",
+          "map": "Medicine Bakery Birmingham",
+          "menu": "https://www.medicinebakery.co.uk/birmingham-menu/"
+        },
+        {
+          "t": "12:00",
+          "iso": "2026-07-19T12:00",
+          "emoji": "👋",
+          "title": "Exeunt",
+          "desc": "Home time. Until next year, boys."
+        }
+      ]
+    }
+  ],
+  "bets": [
+    {
+      "id": "tapout",
+      "emoji": "😴",
+      "type": "person",
+      "q": "First man to tap out"
+    },
+    {
+      "id": "disc",
+      "emoji": "🥏",
+      "type": "person",
+      "q": "Disc golf champion @ Ackers"
+    },
+    {
+      "id": "toca",
+      "emoji": "🎯",
+      "type": "person",
+      "q": "TOCA Social champion"
+    },
+    {
+      "id": "f1",
+      "emoji": "🏎️",
+      "type": "person",
+      "q": "F1 Arcade fastest lap"
+    },
+    {
+      "id": "wcscore",
+      "emoji": "⚽",
+      "type": "text",
+      "q": "World Cup 3rd-place score"
+    },
+    {
+      "id": "units",
+      "emoji": "🍺",
+      "type": "person",
+      "q": "Most drinks by Sunday"
+    },
+    {
+      "id": "balti",
+      "emoji": "🌶️",
+      "type": "person",
+      "q": "Orders the hottest balti"
+    },
+    {
+      "id": "lost",
+      "emoji": "🧭",
+      "type": "person",
+      "q": "First to get lost"
+    },
+    {
+      "id": "spill",
+      "emoji": "🫗",
+      "type": "person",
+      "q": "First to spill a drink"
+    },
+    {
+      "id": "dance",
+      "emoji": "🤠",
+      "type": "person",
+      "q": "First to dance at Low Places"
+    },
+    {
+      "id": "sunday",
+      "emoji": "🥐",
+      "type": "person",
+      "q": "First out of bed on Sunday"
+    },
+    {
+      "id": "soft",
+      "emoji": "🧃",
+      "type": "person",
+      "q": "First to order a soft drink"
+    },
+    {
+      "id": "phonehome",
+      "emoji": "📞",
+      "type": "person",
+      "q": "First to phone home / the missus"
+    },
+    {
+      "id": "disctotal",
+      "emoji": "🥏",
+      "type": "text",
+      "q": "Group disc golf total — call the number"
+    }
+  ],
+  "awards": [
+    {
+      "id": "mvp",
+      "title": "🏆 MVP of the Weekend"
+    },
+    {
+      "id": "balti",
+      "title": "🌶️ Best Balti Order"
+    },
+    {
+      "id": "discgolf",
+      "title": "🥏 Disc Golf Hero"
+    },
+    {
+      "id": "f1",
+      "title": "🏎️ F1 Arcade Champ"
+    },
+    {
+      "id": "lost",
+      "title": "🧭 Most Lost"
+    },
+    {
+      "id": "bed",
+      "title": "😴 First to Bed"
+    },
+    {
+      "id": "honky",
+      "title": "🤠 Best Low Places Moment"
+    },
+    {
+      "id": "dancer",
+      "title": "🕺 Best Mover"
+    },
+    {
+      "id": "rounds",
+      "title": "💸 Biggest Round Buyer"
+    },
+    {
+      "id": "tight",
+      "title": "🤏 Never Got a Round In"
+    },
+    {
+      "id": "phone",
+      "title": "📱 Most Likely to Lose a Phone"
+    },
+    {
+      "id": "quote",
+      "title": "💬 Quote of the Weekend"
+    },
+    {
+      "id": "satam",
+      "title": "🥴 Worst State Saturday AM"
+    },
+    {
+      "id": "sunday",
+      "title": "🤢 Worst State Sunday AM"
+    }
+  ],
+  "bingo": [
+    {
+      "id": "villa",
+      "emoji": "🟣",
+      "t": "Someone in a Villa or Blues top"
+    },
+    {
+      "id": "canal",
+      "emoji": "🛶",
+      "t": "A canal boat"
+    },
+    {
+      "id": "peaky",
+      "emoji": "🎩",
+      "t": "A Peaky Blinders reference"
+    },
+    {
+      "id": "bull",
+      "emoji": "🐂",
+      "t": "The Bullring bull"
+    },
+    {
+      "id": "balti",
+      "emoji": "🍛",
+      "t": "A naan bigger than your head"
+    },
+    {
+      "id": "brummie",
+      "emoji": "🗣️",
+      "t": "A proper thick Brummie accent"
+    },
+    {
+      "id": "stag",
+      "emoji": "🥳",
+      "t": "A stag or hen do"
+    },
+    {
+      "id": "pigeon",
+      "emoji": "🐦",
+      "t": "A pigeon stealing chips"
+    },
+    {
+      "id": "rain",
+      "emoji": "🌧️",
+      "t": "Rain (obviously)"
+    }
+  ]
+}

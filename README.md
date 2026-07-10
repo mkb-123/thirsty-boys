@@ -41,9 +41,24 @@ It launches full-screen with the beer-mug icon.
 ```
 index.html         # markup
 assets/style.css   # styles (dark "night out" theme)
-assets/app.js      # itinerary data, countdown, live-now, tracker, sync
+assets/app.js      # generic app logic (reads the trip from trip.json)
+assets/trip.json   # THE TRIP: city, dates, crew, HQ, itinerary, bets, awards, bingo
 assets/config.js   # OPTIONAL Firebase config for shared live sync
 ```
+
+## Reuse for another city / trip
+
+All the trip-specific content lives in **`assets/trip.json`** — the app code is
+generic. To run this for a different weekend, edit that one file:
+
+- `city`, `year`, `tagline`, `datesLabel`, `footerLabel`
+- `houseCode` (also namespaces the saved drink data — use a new one per trip)
+- `dates.start` / `dates.end` (drive the countdown + live-now, format `YYYY-MM-DDTHH:MM`)
+- `hq` (address + `mapsQuery`), `weather` (lat/lon + BBC link)
+- `crew` (name/emoji/role), `itinerary` (days → stops), `bets`, `awards`, `bingo`
+
+Save, commit, push — the site picks it up on the next load. (It's plain JSON so
+the browser reads it directly; no build step.)
 
 ## Shared live sync (optional)
 

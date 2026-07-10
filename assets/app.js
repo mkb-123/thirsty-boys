@@ -3,47 +3,18 @@
    Itinerary, live-now, countdown & drink tracker (localStorage-backed)
    ========================================================================== */
 
-/* ---------- ITINERARY DATA ----------
-   Times are 2026 local (BST). `iso` drives the countdown + live-now logic. */
-const ITINERARY = [
-  {
-    name: "Friday", date: "17 July",
-    stops: [
-      { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul, Big Ben & Director hit town." },
-      { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham", menu: "https://www.indianbrewery.com/menu" },
-      { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "9 Sloane Street — HQ. Mr Science arrives.", map: "9 Sloane Street Birmingham B1 3DZ" },
-      { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43", tag: "booked", map: "TOCA Social Bullring Birmingham" },
-      { t: "19:15", iso: "2026-07-17T19:15", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Leave in good time — it's a 20-25 min drive PLUS the off-licence stop for cold beers (BYOB!)." },
-      { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham", menu: "https://www.royal-watan.co.uk/" },
-      { t: "21:30", iso: "2026-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
-    ],
-  },
-  {
-    name: "Saturday", date: "18 July",
-    stops: [
-      { t: "10:00", iso: "2026-07-18T10:00", emoji: "🥏", title: "Disc Golf @ Ackers", desc: "Ackers Adventure · shake off the balti.", tag: "booked", map: "Ackers Adventure Birmingham" },
-      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca (The Loft, 1000 Trades)", desc: "Tacos at The Loft — upstairs at 1000 Trades, JQ.", tag: "walkin", map: "1000 Trades Birmingham", menu: "https://1000trades.org.uk/food/" },
-      { t: "14:00", iso: "2026-07-18T14:00", emoji: "🏎️", title: "F1 Arcade", desc: "Chamberlain Sq · race sims & rounds.", tag: "booked", map: "F1 Arcade Birmingham" },
-      { t: "16:00", iso: "2026-07-18T16:00", emoji: "🔄", title: "F1 done — free time", desc: "2½hr gap: a pub near Chamberlain Sq, a nap at HQ, or a wander. Reconvene 18:30 for food." },
-      { t: "18:30", iso: "2026-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham", menu: "https://alfredworks.co.uk/food-partners/" },
-      { t: "20:00", iso: "2026-07-18T20:00", emoji: "🤠", title: "Low Places", desc: "Honky-tonk. Yeehaw.", map: "Low Places Birmingham" },
-      { t: "22:00", iso: "2026-07-18T22:00", emoji: "⚽", title: "World Cup 3rd Place Playoff", desc: "Luna Springs, Digbeth · big screen.", map: "Luna Springs Digbeth Birmingham" },
-    ],
-  },
-  {
-    name: "Sunday", date: "19 July",
-    stops: [
-      { t: "10:30", iso: "2026-07-19T10:30", emoji: "🥐", title: "Medicine Bakery", desc: "Pastries & coffee. Gentle recovery.", map: "Medicine Bakery Birmingham", menu: "https://www.medicinebakery.co.uk/birmingham-menu/" },
-      { t: "12:00", iso: "2026-07-19T12:00", emoji: "👋", title: "Exeunt", desc: "Home time. Until next year, boys." },
-    ],
-  },
-];
+/* ==========================================================================
+   TRIP CONFIG — everything trip-specific lives in assets/trip.json.
+   Edit that one file (city, dates, crew, HQ, itinerary, bets, awards, bingo)
+   to reuse this whole app for another city/date. Loaded at startup.
+   ========================================================================== */
+let TRIP = {};
+let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [];
+let TRIP_START = new Date(0), TRIP_END = new Date(0);
+let STORE_KEY = "thirstyboys.trip.v1";
+let HQ_ADDRESS = "";
 
-const TRIP_START = new Date("2026-07-17T12:00:00");
-/* End of the last stop window, for live-now bounds */
-const TRIP_END = new Date("2026-07-19T13:00:00");
-
-/* ---------- DRINK DEFINITIONS ---------- */
+/* Drink types and titles are generic — not trip-specific. */
 const DRINKS = [
   { id: "pint",     label: "Pint",     emoji: "🍺" },
   { id: "half",     label: "Half",     emoji: "🥛" },
@@ -53,78 +24,38 @@ const DRINKS = [
   { id: "whiskey",  label: "Whiskey",  emoji: "🥃" },
   { id: "soft",     label: "Soft",     emoji: "🧃" },
 ];
-
-const CREW = [
-  { emoji: "🧑‍✈️", role: "The Ringleader" },
-  { emoji: "🔔", role: "The Timekeeper" },
-  { emoji: "🎬", role: "The Director" },
-  { emoji: "🔬", role: "Mr Science" },
-];
-const DEFAULT_NAMES = ["Mitul", "Big Ben", "Director", "Mr Science"];
-
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
-/* ---------- BETS ----------
-   type "person": pick a crew member from a dropdown.
-   type "text":   free-text call (e.g. a scoreline).
-   Calls are secret (only your own shows) until someone reveals. */
-const BETS = [
-  { id: "tapout",   emoji: "😴", type: "person", q: "First man to tap out" },
-  { id: "disc",     emoji: "🥏", type: "person", q: "Disc golf champion @ Ackers" },
-  { id: "toca",     emoji: "🎯", type: "person", q: "TOCA Social champion" },
-  { id: "f1",       emoji: "🏎️", type: "person", q: "F1 Arcade fastest lap" },
-  { id: "wcscore",  emoji: "⚽", type: "text",   q: "World Cup 3rd-place score" },
-  { id: "units",    emoji: "🍺", type: "person", q: "Most drinks by Sunday" },
-  { id: "balti",    emoji: "🌶️", type: "person", q: "Orders the hottest balti" },
-  { id: "lost",     emoji: "🧭", type: "person", q: "First to get lost" },
-  { id: "spill",    emoji: "🫗", type: "person", q: "First to spill a drink" },
-  { id: "dance",    emoji: "🤠", type: "person", q: "First to dance at Low Places" },
-  { id: "sunday",   emoji: "🥐", type: "person", q: "First out of bed on Sunday" },
-  { id: "soft",     emoji: "🧃", type: "person", q: "First to order a soft drink" },
-  { id: "phonehome",emoji: "📞", type: "person", q: "First to phone home / the missus" },
-  { id: "disctotal",emoji: "🥏", type: "text",   q: "Group disc golf total — call the number" },
-];
-
-/* ---------- AWARDS ---------- */
-const AWARDS = [
-  { id: "mvp",      title: "🏆 MVP of the Weekend" },
-  { id: "balti",    title: "🌶️ Best Balti Order" },
-  { id: "discgolf", title: "🥏 Disc Golf Hero" },
-  { id: "f1",       title: "🏎️ F1 Arcade Champ" },
-  { id: "lost",     title: "🧭 Most Lost" },
-  { id: "bed",      title: "😴 First to Bed" },
-  { id: "honky",    title: "🤠 Best Low Places Moment" },
-  { id: "dancer",   title: "🕺 Best Mover" },
-  { id: "rounds",   title: "💸 Biggest Round Buyer" },
-  { id: "tight",    title: "🤏 Never Got a Round In" },
-  { id: "phone",    title: "📱 Most Likely to Lose a Phone" },
-  { id: "quote",    title: "💬 Quote of the Weekend" },
-  { id: "satam",    title: "🥴 Worst State Saturday AM" },
-  { id: "sunday",   title: "🤢 Worst State Sunday AM" },
-];
-
-/* ---------- BIRMINGHAM BINGO ---------- */
-const BINGO = [
-  { id: "villa",   emoji: "🟣", t: "Someone in a Villa or Blues top" },
-  { id: "canal",   emoji: "🛶", t: "A canal boat" },
-  { id: "peaky",   emoji: "🎩", t: "A Peaky Blinders reference" },
-  { id: "bull",    emoji: "🐂", t: "The Bullring bull" },
-  { id: "balti",   emoji: "🍛", t: "A naan bigger than your head" },
-  { id: "brummie", emoji: "🗣️", t: "A proper thick Brummie accent" },
-  { id: "stag",    emoji: "🥳", t: "A stag or hen do" },
-  { id: "pigeon",  emoji: "🐦", t: "A pigeon stealing chips" },
-  { id: "rain",    emoji: "🌧️", t: "Rain (obviously)" },
-];
-
-const STORE_KEY = "thirstyboys.brum26.v1";
+async function loadTrip() {
+  try {
+    const r = await fetch("assets/trip.json?v=" + (window.TB_BUILD || "dev"), { cache: "no-cache" });
+    if (r.ok) return await r.json();
+  } catch (e) { /* offline or missing — fall through to empty */ }
+  return {};
+}
+function applyTrip(t) {
+  TRIP = t || {};
+  ITINERARY = TRIP.itinerary || [];
+  CREW = (TRIP.crew || []).map((c) => ({ emoji: c.emoji, role: c.role }));
+  DEFAULT_NAMES = (TRIP.crew || []).map((c) => c.name);
+  BETS = TRIP.bets || [];
+  AWARDS = TRIP.awards || [];
+  BINGO = TRIP.bingo || [];
+  const d = TRIP.dates || {};
+  TRIP_START = new Date((d.start || "1970-01-01T00:00") + ":00");
+  TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
+  const hc = String(TRIP.houseCode || "trip").replace(/[^a-z0-9_-]/gi, "_");
+  STORE_KEY = "thirstyboys." + hc + ".v1";
+  HQ_ADDRESS = (TRIP.hq && TRIP.hq.address) || "";
+}
 
 /* ---------- STATE ---------- */
-let state = load();
+let state;
 
 /* ---------- PER-DEVICE IDENTITY (who is holding THIS phone) ----------
    Stored locally only — never synced, so each phone keeps its own "me". */
 const ME_KEY = "thirstyboys.me";
-let me = loadMe();
+let me;
 function loadMe() {
   try {
     const v = localStorage.getItem(ME_KEY);
@@ -134,9 +65,10 @@ function loadMe() {
 
 /* Which drink THIS phone has selected — per-device, never synced. */
 const DRINK_KEY = "thirstyboys.drink";
-let selectedDrink = (function () {
+let selectedDrink = "pint";
+function loadSelectedDrink() {
   try { return localStorage.getItem(DRINK_KEY) || "pint"; } catch (e) { return "pint"; }
-})();
+}
 function setSelectedDrink(id) {
   selectedDrink = id;
   try { localStorage.setItem(DRINK_KEY, id); } catch (e) { /* ignore */ }
@@ -409,7 +341,7 @@ function renderCountdown() {
     set("cd-secs", Math.floor((diff % 60000) / 1000));
     const labs = ["days", "hrs", "min", "sec"];
     blocks.forEach((bl, i) => { const l = bl.querySelector(".cd-lab"); if (l) l.textContent = labs[i]; bl.classList.remove("cd-leader"); });
-    cap.textContent = "It's going to be a big gay";
+    cap.textContent = TRIP.tagline || "";
     cap.classList.remove("live");
   } else {
     // Trip's on (or done): the countdown becomes a live drink scoreboard.
@@ -1080,11 +1012,13 @@ function wxEmoji(c) {
 async function fetchWeather() {
   const el = document.getElementById("weather-days");
   if (!el) return;
+  const w = TRIP.weather || {};
+  if (!w.lat || !w.lon) { el.innerHTML = ""; return; }
   const labels = ["Fri", "Sat", "Sun"];
   try {
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=52.4862&longitude=-1.8904" +
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + w.lat + "&longitude=" + w.lon +
       "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
-      "&timezone=Europe%2FLondon&start_date=2026-07-17&end_date=2026-07-19";
+      "&timezone=Europe%2FLondon&start_date=" + (w.start || "") + "&end_date=" + (w.end || "");
     const r = await fetch(url);
     if (!r.ok) throw new Error("wx");
     const d = await r.json();
@@ -1155,8 +1089,7 @@ function maybeShowA2HS() {
 }
 setTimeout(maybeShowA2HS, 2500);
 
-/* HQ: copy address (for pasting into Uber etc.) */
-const HQ_ADDRESS = "9 Sloane Street, Birmingham, B1 3DZ";
+/* HQ: copy address (for pasting into a taxi app etc.) */
 document.getElementById("hq-copy").addEventListener("click", async (e) => {
   const btn = e.currentTarget;
   try {
@@ -1184,21 +1117,59 @@ document.getElementById("quote-add").addEventListener("submit", (e) => {
   renderQuotes();
 });
 
-renderDrinkBar();
-render();
-tick();
-setInterval(tick, 1000);
-initSync();
-fetchWeather();
+/* ==========================================================================
+   BOOT — load the trip config, then wire up state and render.
+   ========================================================================== */
+function applyTripToDOM() {
+  const city = TRIP.city || "The Trip";
+  const year = TRIP.year || "";
+  document.title = "Thirsty Boys — " + city + (year ? " '" + year : "");
+  const h1 = document.querySelector(".hero h1");
+  if (h1) h1.innerHTML = escapeHtml(city.toUpperCase()) + (year ? ` <span>'${escapeHtml(year)}</span>` : "");
+  const dates = document.querySelector(".hero .dates");
+  if (dates && TRIP.datesLabel) dates.textContent = TRIP.datesLabel;
+  const foot = document.querySelector(".footer .muted");
+  if (foot && TRIP.footerLabel) foot.textContent = "Built for the Thirsty Boys · " + TRIP.footerLabel;
+  // HQ card
+  if (TRIP.hq) {
+    const addr = document.querySelector(".hq-addr");
+    if (addr) addr.textContent = TRIP.hq.address || "";
+    const lab = document.querySelector(".hq-label");
+    if (lab && TRIP.hq.label) lab.textContent = TRIP.hq.label;
+    const walk = document.querySelector(".hq-btn");
+    if (walk && TRIP.hq.mapsQuery) walk.href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(TRIP.hq.mapsQuery) + "&travelmode=walking";
+  }
+  // Weather link
+  if (TRIP.weather && TRIP.weather.bbc) {
+    const wc = document.querySelector(".weather-cta");
+    if (wc) wc.href = TRIP.weather.bbc;
+  }
+}
 
-// First thing on first load: ask who you are.
-if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
+async function boot() {
+  applyTrip(await loadTrip());
+  state = load();
+  me = loadMe();
+  selectedDrink = loadSelectedDrink();
+  applyTripToDOM();
 
-// Heartbeat: refresh my presence every 2 min and whenever I return to the app,
-// and re-render the roster each minute so stale lads slide to "Away".
-setInterval(() => { beat(); renderWhoami(); }, 120000);
-setInterval(renderWhoami, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { beat(); renderWhoami(); } });
+  renderDrinkBar();
+  render();
+  tick();
+  setInterval(tick, 1000);
+  initSync();
+  fetchWeather();
+
+  // First thing on first load: ask who you are.
+  if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
+
+  // Heartbeat: refresh presence every 2 min + on foreground; re-render roster
+  // each minute so stale lads slide to "Away".
+  setInterval(() => { beat(); renderWhoami(); }, 120000);
+  setInterval(renderWhoami, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { beat(); renderWhoami(); } });
+}
+boot();
 
 /* ==========================================================================
    UPDATE CHECKER — make new deploys stick on Safari, Chrome & the PWA.
