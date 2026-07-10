@@ -27,8 +27,12 @@
 
   <nav class="tabs">
     <a href="#itinerary" class="tab">Itinerary</a>
-    <a href="#tracker" class="tab">Drink Tracker</a>
-    <a href="#crew" class="tab">The Crew</a>
+    <a href="#tracker" class="tab">Drinks</a>
+    <a href="#bets" class="tab">Bets</a>
+    <a href="#awards" class="tab">Awards</a>
+    <a href="#shop" class="tab">Off-Licence</a>
+    <a href="#quotes" class="tab">Quotes</a>
+    <a href="#crew" class="tab">Crew</a>
   </nav>
 
   <main>
@@ -56,6 +60,43 @@
       </div>
       <p class="log-title">Last rounds</p>
       <ul class="log" id="log"></ul>
+    </section>
+
+    <!-- BETS / PREDICTIONS -->
+    <section id="bets" class="section">
+      <h2 class="section-title">Predictions &amp; Bets</h2>
+      <p class="section-sub">Everyone logs their call before kick-off. Fill in the result Sunday and settle up.</p>
+      <div class="bets" id="bets-list"></div>
+    </section>
+
+    <!-- AWARDS -->
+    <section id="awards" class="section">
+      <h2 class="section-title">The Awards</h2>
+      <p class="section-sub">Hand these out Sunday morning. Tap a name to crown the winner.</p>
+      <div class="awards" id="awards-list"></div>
+    </section>
+
+    <!-- OFF-LICENCE CHECKLIST -->
+    <section id="shop" class="section">
+      <h2 class="section-title">Off-Licence Run</h2>
+      <p class="section-sub">Balti Triangle is BYOB — grab the essentials en route Friday. <span id="shop-progress"></span></p>
+      <ul class="checklist" id="shop-list"></ul>
+      <form class="add-row" id="shop-add">
+        <input type="text" id="shop-input" placeholder="Add an item…" maxlength="40" />
+        <button type="submit" class="btn-add">Add</button>
+      </form>
+    </section>
+
+    <!-- QUOTE WALL -->
+    <section id="quotes" class="section">
+      <h2 class="section-title">The Quote Wall</h2>
+      <p class="section-sub">Capture the daft things said all weekend. You'll want these later.</p>
+      <form class="quote-add" id="quote-add">
+        <input type="text" id="quote-text" placeholder="What was said…" maxlength="140" />
+        <select id="quote-who"></select>
+        <button type="submit" class="btn-add">Add</button>
+      </form>
+      <div class="quotes" id="quotes-list"></div>
     </section>
 
     <!-- CREW -->

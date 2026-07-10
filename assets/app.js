@@ -63,23 +63,59 @@ const DEFAULT_NAMES = ["Mitul", "Twin One", "Twin Two", "Mr Science"];
 
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
+/* ---------- BETS ---------- */
+const BETS = [
+  { id: "tapout",  emoji: "😴", q: "First man to tap out" },
+  { id: "disc",    emoji: "🥏", q: "Disc golf champion @ Ackers" },
+  { id: "f1",      emoji: "🏎️", q: "F1 Arcade fastest lap" },
+  { id: "wcscore", emoji: "⚽", q: "World Cup 3rd-place score" },
+  { id: "units",   emoji: "🍺", q: "Most units by Sunday" },
+  { id: "balti",   emoji: "🌶️", q: "Orders the hottest balti" },
+  { id: "lost",    emoji: "🧭", q: "First to get lost" },
+];
+
+/* ---------- AWARDS ---------- */
+const AWARDS = [
+  { id: "mvp",    title: "🏆 MVP of the Weekend" },
+  { id: "balti",  title: "🌶️ Best Balti Order" },
+  { id: "lost",   title: "🧭 Most Lost" },
+  { id: "bed",    title: "😴 First to Bed" },
+  { id: "honky",  title: "🎤 Best Honky-Tonk Moment" },
+  { id: "rounds", title: "💸 Biggest Round Buyer" },
+  { id: "sunday", title: "🤢 Worst State Sunday AM" },
+];
+
+/* ---------- OFF-LICENCE DEFAULTS ---------- */
+const SHOP_DEFAULTS = [
+  "Red wine (for the balti)", "White wine", "Beers / lager", "Cans / mixers",
+  "Soft drinks", "Bottle of water", "Cash / card for the offie", "Bag to carry it all",
+];
+
 const STORE_KEY = "thirstyboys.brum25.v1";
 
 /* ---------- STATE ---------- */
 let state = load();
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { /* ignore */ }
+function defaults() {
   return {
     names: [...DEFAULT_NAMES],
     // per person: { pint: n, half: n, ... }
     tallies: DEFAULT_NAMES.map(() => ({})),
     log: [], // {who, drink, ts}
     selectedDrink: "pint",
+    bets: {},    // betId -> { picks: {0..3: str}, result: str }
+    awards: {},  // awardId -> winner index
+    shop: SHOP_DEFAULTS.map((label, i) => ({ id: "d" + i, label, checked: false })),
+    quotes: [],  // { text, who, ts }
   };
+}
+function load() {
+  const base = defaults();
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return Object.assign(base, JSON.parse(raw));
+  } catch (e) { /* ignore */ }
+  return base;
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
@@ -308,16 +344,153 @@ function undoLast() {
   render();
 }
 function resetAll() {
-  if (!confirm("Reset all drinks and names for the weekend?")) return;
-  state = {
-    names: [...DEFAULT_NAMES],
-    tallies: DEFAULT_NAMES.map(() => ({})),
-    log: [],
-    selectedDrink: "pint",
-  };
+  if (!confirm("Reset all drinks and names for the weekend? (Bets, awards, list & quotes stay.)")) return;
+  state.names = [...DEFAULT_NAMES];
+  state.tallies = DEFAULT_NAMES.map(() => ({}));
+  state.log = [];
+  state.selectedDrink = "pint";
   save();
   renderDrinkBar();
   render();
+}
+
+/* ==========================================================================
+   RENDER: BETS
+   ========================================================================== */
+function renderBets() {
+  const wrap = document.getElementById("bets-list");
+  wrap.innerHTML = BETS.map((bet) => {
+    const data = state.bets[bet.id] || { picks: {}, result: "" };
+    const picks = state.names.map((n, i) => `
+      <div class="bet-pick">
+        <label>${escapeHtml(n)}</label>
+        <input type="text" data-bet="${bet.id}" data-who="${i}" value="${escapeAttr(data.picks[i] || "")}" placeholder="call it…" maxlength="30" />
+      </div>`).join("");
+    return `
+      <div class="bet-card">
+        <p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>
+        <div class="bet-picks">${picks}</div>
+        <div class="bet-result">
+          <label>✅ Actual result</label>
+          <input type="text" data-bet-result="${bet.id}" value="${escapeAttr(data.result || "")}" placeholder="who / what won…" maxlength="40" />
+        </div>
+      </div>`;
+  }).join("");
+
+  wrap.querySelectorAll("input[data-bet]").forEach((inp) =>
+    inp.addEventListener("change", () => {
+      const id = inp.dataset.bet, who = inp.dataset.who;
+      state.bets[id] = state.bets[id] || { picks: {}, result: "" };
+      state.bets[id].picks[who] = inp.value;
+      save();
+    })
+  );
+  wrap.querySelectorAll("input[data-bet-result]").forEach((inp) =>
+    inp.addEventListener("change", () => {
+      const id = inp.dataset.betResult;
+      state.bets[id] = state.bets[id] || { picks: {}, result: "" };
+      state.bets[id].result = inp.value;
+      save();
+    })
+  );
+}
+
+/* ==========================================================================
+   RENDER: AWARDS
+   ========================================================================== */
+function renderAwards() {
+  const wrap = document.getElementById("awards-list");
+  wrap.innerHTML = AWARDS.map((a) => {
+    const winner = state.awards[a.id];
+    const opts = state.names.map((n, i) =>
+      `<button class="award-opt ${winner === i ? "won" : ""}" data-award="${a.id}" data-who="${i}">${escapeHtml(n)}</button>`
+    ).join("");
+    const line = (winner != null && state.names[winner])
+      ? `🏅 Winner: <strong>${escapeHtml(state.names[winner])}</strong>` : "Not awarded yet";
+    return `
+      <div class="award-card">
+        <p class="award-title">${a.title}</p>
+        <p class="award-winner">${line}</p>
+        <div class="award-opts">${opts}</div>
+      </div>`;
+  }).join("");
+
+  wrap.querySelectorAll(".award-opt").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.award, who = Number(btn.dataset.who);
+      state.awards[id] = state.awards[id] === who ? null : who; // tap again to un-award
+      save();
+      renderAwards();
+    })
+  );
+}
+
+/* ==========================================================================
+   RENDER: OFF-LICENCE CHECKLIST
+   ========================================================================== */
+function renderShop() {
+  const ul = document.getElementById("shop-list");
+  const done = state.shop.filter((s) => s.checked).length;
+  document.getElementById("shop-progress").textContent =
+    state.shop.length ? `(${done}/${state.shop.length} sorted)` : "";
+  ul.innerHTML = state.shop.map((item) => `
+    <li class="${item.checked ? "done" : ""}" data-id="${item.id}">
+      <span class="chk-box">✓</span>
+      <span class="chk-label">${escapeHtml(item.label)}</span>
+      <button class="chk-del" data-del="${item.id}" aria-label="Remove">✕</button>
+    </li>`).join("");
+
+  ul.querySelectorAll("li").forEach((li) =>
+    li.addEventListener("click", (e) => {
+      if (e.target.closest(".chk-del")) return;
+      const item = state.shop.find((s) => s.id === li.dataset.id);
+      if (item) { item.checked = !item.checked; save(); renderShop(); }
+    })
+  );
+  ul.querySelectorAll(".chk-del").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.shop = state.shop.filter((s) => s.id !== btn.dataset.del);
+      save();
+      renderShop();
+    })
+  );
+}
+
+/* ==========================================================================
+   RENDER: QUOTE WALL
+   ========================================================================== */
+function renderQuoteWho() {
+  const sel = document.getElementById("quote-who");
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">— who said it —</option>` +
+    state.names.map((n, i) => `<option value="${i}">${escapeHtml(n)}</option>`).join("");
+  if (cur) sel.value = cur;
+}
+function renderQuotes() {
+  const wrap = document.getElementById("quotes-list");
+  if (!state.quotes.length) {
+    wrap.innerHTML = `<p class="quotes-empty">Nothing yet. The weekend is young.</p>`;
+    return;
+  }
+  wrap.innerHTML = state.quotes.slice().reverse().map((q) => {
+    const who = q.who !== "" && state.names[q.who] ? escapeHtml(state.names[q.who]) : "Anon";
+    const when = new Date(q.ts).toLocaleDateString([], { weekday: "short" }) + " " +
+      new Date(q.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return `
+      <div class="quote-card">
+        <button class="quote-del" data-ts="${q.ts}" aria-label="Delete">🗑</button>
+        <div class="quote-text">${escapeHtml(q.text)}</div>
+        <div class="quote-meta">— ${who} · ${when}</div>
+      </div>`;
+  }).join("");
+
+  wrap.querySelectorAll(".quote-del").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.quotes = state.quotes.filter((q) => String(q.ts) !== btn.dataset.ts);
+      save();
+      renderQuotes();
+    })
+  );
 }
 
 /* ---------- UTIL ---------- */
@@ -333,6 +506,11 @@ function render() {
   renderLeaderboard();
   renderTracker();
   renderLog();
+  renderBets();
+  renderAwards();
+  renderShop();
+  renderQuoteWho();
+  renderQuotes();
   renderCrew();
 }
 
@@ -343,6 +521,32 @@ function tick() {
 
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
+
+/* Off-licence: add item */
+document.getElementById("shop-add").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("shop-input");
+  const label = input.value.trim();
+  if (!label) return;
+  state.shop.push({ id: "u" + Date.now(), label, checked: false });
+  input.value = "";
+  save();
+  renderShop();
+});
+
+/* Quote wall: add quote */
+document.getElementById("quote-add").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const textEl = document.getElementById("quote-text");
+  const whoEl = document.getElementById("quote-who");
+  const text = textEl.value.trim();
+  if (!text) return;
+  state.quotes.push({ text, who: whoEl.value === "" ? "" : Number(whoEl.value), ts: Date.now() });
+  textEl.value = "";
+  whoEl.value = "";
+  save();
+  renderQuotes();
+});
 
 renderDrinkBar();
 render();

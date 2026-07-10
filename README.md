@@ -12,9 +12,16 @@ A little GitHub Pages site for four men and one weekend in Birmingham
 - **Drink tracker** — tap a drink type for each man, tracks totals + UK units,
   and ranks everyone on a live leaderboard (👑 Thirstiest Boy). Data is saved
   in the browser (`localStorage`), so it survives refreshes on that device.
+- **Predictions & bets** — everyone logs their pre-trip calls (first to tap out,
+  disc golf champ, World Cup score…); fill in the actual result and settle up.
+- **The Awards** — hand out superlatives Sunday morning; tap a name to crown a winner.
+- **Off-licence run** — a BYOB checklist for the Balti Triangle pit stop; tick
+  items off and add your own.
+- **Quote wall** — capture the daft things said all weekend, attributed and timestamped.
 - **Crew roster** — rename anyone by editing their name in the tracker.
 
-Everything is static — no build step, no dependencies.
+Everything is static — no build step, no dependencies. All data is saved in the
+browser (`localStorage`) per device.
 
 ## Files
 
