@@ -150,6 +150,15 @@ h1 span {
 }
 .day-name { font-size: 1.25rem; font-weight: 900; }
 .day-date { color: var(--amber); font-weight: 700; }
+.day-map {
+  margin-left: auto;
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.day-map:hover { text-decoration: underline; }
 .stops { display: flex; flex-direction: column; gap: 0.6rem; }
 .stop {
   display: grid;

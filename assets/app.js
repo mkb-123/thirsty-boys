@@ -244,11 +244,17 @@ function renderItinerary() {
         </div>`;
     }).join("");
 
+    const mapStops = day.stops.filter((s) => s.map).map((s) => encodeURIComponent(s.map));
+    const dayMap = mapStops.length
+      ? `<a class="day-map" href="https://www.google.com/maps/dir/${mapStops.join("/")}" target="_blank" rel="noopener">🗺️ Route</a>`
+      : "";
+
     return `
       <div class="day">
         <div class="day-head">
           <span class="day-name">${day.name}</span>
           <span class="day-date">${day.date}</span>
+          ${dayMap}
         </div>
         <div class="stops">${stops}</div>
       </div>`;

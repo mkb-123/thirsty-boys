@@ -19,9 +19,20 @@ A little GitHub Pages site for four men and one weekend in Birmingham
   items off and add your own.
 - **Quote wall** — capture the daft things said all weekend, attributed and timestamped.
 - **Crew roster** — rename anyone by editing their name in the tracker.
+- **Route maps** — each day has a 🗺️ link that opens a Google Maps route through
+  that day's venues in order.
+- **Add to Home Screen** — installable as a phone app (PWA manifest + icons);
+  opens full-screen with its own beer-mug icon.
 
 Everything is static — no build step, no dependencies. All data is saved in the
 browser (`localStorage`) per device.
+
+## Add to Home Screen
+
+- **iPhone (Safari):** open the site → Share → *Add to Home Screen*.
+- **Android (Chrome):** open the site → ⋮ menu → *Install app* / *Add to Home screen*.
+
+It launches full-screen with the beer-mug icon.
 
 ## Files
 
