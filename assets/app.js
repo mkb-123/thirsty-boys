@@ -13,7 +13,7 @@ const ITINERARY = [
       { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
       { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "9 Sloane Street — HQ. Mr Science arrives.", map: "9 Sloane Street Birmingham B1 3DZ" },
       { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43", tag: "booked", map: "TOCA Social Bullring Birmingham" },
-      { t: "19:30", iso: "2026-07-17T19:30", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Off-licence pit stop en route (BYOB!)." },
+      { t: "19:15", iso: "2026-07-17T19:15", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Leave in good time — it's a 20-25 min drive PLUS the off-licence stop for cold beers (BYOB!)." },
       { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
       { t: "21:30", iso: "2026-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
     ],
@@ -22,9 +22,9 @@ const ITINERARY = [
     name: "Saturday", date: "18 July",
     stops: [
       { t: "10:00", iso: "2026-07-18T10:00", emoji: "🥏", title: "Disc Golf @ Ackers", desc: "Ackers Adventure · shake off the balti.", tag: "booked", map: "Ackers Adventure Birmingham" },
-      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca @ The Loft", desc: "1000 Trades · tacos.", tag: "walkin", map: "1000 Trades Birmingham" },
+      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca (The Loft, 1000 Trades)", desc: "Tacos at The Loft — upstairs at 1000 Trades, JQ.", tag: "walkin", map: "1000 Trades Birmingham" },
       { t: "14:00", iso: "2026-07-18T14:00", emoji: "🏎️", title: "F1 Arcade", desc: "Chamberlain Sq · race sims & rounds.", tag: "booked", map: "F1 Arcade Birmingham" },
-      { t: "16:00", iso: "2026-07-18T16:00", emoji: "🔄", title: "F1 done — regroup", desc: "Breather. Rehydrate. Reassess." },
+      { t: "16:00", iso: "2026-07-18T16:00", emoji: "🔄", title: "F1 done — free time", desc: "2½hr gap: a pub near Chamberlain Sq, a nap at HQ, or a wander. Reconvene 18:30 for food." },
       { t: "18:30", iso: "2026-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham" },
       { t: "20:00", iso: "2026-07-18T20:00", emoji: "🤠", title: "Low Places", desc: "Honky-tonk. Yeehaw.", map: "Low Places Birmingham" },
       { t: "22:00", iso: "2026-07-18T22:00", emoji: "⚽", title: "World Cup 3rd Place Playoff", desc: "Luna Springs, Digbeth · big screen.", map: "Luna Springs Digbeth Birmingham" },
@@ -135,15 +135,20 @@ function setMe(i) {
   try { localStorage.setItem(ME_KEY, String(i)); } catch (e) { /* ignore */ }
   state.present = state.present || {};
   state.present[i] = Date.now();   // mark "in" for everyone (synced)
+  presencePushed = true;
   save();
+  rtSet("present/" + i, state.present[i]);
   closeWhoamiModal();
   render();
 }
 function clearMe() {
-  if (me != null && state.present) delete state.present[me];  // mark "out"
+  const old = me;
+  if (old != null && state.present) delete state.present[old];  // mark "out"
+  presencePushed = false;      // allow re-announcing after re-claim
   me = null;
   try { localStorage.removeItem(ME_KEY); } catch (e) { /* ignore */ }
   save();
+  if (old != null) rtRemove("present/" + old);
   render();
   openWhoamiModal();               // re-prompt for who you are
 }
@@ -177,8 +182,9 @@ function load() {
   return base;
 }
 function save() {
+  // Local cache only. Remote writes are granular (see rtSet/rtTxn) so two
+  // phones acting at once never clobber each other's whole state.
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
-  pushRemote();
 }
 
 /* ==========================================================================
@@ -188,7 +194,7 @@ function save() {
    ========================================================================== */
 let syncRef = null;
 let applyingRemote = false;   // guards against echoing remote updates back
-let pushTimer = null;
+let presencePushed = false;   // only announce "I'm in" once per load
 
 function setSyncStatus(text, cls) {
   const el = document.getElementById("sync-status");
@@ -216,6 +222,7 @@ function loadScript(src) {
   });
 }
 async function loadFirebase(timeoutMs) {
+  if (typeof firebase !== "undefined" && firebase.initializeApp) return; // already loaded
   await Promise.race([
     (async () => {
       await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
@@ -225,14 +232,13 @@ async function loadFirebase(timeoutMs) {
   ]);
 }
 
-function pushRemote() {
-  if (!syncRef || applyingRemote) return;
-  clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => {
-    try { syncRef.set(JSON.parse(JSON.stringify(state))); }
-    catch (e) { /* offline; localStorage still holds it */ }
-  }, 250);
-}
+/* ---- Granular remote writes: each change touches only its own child path,
+   and drink counts use a transaction, so concurrent taps can't clobber. ---- */
+function rtReady() { return !!(syncRef && !applyingRemote); }
+function rtSet(path, value) { if (rtReady()) { try { syncRef.child(path).set(value); } catch (e) { /* offline */ } } }
+function rtRemove(path) { if (rtReady()) { try { syncRef.child(path).remove(); } catch (e) { /* offline */ } } }
+function rtTxn(path, fn) { if (rtReady()) { try { syncRef.child(path).transaction(fn); } catch (e) { /* offline */ } } }
+function seedRemote() { if (rtReady()) { try { syncRef.set(JSON.parse(JSON.stringify(state))); } catch (e) { /* offline */ } } }
 
 async function initSync() {
   const cfgPre = window.THIRSTY_CONFIG;
@@ -262,16 +268,19 @@ async function initSync() {
       const remote = snap.val();
       if (!remote) {
         // Nothing shared yet — seed the room with our current state.
-        markMePresent();
+        if (markMePresent()) presencePushed = true;
         setSyncStatus("🟢 Live · house “" + code + "”", "on");
-        pushRemote();
+        seedRemote();
         return;
       }
       applyingRemote = true;
       state = Object.assign(defaults(), remote);
+      // Firebase drops empty collections and may return keyed objects; normalise.
+      if (state.log && !Array.isArray(state.log)) state.log = Object.keys(state.log).map((k) => state.log[k]);
+      if (!Array.isArray(state.quotes)) state.quotes = state.quotes ? Object.keys(state.quotes).map((k) => state.quotes[k]) : [];
       applyingRemote = false;
-      // If this phone has claimed an identity, make sure it shows as "in".
-      if (markMePresent()) pushRemote();
+      // If this phone has claimed an identity, announce "I'm in" — but only once.
+      if (!presencePushed && markMePresent()) { presencePushed = true; rtSet("present/" + me, state.present[me]); }
       setSyncStatus("🟢 Live · house “" + code + "”", "on");
       renderDrinkBar();
       render();
@@ -574,6 +583,7 @@ function renderCrew() {
       const i = Number(inp.dataset.i);
       state.names[i] = inp.value.trim() || DEFAULT_NAMES[i];
       save();
+      rtSet("names/" + i, state.names[i]);
       render();
     });
   });
@@ -587,7 +597,11 @@ function addDrink(i) {
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
   state.log.push({ who: i, drink: id, ts: Date.now() });
+  if (state.log.length > 100) state.log = state.log.slice(-100);
   save();
+  // Count via a transaction so simultaneous taps both land; log written whole.
+  rtTxn("tallies/" + i + "/" + id, (v) => (v || 0) + 1);
+  rtSet("log", state.log);
   render();
 }
 function undoLast() {
@@ -606,6 +620,8 @@ function undoLast() {
   const t = state.tallies[entry.who];
   if (t && t[entry.drink]) t[entry.drink] -= 1;
   save();
+  rtTxn("tallies/" + entry.who + "/" + entry.drink, (v) => Math.max(0, (v || 0) - 1));
+  rtSet("log", state.log);
   render();
 }
 
@@ -618,6 +634,7 @@ function resetAll() {
   state = defaults();
   markMePresent();          // keep whoever's holding this phone marked "in"
   save();
+  seedRemote();             // overwrite the whole shared room (this IS a full reset)
   renderDrinkBar();
   render();
 }
@@ -717,8 +734,8 @@ function renderBets() {
     el.addEventListener("change", () => {
       const id = el.dataset.betCall, b = getBet(id);
       const v = el.value;
-      if (v === "") delete b.calls[me];
-      else b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v;
+      if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
+      else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
       state.bets[id] = b;
       save();
       renderBets();
@@ -730,19 +747,21 @@ function renderBets() {
       b.result = el.value === "" ? "" : (BETS.find((x) => x.id === id).type === "person" ? Number(el.value) : el.value);
       state.bets[id] = b;
       save();
+      rtSet("bets/" + id + "/result", b.result);
       renderBets();
     })
   );
   wrap.querySelectorAll(".bet-reveal").forEach((btn) =>
     btn.addEventListener("click", () => {
+      if (!confirm("Reveal everyone's calls to the whole crew? No un-seeing it.")) return;
       const id = btn.dataset.bet, b = getBet(id);
-      b.revealed = true; state.bets[id] = b; save(); renderBets();
+      b.revealed = true; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", true); renderBets();
     })
   );
   wrap.querySelectorAll(".bet-reopen").forEach((btn) =>
     btn.addEventListener("click", () => {
       const id = btn.dataset.bet, b = getBet(id);
-      b.revealed = false; state.bets[id] = b; save(); renderBets();
+      b.revealed = false; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", false); renderBets();
     })
   );
 }
@@ -806,7 +825,8 @@ function renderAwards() {
   wrap.querySelectorAll(".award-select").forEach((sel) =>
     sel.addEventListener("change", () => {
       const id = sel.dataset.award, a = getAward(id);
-      if (sel.value === "") delete a.votes[me]; else a.votes[me] = Number(sel.value);
+      if (sel.value === "") { delete a.votes[me]; rtRemove("awards/" + id + "/votes/" + me); }
+      else { a.votes[me] = Number(sel.value); rtSet("awards/" + id + "/votes/" + me, a.votes[me]); }
       state.awards[id] = a;
       save();
       renderAwards();
@@ -814,14 +834,15 @@ function renderAwards() {
   );
   wrap.querySelectorAll(".award-reveal").forEach((b) =>
     b.addEventListener("click", () => {
+      if (!confirm("Reveal the result to the whole crew? No un-seeing it.")) return;
       const id = b.dataset.award, a = getAward(id);
-      a.revealed = true; state.awards[id] = a; save(); renderAwards();
+      a.revealed = true; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", true); renderAwards();
     })
   );
   wrap.querySelectorAll(".award-reopen").forEach((b) =>
     b.addEventListener("click", () => {
       const id = b.dataset.award, a = getAward(id);
-      a.revealed = false; state.awards[id] = a; save(); renderAwards();
+      a.revealed = false; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", false); renderAwards();
     })
   );
 }
@@ -862,6 +883,7 @@ function renderQuotes() {
     btn.addEventListener("click", () => {
       state.quotes = state.quotes.filter((q) => String(q.ts) !== btn.dataset.ts);
       save();
+      rtSet("quotes", state.quotes);
       renderQuotes();
     })
   );
@@ -922,6 +944,7 @@ document.getElementById("quote-add").addEventListener("submit", (e) => {
   textEl.value = "";
   whoEl.value = "";
   save();
+  rtSet("quotes", state.quotes);
   renderQuotes();
 });
 
