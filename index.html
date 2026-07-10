@@ -40,6 +40,7 @@
     <a href="#tracker" class="tab">Drinks</a>
     <a href="#bets" class="tab">Bets</a>
     <a href="#awards" class="tab">Awards</a>
+    <a href="#bingo" class="tab">Bingo</a>
     <a href="#quotes" class="tab">Quotes</a>
     <a href="#crew" class="tab">Crew</a>
   </nav>
@@ -58,10 +59,17 @@
           <div class="hq-addr">9 Sloane Street, Birmingham, B1 3DZ</div>
         </div>
         <div class="hq-actions">
-          <a class="hq-btn" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Take me home</a>
+          <a class="hq-btn" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Walk home</a>
+          <a class="hq-btn" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=9%20Sloane%20Street%2C%20Birmingham%2C%20B1%203DZ" target="_blank" rel="noopener">🚕 Uber home</a>
           <button class="hq-btn ghost" id="hq-copy">📋 Copy address</button>
         </div>
       </div>
+
+      <a class="weather-strip" href="https://www.bbc.co.uk/weather/2655603" target="_blank" rel="noopener">
+        <span class="weather-emoji">🌦️</span>
+        <span class="weather-body"><b>Birmingham forecast</b><br><span class="muted">Check before you leave HQ each morning</span></span>
+        <span class="weather-cta">BBC Weather →</span>
+      </a>
 
       <div class="days" id="days"></div>
     </section>
@@ -81,7 +89,9 @@
 
       <div class="tracker-actions">
         <button class="btn-ghost" id="undo-btn">↩ Undo my last</button>
+        <button class="btn-ghost" id="spin-btn">🎲 Whose round?</button>
       </div>
+      <p class="round-result" id="round-result"></p>
       <p class="log-title">Last rounds</p>
       <ul class="log" id="log"></ul>
     </section>
@@ -98,6 +108,13 @@
       <h2 class="section-title">The Awards</h2>
       <p class="section-sub">Everyone casts a secret vote. Nobody sees the results until someone hits reveal.</p>
       <div class="awards" id="awards-list"></div>
+    </section>
+
+    <!-- BIRMINGHAM BINGO -->
+    <section id="bingo" class="section">
+      <h2 class="section-title">Birmingham Bingo</h2>
+      <p class="section-sub">Spot it, tap it, claim it. First to spot each one gets the credit. <span id="bingo-progress"></span></p>
+      <div class="bingo-grid" id="bingo-grid"></div>
     </section>
 
     <!-- QUOTE WALL -->

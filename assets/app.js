@@ -102,6 +102,19 @@ const AWARDS = [
   { id: "sunday",   title: "🤢 Worst State Sunday AM" },
 ];
 
+/* ---------- BIRMINGHAM BINGO ---------- */
+const BINGO = [
+  { id: "villa",   emoji: "🟣", t: "Someone in a Villa or Blues top" },
+  { id: "canal",   emoji: "🛶", t: "A canal boat" },
+  { id: "peaky",   emoji: "🎩", t: "A Peaky Blinders reference" },
+  { id: "bull",    emoji: "🐂", t: "The Bullring bull" },
+  { id: "balti",   emoji: "🍛", t: "A naan bigger than your head" },
+  { id: "brummie", emoji: "🗣️", t: "A proper thick Brummie accent" },
+  { id: "stag",    emoji: "🥳", t: "A stag or hen do" },
+  { id: "pigeon",  emoji: "🐦", t: "A pigeon stealing chips" },
+  { id: "rain",    emoji: "🌧️", t: "Rain (obviously)" },
+];
+
 const STORE_KEY = "thirstyboys.brum26.v1";
 
 /* ---------- STATE ---------- */
@@ -170,6 +183,7 @@ function defaults() {
     bets: {},    // betId -> { calls: {voterIdx: value}, result, revealed }
     awards: {},  // awardId -> { votes: {voterIdx: nomineeIdx}, revealed }
     quotes: [], // { text, who, ts }
+    bingo: {},  // bingoId -> spotter index (synced)
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
   };
 }
@@ -423,23 +437,44 @@ function hasClaimed() {
   return !(me == null || Number.isNaN(me) || !state.names[me]);
 }
 
-/* Roster of who has joined (synced) vs who hasn't. */
+/* Roster with live presence. "In" = seen recently (heartbeat), "Away" =
+   joined but quiet for a while, "Waiting" = never joined. */
+const FRESH_MS = 8 * 60 * 1000;   // seen within 8 min = online
 function rosterHtml() {
   const present = state.present || {};
-  const ins = [], outs = [];
-  state.names.forEach((n, i) => (present[i] ? ins : outs).push({ n, i }));
+  const now = Date.now();
+  const ins = [], away = [], outs = [];
+  state.names.forEach((n, i) => {
+    const seen = present[i];
+    if (seen && now - seen < FRESH_MS) ins.push({ n, i });
+    else if (seen) away.push({ n, i });
+    else outs.push({ n, i });
+  });
   const fmt = (x) => `${CREW[x.i] ? CREW[x.i].emoji : ""} ${escapeHtml(x.n)}${x.i === me ? " (you)" : ""}`;
+  const awayRow = away.length
+    ? `<div class="roster-row"><span class="roster-lab away">Away</span><span>${away.map(fmt).join(" · ")}</span></div>`
+    : "";
   return `
     <div class="roster">
       <div class="roster-row">
         <span class="roster-lab in">In</span>
         <span>${ins.length ? ins.map(fmt).join(" · ") : `<span class="roster-none">nobody yet</span>`}</span>
       </div>
+      ${awayRow}
       <div class="roster-row">
         <span class="roster-lab out">Waiting</span>
         <span>${outs.length ? outs.map((x) => escapeHtml(x.n)).join(" · ") : `<span class="roster-none">everyone's in! 🎉</span>`}</span>
       </div>
     </div>`;
+}
+
+/* Heartbeat: keep my "last seen" fresh so the roster shows who's really online. */
+function beat() {
+  if (me == null || Number.isNaN(me) || !state.names[me]) return;
+  state.present = state.present || {};
+  state.present[me] = Date.now();
+  save();
+  rtSet("present/" + me, state.present[me]);
 }
 
 function pickButtonsHtml() {
@@ -520,6 +555,7 @@ function renderLeaderboard() {
         <div class="lb-units">${r.count}</div>
         <div class="lb-units-lab">${r.count === 1 ? "drink" : "drinks"} · ${r.units} units</div>
         <div class="lb-title">${title}</div>
+        <div class="lb-badges">${badgesFor(r.i).join(" ")}</div>
       </div>`;
   }).join("");
 }
@@ -594,6 +630,7 @@ function renderCrew() {
    ========================================================================== */
 function addDrink(i) {
   const id = selectedDrink;
+  const prevLeader = currentLeader();
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
   state.log.push({ who: i, drink: id, ts: Date.now() });
@@ -603,6 +640,15 @@ function addDrink(i) {
   rtTxn("tallies/" + i + "/" + id, (v) => (v || 0) + 1);
   rtSet("log", state.log);
   render();
+  // Celebrate: small burst from the button; big fanfare when the crown changes.
+  const btn = document.querySelector('.person-add[data-i="' + i + '"]');
+  if (btn) { const r = btn.getBoundingClientRect(); burstConfetti(r.left + r.width / 2, r.top, 12); }
+  const newLeader = currentLeader();
+  if (newLeader != null && newLeader !== prevLeader) {
+    burstConfetti(window.innerWidth / 2, 90, 40);
+    pop();
+    toast("👑 " + state.names[newLeader] + " is Thirstiest Boy!");
+  }
 }
 function undoLast() {
   // Undo YOUR own last drink if you've claimed a name; otherwise the last overall.
@@ -889,6 +935,124 @@ function renderQuotes() {
   );
 }
 
+/* ==========================================================================
+   CELEBRATION: confetti, toast, crown-change, whose-round spinner
+   ========================================================================== */
+function reducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function burstConfetti(x, y, count) {
+  if (reducedMotion()) return;
+  const colors = ["#f4a933", "#ffcf6b", "#b83a5c", "#4bbf87", "#f4f1e9"];
+  for (let k = 0; k < count; k++) {
+    const p = document.createElement("div");
+    p.className = "confetti";
+    p.style.left = x + "px";
+    p.style.top = y + "px";
+    p.style.background = colors[k % colors.length];
+    const ang = (Math.random() * Math.PI * 2), dist = 40 + Math.random() * 90;
+    p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+    p.style.setProperty("--dy", (Math.sin(ang) * dist - 70) + "px");
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+}
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add("show"));
+  setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 350); }, 2600);
+}
+let audioCtx;
+function pop() {
+  if (reducedMotion()) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "triangle"; o.frequency.value = 660;
+    o.connect(g); g.connect(audioCtx.destination);
+    const t0 = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.09, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+    o.start(t0); o.stop(t0 + 0.2);
+  } catch (e) { /* audio blocked — no worries */ }
+}
+/* Index of the single outright drinks leader, or null (tie / nobody drinking). */
+function currentLeader() {
+  let max = 0, who = null, tie = false;
+  state.names.forEach((_, i) => {
+    const c = countFor(i);
+    if (c > max) { max = c; who = i; tie = false; }
+    else if (c === max && c > 0) tie = true;
+  });
+  return max > 0 && !tie ? who : null;
+}
+/* Little achievement badges from a person's tally. */
+function badgesFor(i) {
+  const t = state.tallies[i] || {}, c = countFor(i), out = [];
+  if (c >= 20) out.push("🏆"); else if (c >= 10) out.push("🔟");
+  if (t.shot) out.push("🥃");
+  if (t.wine) out.push("🍷");
+  if (t.cocktail) out.push("🍸");
+  if (c === 0) out.push("😇");
+  return out;
+}
+function spinRound() {
+  const el = document.getElementById("round-result");
+  if (!el) return;
+  const winner = Math.floor(Math.random() * state.names.length);
+  let n = 0;
+  const iv = setInterval(() => {
+    el.textContent = state.names[Math.floor(Math.random() * state.names.length)];
+    if (++n > 12) {
+      clearInterval(iv);
+      el.textContent = "🍺 " + state.names[winner] + "'s round!";
+      const r = el.getBoundingClientRect();
+      burstConfetti(r.left + r.width / 2, r.top + r.height / 2, 16);
+      pop();
+    }
+  }, 80);
+}
+
+/* ==========================================================================
+   RENDER: BIRMINGHAM BINGO
+   ========================================================================== */
+function renderBingo() {
+  const grid = document.getElementById("bingo-grid");
+  if (!grid) return;
+  const spotted = BINGO.filter((x) => state.bingo && state.bingo[x.id] != null).length;
+  const prog = document.getElementById("bingo-progress");
+  if (prog) prog.textContent = `(${spotted}/${BINGO.length} spotted)`;
+  grid.innerHTML = BINGO.map((x) => {
+    const by = state.bingo ? state.bingo[x.id] : undefined;
+    const done = by != null && state.names[by];
+    return `
+      <div class="bingo-cell ${done ? "spotted" : ""}" data-bingo="${x.id}">
+        <span class="bingo-emoji">${x.emoji}</span>
+        <span>${escapeHtml(x.t)}</span>
+        <span class="bingo-by">${done ? "✅ " + escapeHtml(state.names[by]) : ""}</span>
+      </div>`;
+  }).join("");
+  grid.querySelectorAll(".bingo-cell").forEach((cell) =>
+    cell.addEventListener("click", () => {
+      const id = cell.dataset.bingo;
+      state.bingo = state.bingo || {};
+      if (state.bingo[id] != null) { delete state.bingo[id]; rtRemove("bingo/" + id); }
+      else {
+        const who = (me != null && !Number.isNaN(me)) ? me : 0;
+        state.bingo[id] = who; rtSet("bingo/" + id, who);
+        const r = cell.getBoundingClientRect();
+        burstConfetti(r.left + r.width / 2, r.top + r.height / 2, 10);
+      }
+      save();
+      renderBingo();
+    })
+  );
+}
+
 /* ---------- UTIL ---------- */
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -905,6 +1069,7 @@ function render() {
   renderLog();
   renderBets();
   renderAwards();
+  renderBingo();
   renderQuoteWho();
   renderQuotes();
   renderCrew();
@@ -917,7 +1082,27 @@ function tick() {
 
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
+document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
+
+/* Add-to-Home-Screen hint — shown once, only when not already installed. */
+function maybeShowA2HS() {
+  const A2HS_KEY = "thirstyboys.a2hs";
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(A2HS_KEY) === "1"; } catch (e) { /* ignore */ }
+  if (standalone || dismissed || document.getElementById("a2hs")) return;
+  const bar = document.createElement("div");
+  bar.id = "a2hs";
+  bar.innerHTML = `<span class="a2hs-txt">📲 <b>Add to Home Screen</b> — tap Share, then “Add to Home Screen”.</span>
+    <button class="a2hs-close" aria-label="Dismiss">✕</button>`;
+  bar.querySelector(".a2hs-close").addEventListener("click", () => {
+    try { localStorage.setItem(A2HS_KEY, "1"); } catch (e) { /* ignore */ }
+    bar.remove();
+  });
+  document.body.appendChild(bar);
+}
+setTimeout(maybeShowA2HS, 2500);
 
 /* HQ: copy address (for pasting into Uber etc.) */
 const HQ_ADDRESS = "9 Sloane Street, Birmingham, B1 3DZ";
@@ -956,6 +1141,12 @@ initSync();
 
 // First thing on first load: ask who you are.
 if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
+
+// Heartbeat: refresh my presence every 2 min and whenever I return to the app,
+// and re-render the roster each minute so stale lads slide to "Away".
+setInterval(() => { beat(); renderWhoami(); }, 120000);
+setInterval(renderWhoami, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { beat(); renderWhoami(); } });
 
 /* ==========================================================================
    UPDATE CHECKER — make new deploys stick on Safari, Chrome & the PWA.
