@@ -9,7 +9,7 @@ const ITINERARY = [
   {
     name: "Friday", date: "17 July",
     stops: [
-      { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul + the Sausage Twins hit town." },
+      { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul, Big Ben & Director hit town." },
       { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
       { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "Jewellery Quarter HQ. Mr Science arrives." },
       { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks.", tag: "booked", map: "TOCA Social Bullring Birmingham" },
@@ -55,8 +55,8 @@ const DRINKS = [
 
 const CREW = [
   { emoji: "🧑‍✈️", role: "The Ringleader" },
-  { emoji: "🌭", role: "Sausage Twin I" },
-  { emoji: "🌭", role: "Sausage Twin II" },
+  { emoji: "🔔", role: "The Timekeeper" },
+  { emoji: "🎬", role: "The Director" },
   { emoji: "🔬", role: "Mr Science" },
 ];
 const DEFAULT_NAMES = ["Mitul", "Big Ben", "Director", "Mr Science"];
@@ -277,7 +277,7 @@ function renderCountdown() {
     const mins = Math.floor((diff % 3600000) / 60000);
     const secs = Math.floor((diff % 60000) / 1000);
     set("cd-days", days); set("cd-hours", hrs); set("cd-mins", mins); set("cd-secs", secs);
-    cap.textContent = "until the Sausage Twins hit Snow Hill";
+    cap.textContent = "until the boys hit Snow Hill";
     cap.classList.remove("live");
   } else if (now <= TRIP_END) {
     ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach((id) => (document.getElementById(id).textContent = "🍺"));

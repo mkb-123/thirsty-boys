@@ -1,7 +1,7 @@
 # 🍺 Thirsty Boys — Birmingham '26
 
 A little GitHub Pages site for four men and one weekend in Birmingham
-(17–19 July). Built for **Mitul, the Sausage Twins & Mr Science**.
+(17–19 July). Built for **Mitul, Big Ben, Director & Mr Science**.
 
 ## What's in it
 
