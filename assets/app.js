@@ -140,7 +140,8 @@ function setSyncStatus(text, cls) {
 
 function syncEnabled() {
   const cfg = window.THIRSTY_CONFIG;
-  return !!(cfg && cfg.firebase && cfg.firebase.apiKey && cfg.firebase.databaseURL
+  // Realtime Database only needs databaseURL; apiKey is only for Auth/Firestore.
+  return !!(cfg && cfg.firebase && cfg.firebase.databaseURL
             && typeof firebase !== "undefined" && firebase.initializeApp);
 }
 

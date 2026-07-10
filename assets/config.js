@@ -31,10 +31,10 @@ window.THIRSTY_CONFIG = {
   // stay in per-device mode.
   firebase: {
     apiKey: "",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    storageBucket: "",
+    authDomain: "thirstyboys-61919.firebaseapp.com",
+    databaseURL: "https://thirstyboys-61919-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "thirstyboys-61919",
+    storageBucket: "thirstyboys-61919.appspot.com",
     messagingSenderId: "",
     appId: "",
   },
