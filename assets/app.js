@@ -59,7 +59,7 @@ const CREW = [
   { emoji: "🌭", role: "Sausage Twin II" },
   { emoji: "🔬", role: "Mr Science" },
 ];
-const DEFAULT_NAMES = ["Mitul", "Twin One", "Twin Two", "Mr Science"];
+const DEFAULT_NAMES = ["Mitul", "Big Ben", "Director", "Mr Science"];
 
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
