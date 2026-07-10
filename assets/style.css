@@ -300,6 +300,8 @@ h1 span {
   border-bottom: 1px dashed transparent;
 }
 .person-name:hover, .person-name:focus { border-bottom-color: var(--muted); outline: none; }
+.person-name-static { font-weight: 800; font-size: 1.05rem; color: var(--ink); }
+.person-name-static .you-tag { margin-left: 0.35rem; }
 .person-count { font-size: 2.4rem; font-weight: 900; color: var(--amber-2); font-variant-numeric: tabular-nums; }
 .person-count-lab { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.6rem; }
 .person-add {
@@ -352,7 +354,21 @@ h1 span {
 }
 .crew-emoji { font-size: 2.6rem; }
 .crew-name { font-weight: 800; margin-top: 0.4rem; }
-.crew-role { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+.crew-name-input {
+  font-weight: 800;
+  font-size: 1rem;
+  margin-top: 0.4rem;
+  width: 100%;
+  text-align: center;
+  color: var(--ink);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.3rem;
+  font-family: inherit;
+}
+.crew-name-input:focus { outline: none; border-color: var(--amber); }
+.crew-role { color: var(--muted); font-size: 0.85rem; margin-top: 0.35rem; }
 
 /* ---------- ROSTER (who's in) ---------- */
 .roster { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; }
@@ -601,6 +617,8 @@ h1 span {
 }
 .footer p { margin: 0.3rem 0; }
 .muted { color: var(--muted); font-size: 0.85rem; }
+.reset-bottom { margin-top: 1.75rem; }
+.reset-note { margin-top: 0.5rem !important; font-size: 0.75rem; opacity: 0.75; }
 
 /* ---------- MOBILE-FIRST TUNING ---------- */
 @media (max-width: 560px) {

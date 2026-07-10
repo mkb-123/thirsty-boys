@@ -113,6 +113,19 @@ function loadMe() {
     return v === null ? null : Number(v);
   } catch (e) { return null; }
 }
+
+/* Which drink THIS phone has selected — per-device, never synced. */
+const DRINK_KEY = "thirstyboys.drink";
+let selectedDrink = (function () {
+  try { return localStorage.getItem(DRINK_KEY) || "pint"; } catch (e) { return "pint"; }
+})();
+function setSelectedDrink(id) {
+  selectedDrink = id;
+  try { localStorage.setItem(DRINK_KEY, id); } catch (e) { /* ignore */ }
+  renderDrinkBar();
+  renderTracker();
+  renderWhoami();
+}
 function setMe(i) {
   me = i;
   try { localStorage.setItem(ME_KEY, String(i)); } catch (e) { /* ignore */ }
@@ -292,10 +305,18 @@ function renderItinerary() {
         </div>`;
     }).join("");
 
-    const mapStops = day.stops.filter((s) => s.map).map((s) => encodeURIComponent(s.map));
-    const dayMap = mapStops.length
-      ? `<a class="day-map" href="https://www.google.com/maps/dir/${mapStops.join("/")}" target="_blank" rel="noopener">🗺️ Route</a>`
-      : "";
+    // Build a reliable Google Maps route through this day's mappable venues.
+    const mapStops = day.stops.filter((s) => s.map).map((s) => s.map);
+    let dayMap = "";
+    if (mapStops.length === 1) {
+      dayMap = `<a class="day-map" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapStops[0])}" target="_blank" rel="noopener">🗺️ Map</a>`;
+    } else if (mapStops.length > 1) {
+      const origin = encodeURIComponent(mapStops[0]);
+      const destination = encodeURIComponent(mapStops[mapStops.length - 1]);
+      const waypoints = mapStops.slice(1, -1).map(encodeURIComponent).join("%7C"); // %7C = |
+      const wp = waypoints ? `&waypoints=${waypoints}` : "";
+      dayMap = `<a class="day-map" href="https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${wp}&travelmode=walking" target="_blank" rel="noopener">🗺️ Route</a>`;
+    }
 
     return `
       <div class="day">
@@ -343,16 +364,11 @@ function renderCountdown() {
 function renderDrinkBar() {
   const bar = document.getElementById("drink-bar");
   bar.innerHTML = DRINKS.map((d) => `
-    <button class="drink-pick ${d.id === state.selectedDrink ? "active" : ""}" data-drink="${d.id}">
+    <button class="drink-pick ${d.id === selectedDrink ? "active" : ""}" data-drink="${d.id}">
       ${d.emoji} ${d.label} <small>${d.units}u</small>
     </button>`).join("");
   bar.querySelectorAll(".drink-pick").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      state.selectedDrink = btn.dataset.drink;
-      save();
-      renderDrinkBar();
-      renderTracker();
-    })
+    btn.addEventListener("click", () => setSelectedDrink(btn.dataset.drink))
   );
 }
 
@@ -400,7 +416,7 @@ function renderWhoami() {
         b.addEventListener("click", () => setMe(Number(b.dataset.me)))
       );
     } else {
-      const sel = drinkById(state.selectedDrink);
+      const sel = drinkById(selectedDrink);
       const emoji = CREW[me] ? CREW[me].emoji : "";
       el.innerHTML =
         `<div class="whoami-claimed">
@@ -442,12 +458,13 @@ function closeWhoamiModal() {
 function renderLeaderboard() {
   const lb = document.getElementById("leaderboard");
   const rows = state.names.map((n, i) => ({ i, name: n, units: unitsFor(i), count: countFor(i) }));
-  const maxUnits = Math.max(...rows.map((r) => r.units));
-  const anyDrinks = maxUnits > 0;
+  const maxCount = Math.max(0, ...rows.map((r) => r.count));
+  const anyDrinks = maxCount > 0;
 
-  const ordered = [...rows].sort((a, b) => b.units - a.units);
+  // Rank by number of drinks (units as tie-breaker).
+  const ordered = [...rows].sort((a, b) => b.count - a.count || b.units - a.units);
   lb.innerHTML = ordered.map((r) => {
-    const isLeader = anyDrinks && r.units === maxUnits;
+    const isLeader = anyDrinks && r.count === maxCount;
     let title = "";
     if (isLeader) title = TITLES.top;
     else if (anyDrinks && r.count === 0) title = TITLES.zero;
@@ -456,8 +473,8 @@ function renderLeaderboard() {
       <div class="lb-card ${isLeader ? "leader" : ""} ${isYou ? "you" : ""}">
         ${isLeader ? `<div class="lb-crown">👑</div>` : ""}
         <div class="lb-name">${escapeHtml(r.name)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
-        <div class="lb-units">${r.units}</div>
-        <div class="lb-units-lab">units · ${r.count} drinks</div>
+        <div class="lb-units">${r.count}</div>
+        <div class="lb-units-lab">${r.count === 1 ? "drink" : "drinks"} · ${r.units} units</div>
         <div class="lb-title">${title}</div>
       </div>`;
   }).join("");
@@ -468,7 +485,7 @@ function renderLeaderboard() {
    ========================================================================== */
 function renderTracker() {
   const grid = document.getElementById("tracker-grid");
-  const sel = drinkById(state.selectedDrink);
+  const sel = drinkById(selectedDrink);
   grid.innerHTML = state.names.map((n, i) => {
     const tally = state.tallies[i] || {};
     const breakdown = DRINKS.filter((d) => tally[d.id])
@@ -476,8 +493,7 @@ function renderTracker() {
     const isYou = i === me;
     return `
       <div class="person ${isYou ? "you" : ""}">
-        <input class="person-name" data-i="${i}" value="${escapeAttr(n)}" aria-label="Name" />
-        ${isYou ? `<div class="person-mini" style="margin-top:0"><span class="you-tag">You</span></div>` : ""}
+        <div class="person-name-static">${escapeHtml(n)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
         <div class="person-count">${countFor(i)}</div>
         <div class="person-count-lab">${unitsFor(i)} units</div>
         <button class="person-add" data-i="${i}">+ ${sel.emoji} ${sel.label}</button>
@@ -488,14 +504,6 @@ function renderTracker() {
   grid.querySelectorAll(".person-add").forEach((btn) =>
     btn.addEventListener("click", () => addDrink(Number(btn.dataset.i)))
   );
-  grid.querySelectorAll(".person-name").forEach((inp) => {
-    inp.addEventListener("change", () => {
-      const i = Number(inp.dataset.i);
-      state.names[i] = inp.value.trim() || DEFAULT_NAMES[i];
-      save();
-      render();
-    });
-  });
 }
 
 /* ==========================================================================
@@ -522,16 +530,25 @@ function renderCrew() {
   wrap.innerHTML = CREW.map((c, i) => `
     <div class="crew-card">
       <div class="crew-emoji">${c.emoji}</div>
-      <div class="crew-name">${escapeHtml(state.names[i] || DEFAULT_NAMES[i])}</div>
+      <input class="crew-name-input" data-i="${i}" value="${escapeAttr(state.names[i] || DEFAULT_NAMES[i])}" aria-label="Rename ${escapeAttr(c.role)}" maxlength="20" />
       <div class="crew-role">${c.role}</div>
     </div>`).join("");
+
+  wrap.querySelectorAll(".crew-name-input").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const i = Number(inp.dataset.i);
+      state.names[i] = inp.value.trim() || DEFAULT_NAMES[i];
+      save();
+      render();
+    });
+  });
 }
 
 /* ==========================================================================
    ACTIONS
    ========================================================================== */
 function addDrink(i) {
-  const id = state.selectedDrink;
+  const id = selectedDrink;
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
   state.log.push({ who: i, drink: id, ts: Date.now() });
@@ -539,19 +556,32 @@ function addDrink(i) {
   render();
 }
 function undoLast() {
-  const last = state.log.pop();
-  if (!last) return;
-  const t = state.tallies[last.who];
-  if (t && t[last.drink]) t[last.drink] -= 1;
+  // Undo YOUR own last drink if you've claimed a name; otherwise the last overall.
+  let idx = -1;
+  if (me != null && !Number.isNaN(me)) {
+    for (let k = state.log.length - 1; k >= 0; k--) {
+      if (state.log[k].who === me) { idx = k; break; }
+    }
+    if (idx === -1) { alert("You haven't logged a drink to undo."); return; }
+  } else {
+    idx = state.log.length - 1;
+  }
+  if (idx < 0) return;
+  const entry = state.log.splice(idx, 1)[0];
+  const t = state.tallies[entry.who];
+  if (t && t[entry.drink]) t[entry.drink] -= 1;
   save();
   render();
 }
+
+const RESET_PASSWORD = "brum26";
 function resetAll() {
-  if (!confirm("Reset all drinks and names for the weekend? (Bets, awards, list & quotes stay.)")) return;
+  const pw = prompt("This wipes ALL drinks & names for EVERYONE.\nEnter the reset password to confirm:");
+  if (pw == null) return;                 // cancelled
+  if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password — nothing was reset."); return; }
   state.names = [...DEFAULT_NAMES];
   state.tallies = DEFAULT_NAMES.map(() => ({}));
   state.log = [];
-  state.selectedDrink = "pint";
   save();
   renderDrinkBar();
   render();
@@ -631,16 +661,12 @@ function renderAwards() {
           : `🏆 ${escapeHtml(winners[0].n)}`;
       const rows = state.names.map((n, i) => {
         const c = tally[i] || 0;
-        const voters = Object.keys(data.votes)
-          .filter((v) => Number(data.votes[v]) === i)
-          .map((v) => state.names[v]).filter(Boolean);
         return `
           <div class="award-result-row">
             <span class="award-res-name">${escapeHtml(n)}</span>
             <span class="award-bar-wrap"><span class="award-bar" style="width:${max > 0 ? (c / max) * 100 : 0}%"></span></span>
             <span class="award-count">${c}</span>
-          </div>
-          ${voters.length ? `<div class="award-voters">${voters.map(escapeHtml).join(", ")}</div>` : ""}`;
+          </div>`;
       }).join("");
       body = `<p class="award-winner">${winLine}</p>${rows}
         <button class="btn-ghost award-reopen" data-award="${a.id}">↩ Re-open voting</button>`;
