@@ -347,13 +347,13 @@ function renderItinerary() {
       const map = s.map
         ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(s.map)}" target="_blank" rel="noopener">📍 Map</a>`
         : "";
-      const uber = s.map
-        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bnickname%5D=${encodeURIComponent(s.title)}&dropoff%5Bformatted_address%5D=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Uber</a>`
+      const dirs = s.map
+        ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Get there</a>`
         : "";
       const menu = s.menu
         ? `<a href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>`
         : "";
-      const tags = (tag || map || uber || menu) ? `<div class="stop-tags">${tag}${map}${uber}${menu}</div>` : "";
+      const tags = (tag || map || dirs || menu) ? `<div class="stop-tags">${tag}${map}${dirs}${menu}</div>` : "";
 
       return `
         <div class="${cls}">
@@ -397,25 +397,34 @@ function renderItinerary() {
 function renderCountdown() {
   const now = new Date();
   const cap = document.getElementById("cd-caption");
+  const blocks = document.querySelectorAll("#countdown .cd-block");
   const set = (id, v) => { document.getElementById(id).textContent = String(v).padStart(2, "0"); };
 
   if (now < TRIP_START) {
+    // Before the trip: count down, restore the day/hr/min/sec labels.
     const diff = TRIP_START - now;
-    const days = Math.floor(diff / 86400000);
-    const hrs = Math.floor((diff % 86400000) / 3600000);
-    const mins = Math.floor((diff % 3600000) / 60000);
-    const secs = Math.floor((diff % 60000) / 1000);
-    set("cd-days", days); set("cd-hours", hrs); set("cd-mins", mins); set("cd-secs", secs);
+    set("cd-days", Math.floor(diff / 86400000));
+    set("cd-hours", Math.floor((diff % 86400000) / 3600000));
+    set("cd-mins", Math.floor((diff % 3600000) / 60000));
+    set("cd-secs", Math.floor((diff % 60000) / 1000));
+    const labs = ["days", "hrs", "min", "sec"];
+    blocks.forEach((bl, i) => { const l = bl.querySelector(".cd-lab"); if (l) l.textContent = labs[i]; bl.classList.remove("cd-leader"); });
     cap.textContent = "It's going to be a big gay";
     cap.classList.remove("live");
-  } else if (now <= TRIP_END) {
-    ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach((id) => (document.getElementById(id).textContent = "🍺"));
-    cap.textContent = "The weekend is ON. Pace yourselves.";
-    cap.classList.add("live");
   } else {
-    ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach((id) => (document.getElementById(id).textContent = "—"));
-    cap.textContent = "That's a wrap. Legends, all of you.";
-    cap.classList.remove("live");
+    // Trip's on (or done): the countdown becomes a live drink scoreboard.
+    const rows = state.names.map((n, i) => ({ n, i, c: countFor(i) })).sort((a, b) => b.c - a.c);
+    const maxC = Math.max(0, ...rows.map((r) => r.c));
+    blocks.forEach((bl, i) => {
+      const num = bl.querySelector(".cd-num"), lab = bl.querySelector(".cd-lab");
+      const r = rows[i];
+      if (!r) { if (num) num.textContent = "—"; if (lab) lab.textContent = ""; bl.classList.remove("cd-leader"); return; }
+      if (num) num.textContent = r.c;
+      if (lab) lab.textContent = r.n;
+      bl.classList.toggle("cd-leader", maxC > 0 && r.c === maxC);
+    });
+    cap.textContent = now <= TRIP_END ? "🍺 Live drink count — pace yourselves" : "🏁 Final tally. Legends, all of you.";
+    cap.classList.add("live");
   }
 }
 
@@ -1095,19 +1104,6 @@ async function fetchWeather() {
   }
 }
 
-/* "Where's food now" — nearest open food to wherever you're standing. */
-function foodNearMe() {
-  const open = (u) => window.open(u, "_blank");
-  const plain = "https://www.google.com/maps/search/?api=1&query=food%20open%20now";
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (p) => open(`https://www.google.com/maps/search/food+open+now/@${p.coords.latitude},${p.coords.longitude},16z`),
-      () => open(plain),
-      { timeout: 6000 }
-    );
-  } else { open(plain); }
-}
-
 /* ---------- UTIL ---------- */
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1138,7 +1134,6 @@ function tick() {
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
-document.getElementById("food-now").addEventListener("click", foodNearMe);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
