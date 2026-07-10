@@ -149,7 +149,7 @@ function defaults() {
     bets: {},    // betId -> { picks: {0..3: str}, result: str }
     awards: {},  // awardId -> winner index
     shop: SHOP_DEFAULTS.map((label, i) => ({ id: "d" + i, label, checked: false })),
-    quotes: [],  // { text, who, ts }
+    quotes: [{ text: "It's going to be a big gay", who: "", ts: 0 }], // { text, who, ts }
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
   };
 }
@@ -731,14 +731,16 @@ function renderQuotes() {
     return;
   }
   wrap.innerHTML = state.quotes.slice().reverse().map((q) => {
-    const who = q.who !== "" && state.names[q.who] ? escapeHtml(state.names[q.who]) : "Anon";
-    const when = new Date(q.ts).toLocaleDateString([], { weekday: "short" }) + " " +
-      new Date(q.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const who = q.who !== "" && state.names[q.who] ? escapeHtml(state.names[q.who]) : "The Thirsty Boys";
+    const when = q.ts
+      ? " · " + new Date(q.ts).toLocaleDateString([], { weekday: "short" }) + " " +
+        new Date(q.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "";
     return `
       <div class="quote-card">
         <button class="quote-del" data-ts="${q.ts}" aria-label="Delete">🗑</button>
         <div class="quote-text">${escapeHtml(q.text)}</div>
-        <div class="quote-meta">— ${who} · ${when}</div>
+        <div class="quote-meta">— ${who}${when}</div>
       </div>`;
   }).join("");
 
