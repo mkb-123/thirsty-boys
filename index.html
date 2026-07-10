@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f1220" />
+  <title>Thirsty Boys — Birmingham '25</title>
+  <meta name="description" content="Mitul, the Sausage Twins & Mr Science take Birmingham. 17–19 July." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="kicker">The Thirsty Boys present</p>
+      <h1>BIRMINGHAM<span>'25</span></h1>
+      <p class="dates">Fri 17 → Sun 19 July · Jewellery Quarter HQ</p>
+      <div class="countdown" id="countdown" aria-live="polite">
+        <div class="cd-block"><span class="cd-num" id="cd-days">--</span><span class="cd-lab">days</span></div>
+        <div class="cd-block"><span class="cd-num" id="cd-hours">--</span><span class="cd-lab">hrs</span></div>
+        <div class="cd-block"><span class="cd-num" id="cd-mins">--</span><span class="cd-lab">min</span></div>
+        <div class="cd-block"><span class="cd-num" id="cd-secs">--</span><span class="cd-lab">sec</span></div>
+      </div>
+      <p class="cd-caption" id="cd-caption">until the Sausage Twins hit Snow Hill</p>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#itinerary" class="tab">Itinerary</a>
+    <a href="#tracker" class="tab">Drink Tracker</a>
+    <a href="#crew" class="tab">The Crew</a>
+  </nav>
+
+  <main>
+    <!-- ITINERARY -->
+    <section id="itinerary" class="section">
+      <h2 class="section-title">The Itinerary</h2>
+      <p class="section-sub">Live schedule — the current stop lights up during the weekend.</p>
+      <div class="days" id="days"></div>
+    </section>
+
+    <!-- DRINK TRACKER -->
+    <section id="tracker" class="section tracker">
+      <h2 class="section-title">Drink Tracker</h2>
+      <p class="section-sub">Tap a drink for each man. Tallies &amp; units are saved on this device.</p>
+
+      <div class="leaderboard" id="leaderboard"></div>
+
+      <div class="drink-bar" id="drink-bar"></div>
+
+      <div class="tracker-grid" id="tracker-grid"></div>
+
+      <div class="tracker-actions">
+        <button class="btn-ghost" id="undo-btn">↩ Undo last</button>
+        <button class="btn-ghost danger" id="reset-btn">Reset weekend</button>
+      </div>
+      <p class="log-title">Last rounds</p>
+      <ul class="log" id="log"></ul>
+    </section>
+
+    <!-- CREW -->
+    <section id="crew" class="section">
+      <h2 class="section-title">The Crew</h2>
+      <p class="section-sub">Tap a name in the tracker to rename anyone.</p>
+      <div class="crew" id="crew"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>🍺 Stay hydrated (with water too). Drink responsibly, lads.</p>
+    <p class="muted">Built for the Thirsty Boys · Birmingham 17–19 July 2025</p>
+  </footer>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
