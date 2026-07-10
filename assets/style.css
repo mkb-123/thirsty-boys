@@ -555,6 +555,46 @@ h1 span {
 .bet-result { margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 0.25rem; }
 .bet-result label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); font-weight: 800; }
 
+.bet-scoreboard {
+  background: var(--card);
+  border: 1px solid rgba(244, 169, 51, 0.35);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  align-items: baseline;
+}
+.bet-score { color: var(--muted); }
+.bet-score b { color: var(--amber-2); }
+.bet-result-input {
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.65rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 700;
+}
+.bet-result-input:focus { outline: none; border-color: var(--amber); }
+.bet-call-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.bet-call-row.hit { background: rgba(75, 191, 135, 0.14); }
+.bet-caller { color: var(--muted); font-weight: 700; }
+.bet-callval { font-weight: 800; }
+.bet-nocall { color: var(--muted); font-weight: 600; font-style: italic; }
+.bet-reveal, .bet-reopen { width: 100%; margin-top: 0.7rem; }
+
 /* ---------- AWARDS ---------- */
 .awards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
 .award-card {

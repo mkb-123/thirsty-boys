@@ -12,7 +12,7 @@ const ITINERARY = [
       { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul, Big Ben & Director hit town." },
       { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
       { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "9 Sloane Street — HQ. Mr Science arrives.", map: "9 Sloane Street Birmingham B1 3DZ" },
-      { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks.", tag: "booked", map: "TOCA Social Bullring Birmingham" },
+      { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43", tag: "booked", map: "TOCA Social Bullring Birmingham" },
       { t: "19:30", iso: "2026-07-17T19:30", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Off-licence pit stop en route (BYOB!)." },
       { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
       { t: "21:30", iso: "2026-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
@@ -63,15 +63,23 @@ const DEFAULT_NAMES = ["Mitul", "Big Ben", "Director", "Mr Science"];
 
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
-/* ---------- BETS ---------- */
+/* ---------- BETS ----------
+   type "person": pick a crew member from a dropdown.
+   type "text":   free-text call (e.g. a scoreline).
+   Calls are secret (only your own shows) until someone reveals. */
 const BETS = [
-  { id: "tapout",  emoji: "😴", q: "First man to tap out" },
-  { id: "disc",    emoji: "🥏", q: "Disc golf champion @ Ackers" },
-  { id: "f1",      emoji: "🏎️", q: "F1 Arcade fastest lap" },
-  { id: "wcscore", emoji: "⚽", q: "World Cup 3rd-place score" },
-  { id: "units",   emoji: "🍺", q: "Most units by Sunday" },
-  { id: "balti",   emoji: "🌶️", q: "Orders the hottest balti" },
-  { id: "lost",    emoji: "🧭", q: "First to get lost" },
+  { id: "tapout",   emoji: "😴", type: "person", q: "First man to tap out" },
+  { id: "disc",     emoji: "🥏", type: "person", q: "Disc golf champion @ Ackers" },
+  { id: "toca",     emoji: "🎯", type: "person", q: "TOCA Social champion" },
+  { id: "f1",       emoji: "🏎️", type: "person", q: "F1 Arcade fastest lap" },
+  { id: "wcscore",  emoji: "⚽", type: "text",   q: "World Cup 3rd-place score" },
+  { id: "units",    emoji: "🍺", type: "person", q: "Most drinks by Sunday" },
+  { id: "balti",    emoji: "🌶️", type: "person", q: "Orders the hottest balti" },
+  { id: "lost",     emoji: "🧭", type: "person", q: "First to get lost" },
+  { id: "spill",    emoji: "🫗", type: "person", q: "First to spill a drink" },
+  { id: "dance",    emoji: "🤠", type: "person", q: "First to dance at Low Places" },
+  { id: "phone",    emoji: "📱", type: "person", q: "First phone casualty (lost/dropped/dead)" },
+  { id: "sunday",   emoji: "🥐", type: "person", q: "First out of bed on Sunday" },
 ];
 
 /* ---------- AWARDS ---------- */
@@ -162,7 +170,7 @@ function defaults() {
     bets: {},    // betId -> { picks: {0..3: str}, result: str }
     awards: {},  // awardId -> winner index
     shop: SHOP_DEFAULTS.map((label, i) => ({ id: "d" + i, label, checked: false })),
-    quotes: [{ text: "It's going to be a big gay", who: "", ts: 0 }], // { text, who, ts }
+    quotes: [], // { text, who, ts }
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
   };
 }
@@ -345,7 +353,7 @@ function renderCountdown() {
     const mins = Math.floor((diff % 3600000) / 60000);
     const secs = Math.floor((diff % 60000) / 1000);
     set("cd-days", days); set("cd-hours", hrs); set("cd-mins", mins); set("cd-secs", secs);
-    cap.textContent = "until the boys hit Snow Hill";
+    cap.textContent = "It's going to be a big gay";
     cap.classList.remove("live");
   } else if (now <= TRIP_END) {
     ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach((id) => (document.getElementById(id).textContent = "🍺"));
@@ -590,40 +598,124 @@ function resetAll() {
 /* ==========================================================================
    RENDER: BETS
    ========================================================================== */
+/* Normalise a bet to { calls: {voterIdx: value}, result, revealed }.
+   For "person" bets values are crew indexes; for "text" bets, strings. */
+function getBet(id) {
+  let b = state.bets[id];
+  if (b == null || typeof b !== "object" || !b.calls) b = { calls: {}, result: "", revealed: false };
+  b.calls = b.calls || {};
+  return b;
+}
+
+/* Correct calls per person across all revealed, settled bets. */
+function betScores() {
+  const scores = state.names.map(() => 0);
+  BETS.forEach((bet) => {
+    const b = getBet(bet.id);
+    if (!b.revealed || b.result === "" || b.result == null) return;
+    Object.keys(b.calls).forEach((voter) => {
+      const call = b.calls[voter];
+      const hit = bet.type === "person"
+        ? Number(call) === Number(b.result)
+        : String(call).trim().toLowerCase() === String(b.result).trim().toLowerCase();
+      if (hit && scores[voter] != null) scores[Number(voter)]++;
+    });
+  });
+  return scores;
+}
+
 function renderBets() {
   const wrap = document.getElementById("bets-list");
-  wrap.innerHTML = BETS.map((bet) => {
-    const data = state.bets[bet.id] || { picks: {}, result: "" };
-    const picks = state.names.map((n, i) => `
-      <div class="bet-pick">
-        <label>${escapeHtml(n)}</label>
-        <input type="text" data-bet="${bet.id}" data-who="${i}" value="${escapeAttr(data.picks[i] || "")}" placeholder="call it…" maxlength="30" />
-      </div>`).join("");
-    return `
-      <div class="bet-card">
-        <p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>
-        <div class="bet-picks">${picks}</div>
-        <div class="bet-result">
-          <label>✅ Actual result</label>
-          <input type="text" data-bet-result="${bet.id}" value="${escapeAttr(data.result || "")}" placeholder="who / what won…" maxlength="40" />
-        </div>
-      </div>`;
+  const claimed = hasClaimed();
+  const total = state.names.length;
+
+  // Bragging-rights scoreboard (only once something's been settled)
+  const scores = betScores();
+  const anySettled = scores.some((s) => s > 0);
+  const scoreboard = anySettled
+    ? `<div class="bet-scoreboard">🏅 Correct calls: ` +
+      state.names.map((n, i) => `<span class="bet-score">${escapeHtml(n)} <b>${scores[i]}</b></span>`).join(" ") +
+      `</div>`
+    : "";
+
+  wrap.innerHTML = scoreboard + BETS.map((bet) => {
+    const b = getBet(bet.id);
+    const callCount = Object.keys(b.calls).length;
+    let body;
+
+    if (b.revealed) {
+      // Everyone's calls on the table + settle the result
+      const rows = state.names.map((n, i) => {
+        const call = b.calls[i];
+        const callTxt = call == null || call === ""
+          ? `<span class="bet-nocall">no call</span>`
+          : bet.type === "person" ? escapeHtml(state.names[call] || "?") : escapeHtml(String(call));
+        const hit = b.result !== "" && b.result != null && (
+          bet.type === "person" ? Number(call) === Number(b.result)
+          : String(call || "").trim().toLowerCase() === String(b.result).trim().toLowerCase());
+        return `<div class="bet-call-row ${hit ? "hit" : ""}">
+          <span class="bet-caller">${escapeHtml(n)}</span>
+          <span class="bet-callval">${callTxt}${hit ? " ✅" : ""}</span>
+        </div>`;
+      }).join("");
+      const resultCtl = bet.type === "person"
+        ? `<select class="award-select" data-bet-result="${bet.id}">
+             <option value="">— what actually happened —</option>` +
+           state.names.map((n, i) => `<option value="${i}" ${String(b.result) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+           `</select>`
+        : `<input type="text" class="bet-result-input" data-bet-result="${bet.id}" value="${escapeAttr(b.result || "")}" placeholder="actual result…" maxlength="40" />`;
+      body = `${rows}
+        <div class="bet-result"><label>✅ Actual result</label>${resultCtl}</div>
+        <button class="btn-ghost bet-reopen" data-bet="${bet.id}">↩ Re-open calls</button>`;
+    } else if (!claimed) {
+      body = `<p class="award-hint">👆 Claim who you are (top of the Drinks tab) to make your call.</p>
+        <p class="award-status">🤙 ${callCount}/${total} called</p>`;
+    } else {
+      const mine = b.calls[me];
+      const ctl = bet.type === "person"
+        ? `<select class="award-select" data-bet-call="${bet.id}">
+             <option value="">— call it —</option>` +
+           state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+           `</select>`
+        : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
+      body = `${ctl}
+        <p class="award-status">🤙 ${callCount}/${total} called${mine != null && mine !== "" ? " · your call is in 🔒" : ""}</p>
+        <button class="btn-ghost bet-reveal" data-bet="${bet.id}">👁 Reveal calls</button>`;
+    }
+
+    return `<div class="bet-card"><p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
   }).join("");
 
-  wrap.querySelectorAll("input[data-bet]").forEach((inp) =>
-    inp.addEventListener("change", () => {
-      const id = inp.dataset.bet, who = inp.dataset.who;
-      state.bets[id] = state.bets[id] || { picks: {}, result: "" };
-      state.bets[id].picks[who] = inp.value;
+  wrap.querySelectorAll("[data-bet-call]").forEach((el) =>
+    el.addEventListener("change", () => {
+      const id = el.dataset.betCall, b = getBet(id);
+      const v = el.value;
+      if (v === "") delete b.calls[me];
+      else b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v;
+      state.bets[id] = b;
       save();
+      renderBets();
     })
   );
-  wrap.querySelectorAll("input[data-bet-result]").forEach((inp) =>
-    inp.addEventListener("change", () => {
-      const id = inp.dataset.betResult;
-      state.bets[id] = state.bets[id] || { picks: {}, result: "" };
-      state.bets[id].result = inp.value;
+  wrap.querySelectorAll("[data-bet-result]").forEach((el) =>
+    el.addEventListener("change", () => {
+      const id = el.dataset.betResult, b = getBet(id);
+      b.result = el.value === "" ? "" : (BETS.find((x) => x.id === id).type === "person" ? Number(el.value) : el.value);
+      state.bets[id] = b;
       save();
+      renderBets();
+    })
+  );
+  wrap.querySelectorAll(".bet-reveal").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.bet, b = getBet(id);
+      b.revealed = true; state.bets[id] = b; save(); renderBets();
+    })
+  );
+  wrap.querySelectorAll(".bet-reopen").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.bet, b = getBet(id);
+      b.revealed = false; state.bets[id] = b; save(); renderBets();
     })
   );
 }
