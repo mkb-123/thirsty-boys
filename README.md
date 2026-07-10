@@ -28,8 +28,25 @@ browser (`localStorage`) per device.
 ```
 index.html         # markup
 assets/style.css   # styles (dark "night out" theme)
-assets/app.js      # itinerary data, countdown, live-now, drink tracker
+assets/app.js      # itinerary data, countdown, live-now, tracker, sync
+assets/config.js   # OPTIONAL Firebase config for shared live sync
 ```
+
+## Shared live sync (optional)
+
+By default everything is saved per-device. To make all four phones share **one
+live tally** — drinks, bets, awards, shopping list and quotes updating in real
+time — turn on Firebase (free):
+
+1. Follow the step-by-step instructions at the top of `assets/config.js`.
+2. Paste your Firebase web config in and pick a shared `houseCode`.
+3. Commit, push, and open the site on every phone using the same code.
+
+A badge under the Drink Tracker heading shows the status: **🟢 Live** when
+synced, **📴 this device only** otherwise. The Firebase web keys are safe to
+commit — they're public by design; access is controlled by database rules
+(a sample ruleset is in `config.js`). Sync is last-write-wins on the whole
+state, which is plenty for four mates tapping pints.
 
 ## Run locally
 
@@ -48,5 +65,6 @@ every push to the default branch. To turn it on:
 2. In the repo: **Settings → Pages → Build and deployment → Source → GitHub Actions**.
 3. The site publishes at `https://<user>.github.io/thirsty-boys/`.
 
-> Note: the tracker stores drinks per-device. Each man tracking on his own
-> phone keeps his own tally — pick one "house phone" if you want a shared count.
+> Note: without Firebase (see above) the tracker stores drinks per-device, so
+> each phone keeps its own tally — pick one "house phone", or turn on shared
+> sync to have all four phones share a single live count.

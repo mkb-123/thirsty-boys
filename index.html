@@ -46,7 +46,7 @@
     <!-- DRINK TRACKER -->
     <section id="tracker" class="section tracker">
       <h2 class="section-title">Drink Tracker</h2>
-      <p class="section-sub">Tap a drink for each man. Tallies &amp; units are saved on this device.</p>
+      <p class="section-sub">Tap a drink for each man. <span id="sync-status" class="sync-status">Loading…</span></p>
 
       <div class="leaderboard" id="leaderboard"></div>
 
@@ -112,6 +112,10 @@
     <p class="muted">Built for the Thirsty Boys · Birmingham 17–19 July 2025</p>
   </footer>
 
+  <!-- Firebase (compat build) — only used if you fill in assets/config.js -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>

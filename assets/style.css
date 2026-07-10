@@ -320,6 +320,11 @@ h1 span {
 .crew-name { font-weight: 800; margin-top: 0.4rem; }
 .crew-role { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
 
+.sync-status { font-weight: 700; font-size: 0.85rem; }
+.sync-status.on { color: var(--green); }
+.sync-status.off { color: var(--muted); }
+.sync-status.err { color: var(--claret-2); }
+
 /* ---------- BETS ---------- */
 .bets { display: flex; flex-direction: column; gap: 1rem; }
 .bet-card {

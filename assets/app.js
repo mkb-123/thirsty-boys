@@ -119,6 +119,72 @@ function load() {
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  pushRemote();
+}
+
+/* ==========================================================================
+   FIREBASE SYNC (optional — shared live state across all phones)
+   Enabled only when assets/config.js has a Firebase config with a databaseURL.
+   Falls back silently to per-device localStorage otherwise.
+   ========================================================================== */
+let syncRef = null;
+let applyingRemote = false;   // guards against echoing remote updates back
+let pushTimer = null;
+
+function setSyncStatus(text, cls) {
+  const el = document.getElementById("sync-status");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "sync-status " + (cls || "");
+}
+
+function syncEnabled() {
+  const cfg = window.THIRSTY_CONFIG;
+  return !!(cfg && cfg.firebase && cfg.firebase.apiKey && cfg.firebase.databaseURL
+            && typeof firebase !== "undefined" && firebase.initializeApp);
+}
+
+function pushRemote() {
+  if (!syncRef || applyingRemote) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    try { syncRef.set(JSON.parse(JSON.stringify(state))); }
+    catch (e) { /* offline; localStorage still holds it */ }
+  }, 250);
+}
+
+function initSync() {
+  if (!syncEnabled()) {
+    setSyncStatus("📴 Saved on this device only", "off");
+    return;
+  }
+  const cfg = window.THIRSTY_CONFIG;
+  const code = (cfg.houseCode || "default").replace(/[.#$/\[\]]/g, "_");
+  try {
+    firebase.initializeApp(cfg.firebase);
+    syncRef = firebase.database().ref("houses/" + code);
+    setSyncStatus("🔄 Connecting…", "off");
+
+    syncRef.on("value", (snap) => {
+      const remote = snap.val();
+      if (!remote) {
+        // Nothing shared yet — seed the room with our current state.
+        setSyncStatus("🟢 Live · house “" + code + "”", "on");
+        pushRemote();
+        return;
+      }
+      applyingRemote = true;
+      state = Object.assign(defaults(), remote);
+      applyingRemote = false;
+      setSyncStatus("🟢 Live · house “" + code + "”", "on");
+      renderDrinkBar();
+      render();
+    }, (err) => {
+      setSyncStatus("⚠️ Sync error — check config/rules. Using this device.", "err");
+    });
+  } catch (e) {
+    setSyncStatus("⚠️ Sync failed to start. Using this device.", "err");
+  }
 }
 
 /* ---------- HELPERS ---------- */
@@ -552,3 +618,4 @@ renderDrinkBar();
 render();
 tick();
 setInterval(tick, 1000);
+initSync();
