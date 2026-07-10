@@ -11,7 +11,7 @@ const ITINERARY = [
     stops: [
       { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul, Big Ben & Director hit town." },
       { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
-      { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "Jewellery Quarter HQ. Mr Science arrives." },
+      { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "9 Sloane Street — HQ. Mr Science arrives.", map: "9 Sloane Street Birmingham B1 3DZ" },
       { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks.", tag: "booked", map: "TOCA Social Bullring Birmingham" },
       { t: "19:30", iso: "2026-07-17T19:30", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Off-licence pit stop en route (BYOB!)." },
       { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
@@ -809,6 +809,20 @@ function tick() {
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
+
+/* HQ: copy address (for pasting into Uber etc.) */
+const HQ_ADDRESS = "9 Sloane Street, Birmingham, B1 3DZ";
+document.getElementById("hq-copy").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(HQ_ADDRESS);
+    btn.textContent = "✅ Copied";
+  } catch (err) {
+    prompt("Copy the address:", HQ_ADDRESS); // clipboard blocked — show it instead
+    return;
+  }
+  setTimeout(() => { btn.textContent = "📋 Copy address"; }, 1500);
+});
 
 /* Off-licence: add item */
 document.getElementById("shop-add").addEventListener("submit", (e) => {
