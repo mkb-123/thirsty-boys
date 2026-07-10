@@ -91,7 +91,7 @@ const SHOP_DEFAULTS = [
   "Soft drinks", "Bottle of water", "Cash / card for the offie", "Bag to carry it all",
 ];
 
-const STORE_KEY = "thirstyboys.brum25.v1";
+const STORE_KEY = "thirstyboys.brum26.v1";
 
 /* ---------- STATE ---------- */
 let state = load();

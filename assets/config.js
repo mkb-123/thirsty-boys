@@ -25,7 +25,7 @@
    ========================================================================== */
 window.THIRSTY_CONFIG = {
   // Everyone on the trip sets this to the SAME word.
-  houseCode: "brum25",
+  houseCode: "brum26",
 
   // Paste your Firebase web config here. Leave apiKey/databaseURL blank to
   // stay in per-device mode.
