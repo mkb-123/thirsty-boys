@@ -353,6 +353,61 @@ h1 span {
 .crew-name { font-weight: 800; margin-top: 0.4rem; }
 .crew-role { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
 
+/* ---------- WHO ARE YOU? (per-device identity) ---------- */
+.whoami {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.whoami-q { font-weight: 800; margin: 0 0 0.6rem; }
+.whoami-pick { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.whoami-btn {
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.whoami-btn:hover, .whoami-btn:active { border-color: var(--amber); }
+.whoami-claimed { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.75rem; }
+.whoami-claimed .me-name { font-weight: 800; font-size: 1.05rem; }
+.whoami-claimed .me-name b { color: var(--amber-2); }
+.whoami-change {
+  background: none; border: none; color: var(--blue);
+  font-weight: 700; font-size: 0.82rem; cursor: pointer; padding: 0; text-decoration: underline;
+}
+.me-quickadd {
+  margin-left: auto;
+  border: none;
+  background: linear-gradient(180deg, var(--amber-2), var(--amber));
+  color: #2a1a02;
+  font-weight: 900;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.me-quickadd:active { transform: scale(0.97); }
+.you-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--amber);
+  color: #2a1a02;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+.lb-card.you, .person.you { outline: 2px solid var(--amber); outline-offset: -1px; }
+
 .sync-status { font-weight: 700; font-size: 0.85rem; }
 .sync-status.on { color: var(--green); }
 .sync-status.off { color: var(--muted); }

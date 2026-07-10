@@ -96,6 +96,27 @@ const STORE_KEY = "thirstyboys.brum26.v1";
 /* ---------- STATE ---------- */
 let state = load();
 
+/* ---------- PER-DEVICE IDENTITY (who is holding THIS phone) ----------
+   Stored locally only — never synced, so each phone keeps its own "me". */
+const ME_KEY = "thirstyboys.me";
+let me = loadMe();
+function loadMe() {
+  try {
+    const v = localStorage.getItem(ME_KEY);
+    return v === null ? null : Number(v);
+  } catch (e) { return null; }
+}
+function setMe(i) {
+  me = i;
+  try { localStorage.setItem(ME_KEY, String(i)); } catch (e) { /* ignore */ }
+  render();
+}
+function clearMe() {
+  me = null;
+  try { localStorage.removeItem(ME_KEY); } catch (e) { /* ignore */ }
+  render();
+}
+
 function defaults() {
   return {
     names: [...DEFAULT_NAMES],
@@ -310,6 +331,38 @@ function renderDrinkBar() {
 }
 
 /* ==========================================================================
+   RENDER: WHO ARE YOU? (per-device identity claim)
+   ========================================================================== */
+function renderWhoami() {
+  const el = document.getElementById("whoami");
+  if (!el) return;
+
+  if (me == null || Number.isNaN(me) || !state.names[me]) {
+    el.innerHTML =
+      `<p class="whoami-q">👋 Which one are you?</p>
+       <div class="whoami-pick">` +
+      state.names.map((n, i) =>
+        `<button class="whoami-btn" data-me="${i}">${CREW[i] ? CREW[i].emoji : ""} ${escapeHtml(n)}</button>`
+      ).join("") +
+      `</div>`;
+    el.querySelectorAll(".whoami-btn").forEach((b) =>
+      b.addEventListener("click", () => setMe(Number(b.dataset.me)))
+    );
+  } else {
+    const sel = drinkById(state.selectedDrink);
+    const emoji = CREW[me] ? CREW[me].emoji : "";
+    el.innerHTML =
+      `<div class="whoami-claimed">
+         <span class="me-name">You're ${emoji} <b>${escapeHtml(state.names[me])}</b></span>
+         <button class="whoami-change" id="whoami-change">not you? change</button>
+         <button class="me-quickadd" id="me-quickadd">＋ ${sel.emoji} ${sel.label} for me</button>
+       </div>`;
+    el.querySelector("#whoami-change").addEventListener("click", clearMe);
+    el.querySelector("#me-quickadd").addEventListener("click", () => addDrink(me));
+  }
+}
+
+/* ==========================================================================
    RENDER: LEADERBOARD
    ========================================================================== */
 function renderLeaderboard() {
@@ -324,10 +377,11 @@ function renderLeaderboard() {
     let title = "";
     if (isLeader) title = TITLES.top;
     else if (anyDrinks && r.count === 0) title = TITLES.zero;
+    const isYou = r.i === me;
     return `
-      <div class="lb-card ${isLeader ? "leader" : ""}">
+      <div class="lb-card ${isLeader ? "leader" : ""} ${isYou ? "you" : ""}">
         ${isLeader ? `<div class="lb-crown">👑</div>` : ""}
-        <div class="lb-name">${escapeHtml(r.name)}</div>
+        <div class="lb-name">${escapeHtml(r.name)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
         <div class="lb-units">${r.units}</div>
         <div class="lb-units-lab">units · ${r.count} drinks</div>
         <div class="lb-title">${title}</div>
@@ -345,9 +399,11 @@ function renderTracker() {
     const tally = state.tallies[i] || {};
     const breakdown = DRINKS.filter((d) => tally[d.id])
       .map((d) => `${d.emoji}${tally[d.id]}`).join("  ") || "—";
+    const isYou = i === me;
     return `
-      <div class="person">
+      <div class="person ${isYou ? "you" : ""}">
         <input class="person-name" data-i="${i}" value="${escapeAttr(n)}" aria-label="Name" />
+        ${isYou ? `<div class="person-mini" style="margin-top:0"><span class="you-tag">You</span></div>` : ""}
         <div class="person-count">${countFor(i)}</div>
         <div class="person-count-lab">${unitsFor(i)} units</div>
         <button class="person-add" data-i="${i}">+ ${sel.emoji} ${sel.label}</button>
@@ -537,7 +593,9 @@ function renderQuoteWho() {
   const cur = sel.value;
   sel.innerHTML = `<option value="">— who said it —</option>` +
     state.names.map((n, i) => `<option value="${i}">${escapeHtml(n)}</option>`).join("");
+  // Keep the current pick if any, otherwise default to "you".
   if (cur) sel.value = cur;
+  else if (me != null && !Number.isNaN(me) && state.names[me]) sel.value = String(me);
 }
 function renderQuotes() {
   const wrap = document.getElementById("quotes-list");
@@ -576,6 +634,7 @@ function escapeAttr(s) { return escapeHtml(s); }
    MAIN RENDER + LOOPS
    ========================================================================== */
 function render() {
+  renderWhoami();
   renderLeaderboard();
   renderTracker();
   renderLog();

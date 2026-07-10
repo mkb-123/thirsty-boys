@@ -18,6 +18,9 @@ A little GitHub Pages site for four men and one weekend in Birmingham
 - **Off-licence run** — a BYOB checklist for the Balti Triangle pit stop; tick
   items off and add your own.
 - **Quote wall** — capture the daft things said all weekend, attributed and timestamped.
+- **Who are you?** — each phone claims which crew member it belongs to (saved
+  per-device, not synced). Your card is highlighted with a "You" badge, you get
+  a one-tap "log a drink for me" button, and quotes default to you.
 - **Crew roster** — rename anyone by editing their name in the tracker.
 - **Route maps** — each day has a 🗺️ link that opens a Google Maps route through
   that day's venues in order.
