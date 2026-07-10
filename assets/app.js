@@ -1,47 +1,47 @@
 /* ==========================================================================
-   Thirsty Boys — Birmingham '25
+   Thirsty Boys — Birmingham '26
    Itinerary, live-now, countdown & drink tracker (localStorage-backed)
    ========================================================================== */
 
 /* ---------- ITINERARY DATA ----------
-   Times are 2025 local (BST). `iso` drives the countdown + live-now logic. */
+   Times are 2026 local (BST). `iso` drives the countdown + live-now logic. */
 const ITINERARY = [
   {
     name: "Friday", date: "17 July",
     stops: [
-      { t: "12:00", iso: "2025-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul + the Sausage Twins hit town." },
-      { t: "12:30", iso: "2025-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
-      { t: "15:00", iso: "2025-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "Jewellery Quarter HQ. Mr Science arrives." },
-      { t: "17:30", iso: "2025-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks.", tag: "booked", map: "TOCA Social Bullring Birmingham" },
-      { t: "19:30", iso: "2025-07-17T19:30", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Off-licence pit stop en route (BYOB!)." },
-      { t: "19:45", iso: "2025-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
-      { t: "21:30", iso: "2025-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
+      { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul + the Sausage Twins hit town." },
+      { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
+      { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "Jewellery Quarter HQ. Mr Science arrives." },
+      { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks.", tag: "booked", map: "TOCA Social Bullring Birmingham" },
+      { t: "19:30", iso: "2026-07-17T19:30", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Off-licence pit stop en route (BYOB!)." },
+      { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
+      { t: "21:30", iso: "2026-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
     ],
   },
   {
     name: "Saturday", date: "18 July",
     stops: [
-      { t: "10:00", iso: "2025-07-18T10:00", emoji: "🥏", title: "Disc Golf @ Ackers", desc: "Ackers Adventure · shake off the balti.", tag: "booked", map: "Ackers Adventure Birmingham" },
-      { t: "12:30", iso: "2025-07-18T12:30", emoji: "🌮", title: "El Azteca @ The Loft", desc: "1000 Trades · tacos.", tag: "walkin", map: "1000 Trades Birmingham" },
-      { t: "14:00", iso: "2025-07-18T14:00", emoji: "🏎️", title: "F1 Arcade", desc: "Chamberlain Sq · race sims & rounds.", tag: "booked", map: "F1 Arcade Birmingham" },
-      { t: "16:00", iso: "2025-07-18T16:00", emoji: "🔄", title: "F1 done — regroup", desc: "Breather. Rehydrate. Reassess." },
-      { t: "18:30", iso: "2025-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham" },
-      { t: "20:00", iso: "2025-07-18T20:00", emoji: "🤠", title: "Low Places", desc: "Honky-tonk. Yeehaw.", map: "Low Places Birmingham" },
-      { t: "22:00", iso: "2025-07-18T22:00", emoji: "⚽", title: "World Cup 3rd Place Playoff", desc: "Luna Springs, Digbeth · big screen.", map: "Luna Springs Digbeth Birmingham" },
+      { t: "10:00", iso: "2026-07-18T10:00", emoji: "🥏", title: "Disc Golf @ Ackers", desc: "Ackers Adventure · shake off the balti.", tag: "booked", map: "Ackers Adventure Birmingham" },
+      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca @ The Loft", desc: "1000 Trades · tacos.", tag: "walkin", map: "1000 Trades Birmingham" },
+      { t: "14:00", iso: "2026-07-18T14:00", emoji: "🏎️", title: "F1 Arcade", desc: "Chamberlain Sq · race sims & rounds.", tag: "booked", map: "F1 Arcade Birmingham" },
+      { t: "16:00", iso: "2026-07-18T16:00", emoji: "🔄", title: "F1 done — regroup", desc: "Breather. Rehydrate. Reassess." },
+      { t: "18:30", iso: "2026-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham" },
+      { t: "20:00", iso: "2026-07-18T20:00", emoji: "🤠", title: "Low Places", desc: "Honky-tonk. Yeehaw.", map: "Low Places Birmingham" },
+      { t: "22:00", iso: "2026-07-18T22:00", emoji: "⚽", title: "World Cup 3rd Place Playoff", desc: "Luna Springs, Digbeth · big screen.", map: "Luna Springs Digbeth Birmingham" },
     ],
   },
   {
     name: "Sunday", date: "19 July",
     stops: [
-      { t: "10:30", iso: "2025-07-19T10:30", emoji: "🥐", title: "Medicine Bakery", desc: "Pastries & coffee. Gentle recovery.", map: "Medicine Bakery Birmingham" },
-      { t: "12:00", iso: "2025-07-19T12:00", emoji: "👋", title: "Exeunt", desc: "Home time. Until next year, boys." },
+      { t: "10:30", iso: "2026-07-19T10:30", emoji: "🥐", title: "Medicine Bakery", desc: "Pastries & coffee. Gentle recovery.", map: "Medicine Bakery Birmingham" },
+      { t: "12:00", iso: "2026-07-19T12:00", emoji: "👋", title: "Exeunt", desc: "Home time. Until next year, boys." },
     ],
   },
 ];
 
-const TRIP_START = new Date("2025-07-17T12:00:00");
+const TRIP_START = new Date("2026-07-17T12:00:00");
 /* End of the last stop window, for live-now bounds */
-const TRIP_END = new Date("2025-07-19T13:00:00");
+const TRIP_END = new Date("2026-07-19T13:00:00");
 
 /* ---------- DRINK DEFINITIONS (UK-ish units) ---------- */
 const DRINKS = [
