@@ -12,11 +12,10 @@ A little GitHub Pages site for four men and one weekend in Birmingham
 - **Drink tracker** — tap a drink type for each man, tracks totals + UK units,
   and ranks everyone on a live leaderboard (👑 Thirstiest Boy). Data is saved
   in the browser (`localStorage`), so it survives refreshes on that device.
-- **Predictions & bets** — everyone logs their pre-trip calls (first to tap out,
-  disc golf champ, World Cup score…); fill in the actual result and settle up.
-- **The Awards** — hand out superlatives Sunday morning; tap a name to crown a winner.
-- **Off-licence run** — a BYOB checklist for the Balti Triangle pit stop; tick
-  items off and add your own.
+- **Predictions & bets** — everyone casts a secret call (dropdowns for person
+  bets); reveal, settle the actual result, and a bragging-rights scoreboard
+  tallies who called it.
+- **The Awards** — blind superlative votes, hidden until someone hits reveal.
 - **Quote wall** — capture the daft things said all weekend, attributed and timestamped.
 - **Who are you?** — each phone claims which crew member it belongs to (saved
   per-device, not synced). Your card is highlighted with a "You" badge, you get

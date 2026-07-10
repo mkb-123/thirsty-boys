@@ -16,6 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Thirsty Boys" />
 
+  <script>window.TB_BUILD = "__BUILD__";</script>
   <link rel="stylesheet" href="assets/style.css?v=__BUILD__" />
 </head>
 <body>
@@ -39,7 +40,6 @@
     <a href="#tracker" class="tab">Drinks</a>
     <a href="#bets" class="tab">Bets</a>
     <a href="#awards" class="tab">Awards</a>
-    <a href="#shop" class="tab">Off-Licence</a>
     <a href="#quotes" class="tab">Quotes</a>
     <a href="#crew" class="tab">Crew</a>
   </nav>
@@ -100,17 +100,6 @@
       <div class="awards" id="awards-list"></div>
     </section>
 
-    <!-- OFF-LICENCE CHECKLIST -->
-    <section id="shop" class="section">
-      <h2 class="section-title">Off-Licence Run</h2>
-      <p class="section-sub">Balti Triangle is BYOB — grab the essentials en route Friday. <span id="shop-progress"></span></p>
-      <ul class="checklist" id="shop-list"></ul>
-      <form class="add-row" id="shop-add">
-        <input type="text" id="shop-input" placeholder="Add an item…" maxlength="40" />
-        <button type="submit" class="btn-add">Add</button>
-      </form>
-    </section>
-
     <!-- QUOTE WALL -->
     <section id="quotes" class="section">
       <h2 class="section-title">The Quote Wall</h2>
@@ -150,9 +139,7 @@
     <p class="muted reset-note">Wipes drinks &amp; names for everyone — password required.</p>
   </footer>
 
-  <!-- Firebase (compat build) — only used if you fill in assets/config.js -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Firebase loads dynamically from app.js so a slow CDN can never block the page -->
   <script src="assets/config.js?v=__BUILD__"></script>
   <script src="assets/app.js?v=__BUILD__"></script>
 </body>

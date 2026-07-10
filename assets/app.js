@@ -78,11 +78,8 @@ const BETS = [
   { id: "lost",     emoji: "🧭", type: "person", q: "First to get lost" },
   { id: "spill",    emoji: "🫗", type: "person", q: "First to spill a drink" },
   { id: "dance",    emoji: "🤠", type: "person", q: "First to dance at Low Places" },
-  { id: "phone",    emoji: "📱", type: "person", q: "First phone casualty (lost/dropped/dead)" },
   { id: "sunday",   emoji: "🥐", type: "person", q: "First out of bed on Sunday" },
   { id: "soft",     emoji: "🧃", type: "person", q: "First to order a soft drink" },
-  { id: "villa",    emoji: "🟣", type: "person", q: "First Villa/Blues argument with a local" },
-  { id: "wcwinner", emoji: "🏆", type: "text",   q: "Who wins the 3rd-place playoff" },
   { id: "phonehome",emoji: "📞", type: "person", q: "First to phone home / the missus" },
   { id: "disctotal",emoji: "🥏", type: "text",   q: "Group disc golf total — call the number" },
 ];
@@ -103,12 +100,6 @@ const AWARDS = [
   { id: "quote",    title: "💬 Quote of the Weekend" },
   { id: "satam",    title: "🥴 Worst State Saturday AM" },
   { id: "sunday",   title: "🤢 Worst State Sunday AM" },
-];
-
-/* ---------- OFF-LICENCE DEFAULTS ---------- */
-const SHOP_DEFAULTS = [
-  "Red wine (for the balti)", "White wine", "Beers / lager", "Cans / mixers",
-  "Soft drinks", "Bottle of water", "Cash / card for the offie", "Bag to carry it all",
 ];
 
 const STORE_KEY = "thirstyboys.brum26.v1";
@@ -172,9 +163,8 @@ function defaults() {
     tallies: DEFAULT_NAMES.map(() => ({})),
     log: [], // {who, drink, ts}
     selectedDrink: "pint",
-    bets: {},    // betId -> { picks: {0..3: str}, result: str }
-    awards: {},  // awardId -> winner index
-    shop: SHOP_DEFAULTS.map((label, i) => ({ id: "d" + i, label, checked: false })),
+    bets: {},    // betId -> { calls: {voterIdx: value}, result, revealed }
+    awards: {},  // awardId -> { votes: {voterIdx: nomineeIdx}, revealed }
     quotes: [], // { text, who, ts }
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
   };
@@ -215,6 +205,27 @@ function syncEnabled() {
             && typeof firebase !== "undefined" && firebase.initializeApp);
 }
 
+/* Load the Firebase SDK on demand so a slow/unreachable CDN can never
+   block the page — the app renders instantly and sync joins when ready. */
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("failed: " + src));
+    document.head.appendChild(s);
+  });
+}
+async function loadFirebase(timeoutMs) {
+  await Promise.race([
+    (async () => {
+      await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+      await loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js");
+    })(),
+    new Promise((_, rej) => setTimeout(() => rej(new Error("firebase timeout")), timeoutMs)),
+  ]);
+}
+
 function pushRemote() {
   if (!syncRef || applyingRemote) return;
   clearTimeout(pushTimer);
@@ -224,7 +235,19 @@ function pushRemote() {
   }, 250);
 }
 
-function initSync() {
+async function initSync() {
+  const cfgPre = window.THIRSTY_CONFIG;
+  if (!cfgPre || !cfgPre.firebase || !cfgPre.firebase.databaseURL) {
+    setSyncStatus("📴 Saved on this device only", "off");
+    return;
+  }
+  setSyncStatus("🔄 Connecting…", "off");
+  try {
+    await loadFirebase(10000);
+  } catch (e) {
+    setSyncStatus("📴 No connection — saved on this device", "off");
+    return;
+  }
   if (!syncEnabled()) {
     setSyncStatus("📴 Saved on this device only", "off");
     return;
@@ -531,7 +554,7 @@ function renderLog() {
   ul.innerHTML = state.log.slice(-8).reverse().map((e) => {
     const d = drinkById(e.drink);
     const time = new Date(e.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    return `<li><span>${d ? d.emoji : "🍺"} ${escapeHtml(state.names[e.who] || "?")} — ${d ? d.label : e.drink}</span><span>${time}</span></li>`;
+    return `<li><span>${d ? d.emoji : "🍺"} ${escapeHtml(state.names[e.who] || "?")} — ${d ? d.label : escapeHtml(String(e.drink))}</span><span>${escapeHtml(time)}</span></li>`;
   }).join("");
 }
 
@@ -805,37 +828,6 @@ function renderAwards() {
 }
 
 /* ==========================================================================
-   RENDER: OFF-LICENCE CHECKLIST
-   ========================================================================== */
-function renderShop() {
-  const ul = document.getElementById("shop-list");
-  const done = state.shop.filter((s) => s.checked).length;
-  document.getElementById("shop-progress").textContent =
-    state.shop.length ? `(${done}/${state.shop.length} sorted)` : "";
-  ul.innerHTML = state.shop.map((item) => `
-    <li class="${item.checked ? "done" : ""}" data-id="${item.id}">
-      <span class="chk-box">✓</span>
-      <span class="chk-label">${escapeHtml(item.label)}</span>
-      <button class="chk-del" data-del="${item.id}" aria-label="Remove">✕</button>
-    </li>`).join("");
-
-  ul.querySelectorAll("li").forEach((li) =>
-    li.addEventListener("click", (e) => {
-      if (e.target.closest(".chk-del")) return;
-      const item = state.shop.find((s) => s.id === li.dataset.id);
-      if (item) { item.checked = !item.checked; save(); renderShop(); }
-    })
-  );
-  ul.querySelectorAll(".chk-del").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      state.shop = state.shop.filter((s) => s.id !== btn.dataset.del);
-      save();
-      renderShop();
-    })
-  );
-}
-
-/* ==========================================================================
    RENDER: QUOTE WALL
    ========================================================================== */
 function renderQuoteWho() {
@@ -861,7 +853,7 @@ function renderQuotes() {
       : "";
     return `
       <div class="quote-card">
-        <button class="quote-del" data-ts="${q.ts}" aria-label="Delete">🗑</button>
+        <button class="quote-del" data-ts="${escapeAttr(String(q.ts))}" aria-label="Delete">🗑</button>
         <div class="quote-text">${escapeHtml(q.text)}</div>
         <div class="quote-meta">— ${who}${when}</div>
       </div>`;
@@ -892,7 +884,6 @@ function render() {
   renderLog();
   renderBets();
   renderAwards();
-  renderShop();
   renderQuoteWho();
   renderQuotes();
   renderCrew();
@@ -921,18 +912,6 @@ document.getElementById("hq-copy").addEventListener("click", async (e) => {
   setTimeout(() => { btn.textContent = "📋 Copy address"; }, 1500);
 });
 
-/* Off-licence: add item */
-document.getElementById("shop-add").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const input = document.getElementById("shop-input");
-  const label = input.value.trim();
-  if (!label) return;
-  state.shop.push({ id: "u" + Date.now(), label, checked: false });
-  input.value = "";
-  save();
-  renderShop();
-});
-
 /* Quote wall: add quote */
 document.getElementById("quote-add").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -955,3 +934,55 @@ initSync();
 
 // First thing on first load: ask who you are.
 if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
+
+/* ==========================================================================
+   UPDATE CHECKER — make new deploys stick on Safari, Chrome & the PWA.
+   The deploy stamps window.__BUILD__ and version.json with the commit hash.
+   We poll version.json (cache: no-store); on mismatch we hard-navigate to a
+   cache-busted URL (auto once per new build, otherwise a tap-to-update pill).
+   ========================================================================== */
+const BUILD = window.TB_BUILD || "dev";
+const AUTOUPDATE_KEY = "tb.autoupdated";
+
+function hardRefresh() {
+  // A changed query string bypasses the cached HTML entirely.
+  location.replace(location.pathname + "?u=" + Date.now() + location.hash);
+}
+
+function showUpdateBanner() {
+  if (document.getElementById("update-banner")) return;
+  const el = document.createElement("button");
+  el.id = "update-banner";
+  el.textContent = "🔄 New version — tap to update";
+  el.addEventListener("click", hardRefresh);
+  document.body.appendChild(el);
+}
+
+async function checkForUpdate(allowAuto) {
+  // Unstamped local copies (file:// or dev) have nothing to compare.
+  if (BUILD === "__" + "BUILD__" || location.protocol === "file:") return;
+  try {
+    const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return;
+    const v = await r.json();
+    if (!v.build || v.build === BUILD) return;
+    let guarded = false;
+    try { guarded = sessionStorage.getItem(AUTOUPDATE_KEY) === v.build; } catch (e) { /* ignore */ }
+    if (allowAuto && !guarded) {
+      try { sessionStorage.setItem(AUTOUPDATE_KEY, v.build); } catch (e) { /* ignore */ }
+      hardRefresh();          // silent refresh — state lives in localStorage/Firebase
+    } else {
+      showUpdateBanner();     // mid-session or already tried: let them tap
+    }
+  } catch (e) { /* offline — try again later */ }
+}
+
+// On open (only after parsing finishes — replacing the URL mid-parse wedges
+// the next page), when the PWA/tab comes back to the foreground, after
+// bfcache restores, and every 90s while visible.
+function scheduleInitialUpdateCheck() { setTimeout(() => checkForUpdate(true), 1200); }
+if (document.readyState !== "loading") scheduleInitialUpdateCheck();
+else document.addEventListener("DOMContentLoaded", scheduleInitialUpdateCheck);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(true); });
+window.addEventListener("pageshow", (e) => { if (e.persisted) checkForUpdate(true); });
+setInterval(() => { if (!document.hidden) checkForUpdate(false); }, 90000);
