@@ -43,14 +43,15 @@ const TRIP_START = new Date("2026-07-17T12:00:00");
 /* End of the last stop window, for live-now bounds */
 const TRIP_END = new Date("2026-07-19T13:00:00");
 
-/* ---------- DRINK DEFINITIONS (UK-ish units) ---------- */
+/* ---------- DRINK DEFINITIONS ---------- */
 const DRINKS = [
-  { id: "pint",     label: "Pint",     emoji: "🍺", units: 2 },
-  { id: "half",     label: "Half",     emoji: "🥛", units: 1 },
-  { id: "wine",     label: "Wine",     emoji: "🍷", units: 2 },
-  { id: "cocktail", label: "Cocktail", emoji: "🍸", units: 2 },
-  { id: "shot",     label: "Shot",     emoji: "🥃", units: 1 },
-  { id: "soft",     label: "Soft",     emoji: "🧃", units: 0 },
+  { id: "pint",     label: "Pint",     emoji: "🍺" },
+  { id: "half",     label: "Half",     emoji: "🥛" },
+  { id: "wine",     label: "Wine",     emoji: "🍷" },
+  { id: "cocktail", label: "Cocktail", emoji: "🍸" },
+  { id: "shot",     label: "Shot",     emoji: "🍶" },
+  { id: "whiskey",  label: "Whiskey",  emoji: "🥃" },
+  { id: "soft",     label: "Soft",     emoji: "🧃" },
 ];
 
 const CREW = [
@@ -307,10 +308,6 @@ async function initSync() {
 }
 
 /* ---------- HELPERS ---------- */
-function unitsFor(i) {
-  const tally = state.tallies[i] || {};
-  return DRINKS.reduce((sum, d) => sum + (tally[d.id] || 0) * d.units, 0);
-}
 function countFor(i) {
   const tally = state.tallies[i] || {};
   return DRINKS.reduce((sum, d) => sum + (tally[d.id] || 0), 0);
@@ -429,7 +426,7 @@ function renderDrinkBar() {
   const bar = document.getElementById("drink-bar");
   bar.innerHTML = DRINKS.map((d) => `
     <button class="drink-pick ${d.id === selectedDrink ? "active" : ""}" data-drink="${d.id}">
-      ${d.emoji} ${d.label} <small>${d.units}u</small>
+      ${d.emoji} ${d.label}
     </button>`).join("");
   bar.querySelectorAll(".drink-pick").forEach((btn) =>
     btn.addEventListener("click", () => setSelectedDrink(btn.dataset.drink))
@@ -542,12 +539,12 @@ function closeWhoamiModal() {
    ========================================================================== */
 function renderLeaderboard() {
   const lb = document.getElementById("leaderboard");
-  const rows = state.names.map((n, i) => ({ i, name: n, units: unitsFor(i), count: countFor(i) }));
+  const rows = state.names.map((n, i) => ({ i, name: n, count: countFor(i) }));
   const maxCount = Math.max(0, ...rows.map((r) => r.count));
   const anyDrinks = maxCount > 0;
 
-  // Rank by number of drinks (units as tie-breaker).
-  const ordered = [...rows].sort((a, b) => b.count - a.count || b.units - a.units);
+  // Rank by number of drinks.
+  const ordered = [...rows].sort((a, b) => b.count - a.count);
   lb.innerHTML = ordered.map((r) => {
     const isLeader = anyDrinks && r.count === maxCount;
     let title = "";
@@ -559,7 +556,7 @@ function renderLeaderboard() {
         ${isLeader ? `<div class="lb-crown">👑</div>` : ""}
         <div class="lb-name">${escapeHtml(r.name)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
         <div class="lb-units">${r.count}</div>
-        <div class="lb-units-lab">${r.count === 1 ? "drink" : "drinks"} · ${r.units} units</div>
+        <div class="lb-units-lab">${r.count === 1 ? "drink" : "drinks"}</div>
         <div class="lb-title">${title}</div>
         <div class="lb-badges">${badgesFor(r.i).join(" ")}</div>
       </div>`;
@@ -581,7 +578,7 @@ function renderTracker() {
       <div class="person ${isYou ? "you" : ""}">
         <div class="person-name-static">${escapeHtml(n)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
         <div class="person-count">${countFor(i)}</div>
-        <div class="person-count-lab">${unitsFor(i)} units</div>
+        <div class="person-count-lab">${countFor(i) === 1 ? "drink" : "drinks"}</div>
         <button class="person-add" data-i="${i}">+ ${sel.emoji} ${sel.label}</button>
         <div class="person-mini">${breakdown}</div>
       </div>`;
