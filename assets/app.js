@@ -959,7 +959,7 @@ if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
 
 /* ==========================================================================
    UPDATE CHECKER — make new deploys stick on Safari, Chrome & the PWA.
-   The deploy stamps window.__BUILD__ and version.json with the commit hash.
+   The deploy stamps window.TB_BUILD and version.json with the commit hash.
    We poll version.json (cache: no-store); on mismatch we hard-navigate to a
    cache-busted URL (auto once per new build, otherwise a tap-to-update pill).
    ========================================================================== */
