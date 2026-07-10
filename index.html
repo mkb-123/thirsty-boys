@@ -22,7 +22,7 @@
   <header class="hero">
     <div class="hero-inner">
       <p class="kicker">The Thirsty Boys present</p>
-      <h1>BIRMINGHAM<span>'26</span></h1>
+      <h1>BIRMINGHAM <span>'26</span></h1>
       <p class="dates">Fri 17 → Sun 19 July · Jewellery Quarter HQ</p>
       <div class="countdown" id="countdown" aria-live="polite">
         <div class="cd-block"><span class="cd-num" id="cd-days">--</span><span class="cd-lab">days</span></div>
@@ -83,7 +83,7 @@
     <!-- AWARDS -->
     <section id="awards" class="section">
       <h2 class="section-title">The Awards</h2>
-      <p class="section-sub">Hand these out Sunday morning. Tap a name to crown the winner.</p>
+      <p class="section-sub">Everyone casts a secret vote. Nobody sees the results until someone hits reveal.</p>
       <div class="awards" id="awards-list"></div>
     </section>
 
@@ -117,6 +117,18 @@
       <div class="crew" id="crew"></div>
     </section>
   </main>
+
+  <!-- First-load "Who are you?" prompt -->
+  <div class="modal-overlay hidden" id="whoami-modal">
+    <div class="modal-card">
+      <div class="modal-emoji">🍺</div>
+      <h2 class="modal-title">Welcome, Thirsty Boy</h2>
+      <p class="modal-sub">Which one are you? (Just so the crew knows who's in.)</p>
+      <div id="modal-pick"></div>
+      <div id="modal-roster"></div>
+      <button class="modal-skip" id="modal-skip">Just browsing →</button>
+    </div>
+  </div>
 
   <footer class="footer">
     <p>🍺 Stay hydrated (with water too). Drink responsibly, lads.</p>

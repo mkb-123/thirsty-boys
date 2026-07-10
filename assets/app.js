@@ -76,13 +76,20 @@ const BETS = [
 
 /* ---------- AWARDS ---------- */
 const AWARDS = [
-  { id: "mvp",    title: "🏆 MVP of the Weekend" },
-  { id: "balti",  title: "🌶️ Best Balti Order" },
-  { id: "lost",   title: "🧭 Most Lost" },
-  { id: "bed",    title: "😴 First to Bed" },
-  { id: "honky",  title: "🎤 Best Honky-Tonk Moment" },
-  { id: "rounds", title: "💸 Biggest Round Buyer" },
-  { id: "sunday", title: "🤢 Worst State Sunday AM" },
+  { id: "mvp",      title: "🏆 MVP of the Weekend" },
+  { id: "balti",    title: "🌶️ Best Balti Order" },
+  { id: "discgolf", title: "🥏 Disc Golf Hero" },
+  { id: "f1",       title: "🏎️ F1 Arcade Champ" },
+  { id: "lost",     title: "🧭 Most Lost" },
+  { id: "bed",      title: "😴 First to Bed" },
+  { id: "honky",    title: "🤠 Best Low Places Moment" },
+  { id: "dancer",   title: "🕺 Best Mover" },
+  { id: "rounds",   title: "💸 Biggest Round Buyer" },
+  { id: "tight",    title: "🤏 Never Got a Round In" },
+  { id: "phone",    title: "📱 Most Likely to Lose a Phone" },
+  { id: "quote",    title: "💬 Quote of the Weekend" },
+  { id: "satam",    title: "🥴 Worst State Saturday AM" },
+  { id: "sunday",   title: "🤢 Worst State Sunday AM" },
 ];
 
 /* ---------- OFF-LICENCE DEFAULTS ---------- */
@@ -109,12 +116,27 @@ function loadMe() {
 function setMe(i) {
   me = i;
   try { localStorage.setItem(ME_KEY, String(i)); } catch (e) { /* ignore */ }
+  state.present = state.present || {};
+  state.present[i] = Date.now();   // mark "in" for everyone (synced)
+  save();
+  closeWhoamiModal();
   render();
 }
 function clearMe() {
+  if (me != null && state.present) delete state.present[me];  // mark "out"
   me = null;
   try { localStorage.removeItem(ME_KEY); } catch (e) { /* ignore */ }
+  save();
   render();
+  openWhoamiModal();               // re-prompt for who you are
+}
+/* Ensure the claimed identity is flagged present; returns true if it changed. */
+function markMePresent() {
+  if (me == null || Number.isNaN(me) || !state.names[me]) return false;
+  state.present = state.present || {};
+  if (state.present[me]) return false;
+  state.present[me] = Date.now();
+  return true;
 }
 
 function defaults() {
@@ -128,6 +150,7 @@ function defaults() {
     awards: {},  // awardId -> winner index
     shop: SHOP_DEFAULTS.map((label, i) => ({ id: "d" + i, label, checked: false })),
     quotes: [],  // { text, who, ts }
+    present: {}, // personIndex -> lastSeen ms (synced: who has joined)
   };
 }
 function load() {
@@ -191,6 +214,7 @@ function initSync() {
       const remote = snap.val();
       if (!remote) {
         // Nothing shared yet — seed the room with our current state.
+        markMePresent();
         setSyncStatus("🟢 Live · house “" + code + "”", "on");
         pushRemote();
         return;
@@ -198,6 +222,8 @@ function initSync() {
       applyingRemote = true;
       state = Object.assign(defaults(), remote);
       applyingRemote = false;
+      // If this phone has claimed an identity, make sure it shows as "in".
+      if (markMePresent()) pushRemote();
       setSyncStatus("🟢 Live · house “" + code + "”", "on");
       renderDrinkBar();
       render();
@@ -333,33 +359,81 @@ function renderDrinkBar() {
 /* ==========================================================================
    RENDER: WHO ARE YOU? (per-device identity claim)
    ========================================================================== */
+function hasClaimed() {
+  return !(me == null || Number.isNaN(me) || !state.names[me]);
+}
+
+/* Roster of who has joined (synced) vs who hasn't. */
+function rosterHtml() {
+  const present = state.present || {};
+  const ins = [], outs = [];
+  state.names.forEach((n, i) => (present[i] ? ins : outs).push({ n, i }));
+  const fmt = (x) => `${CREW[x.i] ? CREW[x.i].emoji : ""} ${escapeHtml(x.n)}${x.i === me ? " (you)" : ""}`;
+  return `
+    <div class="roster">
+      <div class="roster-row">
+        <span class="roster-lab in">In</span>
+        <span>${ins.length ? ins.map(fmt).join(" · ") : `<span class="roster-none">nobody yet</span>`}</span>
+      </div>
+      <div class="roster-row">
+        <span class="roster-lab out">Waiting</span>
+        <span>${outs.length ? outs.map((x) => escapeHtml(x.n)).join(" · ") : `<span class="roster-none">everyone's in! 🎉</span>`}</span>
+      </div>
+    </div>`;
+}
+
+function pickButtonsHtml() {
+  return `<div class="whoami-pick">` +
+    state.names.map((n, i) => {
+      const inHere = state.present && state.present[i];
+      return `<button class="whoami-btn ${inHere ? "in" : ""}" data-me="${i}">${CREW[i] ? CREW[i].emoji : ""} ${escapeHtml(n)}${inHere ? " ✅" : ""}</button>`;
+    }).join("") +
+    `</div>`;
+}
+
 function renderWhoami() {
   const el = document.getElementById("whoami");
-  if (!el) return;
-
-  if (me == null || Number.isNaN(me) || !state.names[me]) {
-    el.innerHTML =
-      `<p class="whoami-q">👋 Which one are you?</p>
-       <div class="whoami-pick">` +
-      state.names.map((n, i) =>
-        `<button class="whoami-btn" data-me="${i}">${CREW[i] ? CREW[i].emoji : ""} ${escapeHtml(n)}</button>`
-      ).join("") +
-      `</div>`;
-    el.querySelectorAll(".whoami-btn").forEach((b) =>
-      b.addEventListener("click", () => setMe(Number(b.dataset.me)))
-    );
-  } else {
-    const sel = drinkById(state.selectedDrink);
-    const emoji = CREW[me] ? CREW[me].emoji : "";
-    el.innerHTML =
-      `<div class="whoami-claimed">
-         <span class="me-name">You're ${emoji} <b>${escapeHtml(state.names[me])}</b></span>
-         <button class="whoami-change" id="whoami-change">not you? change</button>
-         <button class="me-quickadd" id="me-quickadd">＋ ${sel.emoji} ${sel.label} for me</button>
-       </div>`;
-    el.querySelector("#whoami-change").addEventListener("click", clearMe);
-    el.querySelector("#me-quickadd").addEventListener("click", () => addDrink(me));
+  if (el) {
+    if (!hasClaimed()) {
+      el.innerHTML = `<p class="whoami-q">👋 Which one are you?</p>${pickButtonsHtml()}${rosterHtml()}`;
+      el.querySelectorAll(".whoami-btn").forEach((b) =>
+        b.addEventListener("click", () => setMe(Number(b.dataset.me)))
+      );
+    } else {
+      const sel = drinkById(state.selectedDrink);
+      const emoji = CREW[me] ? CREW[me].emoji : "";
+      el.innerHTML =
+        `<div class="whoami-claimed">
+           <span class="me-name">You're ${emoji} <b>${escapeHtml(state.names[me])}</b></span>
+           <button class="whoami-change" id="whoami-change">not you? change</button>
+           <button class="me-quickadd" id="me-quickadd">＋ ${sel.emoji} ${sel.label} for me</button>
+         </div>
+         ${rosterHtml()}`;
+      el.querySelector("#whoami-change").addEventListener("click", clearMe);
+      el.querySelector("#me-quickadd").addEventListener("click", () => addDrink(me));
+    }
   }
+  renderWhoamiModal();
+}
+
+/* ---------- First-load "Who are you?" modal ---------- */
+function renderWhoamiModal() {
+  const pick = document.getElementById("modal-pick");
+  const roster = document.getElementById("modal-roster");
+  if (!pick || !roster) return;
+  pick.innerHTML = pickButtonsHtml();
+  pick.querySelectorAll(".whoami-btn").forEach((b) =>
+    b.addEventListener("click", () => setMe(Number(b.dataset.me)))
+  );
+  roster.innerHTML = rosterHtml();
+}
+function openWhoamiModal() {
+  const m = document.getElementById("whoami-modal");
+  if (m) { renderWhoamiModal(); m.classList.remove("hidden"); }
+}
+function closeWhoamiModal() {
+  const m = document.getElementById("whoami-modal");
+  if (m) m.classList.add("hidden");
 }
 
 /* ==========================================================================
@@ -527,29 +601,82 @@ function renderBets() {
 /* ==========================================================================
    RENDER: AWARDS
    ========================================================================== */
+/* Normalise an award to the blind-vote shape { votes: {voterIdx: nomineeIdx}, revealed } */
+function getAward(id) {
+  let a = state.awards[id];
+  if (a == null || typeof a !== "object") a = { votes: {}, revealed: false };
+  a.votes = a.votes || {};
+  return a;
+}
+
 function renderAwards() {
   const wrap = document.getElementById("awards-list");
+  const claimed = hasClaimed();
+  const total = state.names.length;
+
   wrap.innerHTML = AWARDS.map((a) => {
-    const winner = state.awards[a.id];
-    const opts = state.names.map((n, i) =>
-      `<button class="award-opt ${winner === i ? "won" : ""}" data-award="${a.id}" data-who="${i}">${escapeHtml(n)}</button>`
-    ).join("");
-    const line = (winner != null && state.names[winner])
-      ? `🏅 Winner: <strong>${escapeHtml(state.names[winner])}</strong>` : "Not awarded yet";
-    return `
-      <div class="award-card">
-        <p class="award-title">${a.title}</p>
-        <p class="award-winner">${line}</p>
-        <div class="award-opts">${opts}</div>
-      </div>`;
+    const data = getAward(a.id);
+    const voteCount = Object.keys(data.votes).length;
+    const tally = {};
+    Object.values(data.votes).forEach((n) => { tally[n] = (tally[n] || 0) + 1; });
+
+    let body;
+    if (data.revealed) {
+      const max = Math.max(0, ...state.names.map((_, i) => tally[i] || 0));
+      const winners = state.names.map((n, i) => ({ n, i })).filter((x) => max > 0 && (tally[x.i] || 0) === max);
+      const winLine = max <= 0
+        ? "No votes cast"
+        : winners.length > 1
+          ? `🤝 Tie: ${winners.map((w) => escapeHtml(w.n)).join(" & ")}`
+          : `🏆 ${escapeHtml(winners[0].n)}`;
+      const rows = state.names.map((n, i) => {
+        const c = tally[i] || 0;
+        const voters = Object.keys(data.votes)
+          .filter((v) => Number(data.votes[v]) === i)
+          .map((v) => state.names[v]).filter(Boolean);
+        return `
+          <div class="award-result-row">
+            <span class="award-res-name">${escapeHtml(n)}</span>
+            <span class="award-bar-wrap"><span class="award-bar" style="width:${max > 0 ? (c / max) * 100 : 0}%"></span></span>
+            <span class="award-count">${c}</span>
+          </div>
+          ${voters.length ? `<div class="award-voters">${voters.map(escapeHtml).join(", ")}</div>` : ""}`;
+      }).join("");
+      body = `<p class="award-winner">${winLine}</p>${rows}
+        <button class="btn-ghost award-reopen" data-award="${a.id}">↩ Re-open voting</button>`;
+    } else if (!claimed) {
+      body = `<p class="award-hint">👆 Claim who you are (top of the Drinks tab) to cast your vote.</p>
+        <p class="award-status">🗳️ ${voteCount}/${total} voted</p>`;
+    } else {
+      const mine = data.votes[me];
+      const options = `<option value="">— cast your vote —</option>` +
+        state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
+      body = `<select class="award-select" data-award="${a.id}">${options}</select>
+        <p class="award-status">🗳️ ${voteCount}/${total} voted${mine != null ? ` · your pick is in 🔒` : ""}</p>
+        <button class="btn-ghost award-reveal" data-award="${a.id}">👁 Reveal results</button>`;
+    }
+    return `<div class="award-card"><p class="award-title">${a.title}</p>${body}</div>`;
   }).join("");
 
-  wrap.querySelectorAll(".award-opt").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.award, who = Number(btn.dataset.who);
-      state.awards[id] = state.awards[id] === who ? null : who; // tap again to un-award
+  wrap.querySelectorAll(".award-select").forEach((sel) =>
+    sel.addEventListener("change", () => {
+      const id = sel.dataset.award, a = getAward(id);
+      if (sel.value === "") delete a.votes[me]; else a.votes[me] = Number(sel.value);
+      state.awards[id] = a;
       save();
       renderAwards();
+    })
+  );
+  wrap.querySelectorAll(".award-reveal").forEach((b) =>
+    b.addEventListener("click", () => {
+      const id = b.dataset.award, a = getAward(id);
+      a.revealed = true; state.awards[id] = a; save(); renderAwards();
+    })
+  );
+  wrap.querySelectorAll(".award-reopen").forEach((b) =>
+    b.addEventListener("click", () => {
+      const id = b.dataset.award, a = getAward(id);
+      a.revealed = false; state.awards[id] = a; save(); renderAwards();
     })
   );
 }
@@ -653,6 +780,7 @@ function tick() {
 
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
+document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Off-licence: add item */
 document.getElementById("shop-add").addEventListener("submit", (e) => {
@@ -685,3 +813,6 @@ render();
 tick();
 setInterval(tick, 1000);
 initSync();
+
+// First thing on first load: ask who you are.
+if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
