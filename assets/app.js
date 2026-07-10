@@ -80,6 +80,11 @@ const BETS = [
   { id: "dance",    emoji: "🤠", type: "person", q: "First to dance at Low Places" },
   { id: "phone",    emoji: "📱", type: "person", q: "First phone casualty (lost/dropped/dead)" },
   { id: "sunday",   emoji: "🥐", type: "person", q: "First out of bed on Sunday" },
+  { id: "soft",     emoji: "🧃", type: "person", q: "First to order a soft drink" },
+  { id: "villa",    emoji: "🟣", type: "person", q: "First Villa/Blues argument with a local" },
+  { id: "wcwinner", emoji: "🏆", type: "text",   q: "Who wins the 3rd-place playoff" },
+  { id: "phonehome",emoji: "📞", type: "person", q: "First to phone home / the missus" },
+  { id: "disctotal",emoji: "🥏", type: "text",   q: "Group disc golf total — call the number" },
 ];
 
 /* ---------- AWARDS ---------- */
