@@ -59,17 +59,16 @@
           <div class="hq-addr">9 Sloane Street, Birmingham, B1 3DZ</div>
         </div>
         <div class="hq-actions">
-          <a class="hq-btn" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Walk home</a>
-          <a class="hq-btn" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=9%20Sloane%20Street%2C%20Birmingham%2C%20B1%203DZ" target="_blank" rel="noopener">🚕 Uber home</a>
+          <a class="hq-btn" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Take me home</a>
           <button class="hq-btn ghost" id="hq-copy">📋 Copy address</button>
         </div>
       </div>
 
-      <a class="weather-strip" href="https://www.bbc.co.uk/weather/2655603" target="_blank" rel="noopener">
-        <span class="weather-emoji">🌦️</span>
-        <span class="weather-body"><b>Birmingham forecast</b><br><span class="muted">Check before you leave HQ each morning</span></span>
-        <span class="weather-cta">BBC Weather →</span>
-      </a>
+      <div class="weather-strip">
+        <div class="weather-days" id="weather-days"><span class="muted">🌦️ Loading Birmingham forecast…</span></div>
+        <a class="weather-cta" href="https://www.bbc.co.uk/weather/2655603" target="_blank" rel="noopener">BBC →</a>
+      </div>
+      <button class="food-now" id="food-now">🍔 Where's food right now?</button>
 
       <div class="days" id="days"></div>
     </section>
@@ -136,6 +135,9 @@
       <div class="crew" id="crew"></div>
     </section>
   </main>
+
+  <!-- Always-there shortcut to the drink tracker -->
+  <a class="fab-beer" href="#tracker" aria-label="Jump to the drink tracker">🍺</a>
 
   <!-- First-load "Who are you?" prompt -->
   <div class="modal-overlay hidden" id="whoami-modal">

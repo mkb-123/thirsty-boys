@@ -10,11 +10,11 @@ const ITINERARY = [
     name: "Friday", date: "17 July",
     stops: [
       { t: "12:00", iso: "2026-07-17T12:00", emoji: "🚆", title: "Arrive Birmingham", desc: "Mitul, Big Ben & Director hit town." },
-      { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham" },
+      { t: "12:30", iso: "2026-07-17T12:30", emoji: "🍺", title: "The Indian Brewery", desc: "Snow Hill arches · Birmingham Lager & fat naans.", tag: "booked", map: "The Indian Brewery Snow Hill Birmingham", menu: "https://www.indianbrewery.com/menu" },
       { t: "15:00", iso: "2026-07-17T15:00", emoji: "🔑", title: "Check into Airbnb", desc: "9 Sloane Street — HQ. Mr Science arrives.", map: "9 Sloane Street Birmingham B1 3DZ" },
       { t: "17:30", iso: "2026-07-17T17:30", emoji: "🎯", title: "TOCA Social", desc: "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43", tag: "booked", map: "TOCA Social Bullring Birmingham" },
       { t: "19:15", iso: "2026-07-17T19:15", emoji: "🚕", title: "Uber to Balti Triangle", desc: "Leave in good time — it's a 20-25 min drive PLUS the off-licence stop for cold beers (BYOB!)." },
-      { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham" },
+      { t: "19:45", iso: "2026-07-17T19:45", emoji: "🍛", title: "Royal Watan Kashmiri", desc: "BYOB balti feast.", tag: "booked", map: "Royal Watan Kashmiri Birmingham", menu: "https://www.royal-watan.co.uk/" },
       { t: "21:30", iso: "2026-07-17T21:30", emoji: "🍷", title: "Arch 13", desc: "Another wine bar. Naturally.", map: "Arch 13 Birmingham" },
     ],
   },
@@ -22,10 +22,10 @@ const ITINERARY = [
     name: "Saturday", date: "18 July",
     stops: [
       { t: "10:00", iso: "2026-07-18T10:00", emoji: "🥏", title: "Disc Golf @ Ackers", desc: "Ackers Adventure · shake off the balti.", tag: "booked", map: "Ackers Adventure Birmingham" },
-      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca (The Loft, 1000 Trades)", desc: "Tacos at The Loft — upstairs at 1000 Trades, JQ.", tag: "walkin", map: "1000 Trades Birmingham" },
+      { t: "12:30", iso: "2026-07-18T12:30", emoji: "🌮", title: "El Azteca (The Loft, 1000 Trades)", desc: "Tacos at The Loft — upstairs at 1000 Trades, JQ.", tag: "walkin", map: "1000 Trades Birmingham", menu: "https://1000trades.org.uk/food/" },
       { t: "14:00", iso: "2026-07-18T14:00", emoji: "🏎️", title: "F1 Arcade", desc: "Chamberlain Sq · race sims & rounds.", tag: "booked", map: "F1 Arcade Birmingham" },
       { t: "16:00", iso: "2026-07-18T16:00", emoji: "🔄", title: "F1 done — free time", desc: "2½hr gap: a pub near Chamberlain Sq, a nap at HQ, or a wander. Reconvene 18:30 for food." },
-      { t: "18:30", iso: "2026-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham" },
+      { t: "18:30", iso: "2026-07-18T18:30", emoji: "🍔", title: "Alfred Works Food Hall", desc: "Big feed, many options.", tag: "walkin", map: "Alfred Works food hall Birmingham", menu: "https://alfredworks.co.uk/food-partners/" },
       { t: "20:00", iso: "2026-07-18T20:00", emoji: "🤠", title: "Low Places", desc: "Honky-tonk. Yeehaw.", map: "Low Places Birmingham" },
       { t: "22:00", iso: "2026-07-18T22:00", emoji: "⚽", title: "World Cup 3rd Place Playoff", desc: "Luna Springs, Digbeth · big screen.", map: "Luna Springs Digbeth Birmingham" },
     ],
@@ -33,7 +33,7 @@ const ITINERARY = [
   {
     name: "Sunday", date: "19 July",
     stops: [
-      { t: "10:30", iso: "2026-07-19T10:30", emoji: "🥐", title: "Medicine Bakery", desc: "Pastries & coffee. Gentle recovery.", map: "Medicine Bakery Birmingham" },
+      { t: "10:30", iso: "2026-07-19T10:30", emoji: "🥐", title: "Medicine Bakery", desc: "Pastries & coffee. Gentle recovery.", map: "Medicine Bakery Birmingham", menu: "https://www.medicinebakery.co.uk/birmingham-menu/" },
       { t: "12:00", iso: "2026-07-19T12:00", emoji: "👋", title: "Exeunt", desc: "Home time. Until next year, boys." },
     ],
   },
@@ -350,7 +350,13 @@ function renderItinerary() {
       const map = s.map
         ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(s.map)}" target="_blank" rel="noopener">📍 Map</a>`
         : "";
-      const tags = (tag || map) ? `<div class="stop-tags">${tag}${map}</div>` : "";
+      const uber = s.map
+        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bnickname%5D=${encodeURIComponent(s.title)}&dropoff%5Bformatted_address%5D=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Uber</a>`
+        : "";
+      const menu = s.menu
+        ? `<a href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>`
+        : "";
+      const tags = (tag || map || uber || menu) ? `<div class="stop-tags">${tag}${map}${uber}${menu}</div>` : "";
 
       return `
         <div class="${cls}">
@@ -1053,6 +1059,58 @@ function renderBingo() {
   );
 }
 
+/* ==========================================================================
+   WEATHER — live 3-day (Fri/Sat/Sun) summary from Open-Meteo (no key, CORS ok)
+   ========================================================================== */
+function wxEmoji(c) {
+  if (c === 0) return "☀️";
+  if (c <= 3) return "⛅";
+  if (c <= 48) return "🌫️";
+  if (c <= 67) return "🌧️";
+  if (c <= 77) return "❄️";
+  if (c <= 82) return "🌦️";
+  return "⛈️";
+}
+async function fetchWeather() {
+  const el = document.getElementById("weather-days");
+  if (!el) return;
+  const labels = ["Fri", "Sat", "Sun"];
+  try {
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=52.4862&longitude=-1.8904" +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+      "&timezone=Europe%2FLondon&start_date=2026-07-17&end_date=2026-07-19";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("wx");
+    const d = await r.json();
+    el.innerHTML = d.daily.time.map((t, i) => {
+      const hi = Math.round(d.daily.temperature_2m_max[i]);
+      const lo = Math.round(d.daily.temperature_2m_min[i]);
+      const rain = d.daily.precipitation_probability_max[i];
+      return `<div class="wx-day">
+        <span class="wx-d">${labels[i] || t.slice(5)}</span>
+        <span class="wx-emoji">${wxEmoji(d.daily.weather_code[i])}</span>
+        <span class="wx-temp">${hi}°/${lo}°</span>
+        <span class="wx-rain">💧${rain == null ? "–" : rain}%</span>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    el.innerHTML = `<span class="muted">🌦️ Birmingham forecast — tap BBC for the latest</span>`;
+  }
+}
+
+/* "Where's food now" — nearest open food to wherever you're standing. */
+function foodNearMe() {
+  const open = (u) => window.open(u, "_blank");
+  const plain = "https://www.google.com/maps/search/?api=1&query=food%20open%20now";
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (p) => open(`https://www.google.com/maps/search/food+open+now/@${p.coords.latitude},${p.coords.longitude},16z`),
+      () => open(plain),
+      { timeout: 6000 }
+    );
+  } else { open(plain); }
+}
+
 /* ---------- UTIL ---------- */
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1083,6 +1141,7 @@ function tick() {
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
+document.getElementById("food-now").addEventListener("click", foodNearMe);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
@@ -1138,6 +1197,7 @@ render();
 tick();
 setInterval(tick, 1000);
 initSync();
+fetchWeather();
 
 // First thing on first load: ask who you are.
 if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
