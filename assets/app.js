@@ -614,9 +614,9 @@ function resetAll() {
   const pw = prompt("This wipes ALL drinks & names for EVERYONE.\nEnter the reset password to confirm:");
   if (pw == null) return;                 // cancelled
   if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password — nothing was reset."); return; }
-  state.names = [...DEFAULT_NAMES];
-  state.tallies = DEFAULT_NAMES.map(() => ({}));
-  state.log = [];
+  // Full wipe: drinks, names, bets, awards, quotes and the presence roster.
+  state = defaults();
+  markMePresent();          // keep whoever's holding this phone marked "in"
   save();
   renderDrinkBar();
   render();
