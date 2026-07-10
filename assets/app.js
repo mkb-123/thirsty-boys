@@ -162,7 +162,6 @@ function defaults() {
     // per person: { pint: n, half: n, ... }
     tallies: DEFAULT_NAMES.map(() => ({})),
     log: [], // {who, drink, ts}
-    selectedDrink: "pint",
     bets: {},    // betId -> { calls: {voterIdx: value}, result, revealed }
     awards: {},  // awardId -> { votes: {voterIdx: nomineeIdx}, revealed }
     quotes: [], // { text, who, ts }
