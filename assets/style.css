@@ -860,6 +860,46 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .quote-del:hover { color: var(--claret-2); }
 .quotes-empty { color: var(--muted); font-size: 0.9rem; }
 
+/* ---------- SUNDAY RECAP ---------- */
+.recap-card {
+  border: 1px solid rgba(244, 169, 51, 0.4);
+  border-radius: 18px;
+  padding: 1.4rem 1.2rem;
+  background:
+    radial-gradient(600px 300px at 100% 0%, rgba(244, 169, 51, 0.16), transparent 60%),
+    radial-gradient(500px 260px at 0% 100%, rgba(184, 58, 92, 0.18), transparent 55%),
+    var(--card);
+  box-shadow: var(--shadow);
+}
+.recap-head { text-align: center; margin-bottom: 1rem; }
+.recap-head .rc-title { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.01em; }
+.recap-head .rc-sub { color: var(--muted); font-size: 0.82rem; margin-top: 0.15rem; }
+.recap-crown {
+  text-align: center;
+  background: rgba(244, 169, 51, 0.12);
+  border: 1px solid rgba(244, 169, 51, 0.35);
+  border-radius: 14px;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+}
+.recap-crown .rc-lab { font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+.recap-crown .rc-name { font-size: 1.6rem; font-weight: 900; color: var(--amber-2); }
+.recap-crown .rc-none { color: var(--muted); font-weight: 700; }
+.recap-lb { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+.recap-lb-row { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 0.9rem; }
+.recap-lb-row .rc-rank { width: 1.5rem; color: var(--muted); }
+.recap-lb-row .rc-who { flex: 1; }
+.recap-lb-row .rc-n { color: var(--amber-2); font-variant-numeric: tabular-nums; }
+.recap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.recap-stat { background: var(--bg-2); border-radius: 12px; padding: 0.7rem 0.4rem; text-align: center; }
+.recap-stat .rc-v { font-size: 1.3rem; font-weight: 900; color: var(--amber-2); }
+.recap-stat .rc-k { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; margin-top: 0.15rem; }
+.recap-awards { border-top: 1px dashed var(--line); padding-top: 0.8rem; }
+.recap-awards .rc-aw { font-size: 0.85rem; padding: 0.15rem 0; }
+.recap-awards .rc-aw b { color: var(--amber-2); }
+.recap-empty { color: var(--muted); font-size: 0.85rem; text-align: center; }
+.recap-share { width: 100%; margin-top: 1rem; }
+
 /* ---------- FOOTER ---------- */
 .footer {
   text-align: center;

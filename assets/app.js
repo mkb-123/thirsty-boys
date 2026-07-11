@@ -840,6 +840,81 @@ function renderAwards() {
 }
 
 /* ==========================================================================
+   RENDER: SUNDAY RECAP ("wrapped") + share
+   ========================================================================== */
+function awardWinner(id) {
+  const a = getAward(id);
+  if (!a.revealed) return null;
+  const tally = {};
+  Object.values(a.votes).forEach((n) => { tally[n] = (tally[n] || 0) + 1; });
+  const max = Math.max(0, ...state.names.map((_, i) => tally[i] || 0));
+  if (max <= 0) return null;
+  const w = state.names.map((n, i) => ({ n, i })).filter((x) => (tally[x.i] || 0) === max);
+  return w.length === 1 ? w[0].n : w.map((x) => x.n).join(" & ");
+}
+function recapData() {
+  const rows = state.names.map((n, i) => ({ n, i, c: countFor(i) })).sort((a, b) => b.c - a.c);
+  const total = rows.reduce((s, r) => s + r.c, 0);
+  const maxC = Math.max(0, ...rows.map((r) => r.c));
+  const thirstiest = maxC > 0 ? rows.filter((r) => r.c === maxC).map((r) => r.n).join(" & ") : null;
+  const scores = betScores();
+  const maxS = Math.max(0, ...scores);
+  const pundit = maxS > 0 ? state.names.map((n, i) => ({ n, s: scores[i] })).filter((x) => x.s === maxS).map((x) => x.n).join(" & ") : null;
+  const bingoN = BINGO.filter((x) => state.bingo && state.bingo[x.id] != null).length;
+  const awards = AWARDS.map((a) => ({ title: a.title, w: awardWinner(a.id) })).filter((x) => x.w);
+  return { rows, total, maxC, thirstiest, maxS, pundit, bingoN, awards };
+}
+function renderRecap() {
+  const el = document.getElementById("recap-card");
+  if (!el) return;
+  const d = recapData();
+  const medal = ["🥇", "🥈", "🥉"];
+  el.innerHTML =
+    `<div class="recap-head">
+       <div class="rc-title">${escapeHtml((TRIP.city || "") + " '" + (TRIP.year || ""))} 🍺</div>
+       <div class="rc-sub">${escapeHtml(TRIP.datesLabel || "")}</div>
+     </div>
+     <div class="recap-crown">
+       <div class="rc-lab">👑 Thirstiest Boy</div>
+       ${d.thirstiest
+        ? `<div class="rc-name">${escapeHtml(d.thirstiest)}</div><div class="rc-sub">${d.maxC} drink${d.maxC === 1 ? "" : "s"}</div>`
+        : `<div class="rc-none">No drinks logged yet</div>`}
+     </div>
+     <div class="recap-lb">${d.rows.map((r, i) =>
+      `<div class="recap-lb-row"><span class="rc-rank">${medal[i] || (i + 1) + "."}</span><span class="rc-who">${escapeHtml(r.n)}</span><span class="rc-n">${r.c}</span></div>`).join("")}</div>
+     <div class="recap-stats">
+       <div class="recap-stat"><div class="rc-v">${d.total}</div><div class="rc-k">Total drinks</div></div>
+       <div class="recap-stat"><div class="rc-v">${d.bingoN}/${BINGO.length}</div><div class="rc-k">Bingo</div></div>
+       <div class="recap-stat"><div class="rc-v">${state.quotes.length}</div><div class="rc-k">Quotes</div></div>
+     </div>
+     <div class="recap-awards">
+       ${d.pundit ? `<div class="rc-aw">🎯 Best pundit: <b>${escapeHtml(d.pundit)}</b> (${d.maxS} correct)</div>` : ""}
+       ${d.awards.map((x) => `<div class="rc-aw">${escapeHtml(x.title)}: <b>${escapeHtml(x.w)}</b></div>`).join("")}
+       ${(!d.pundit && !d.awards.length) ? `<div class="recap-empty">Reveal some awards & settle bets and they'll show here 🏆</div>` : ""}
+     </div>`;
+}
+function buildRecapText() {
+  const d = recapData();
+  const lines = ["🍺 " + (TRIP.city || "") + " '" + (TRIP.year || "") + " — Thirsty Boys"];
+  if (d.thirstiest) lines.push("👑 Thirstiest Boy: " + d.thirstiest + " (" + d.maxC + ")");
+  lines.push("🍻 " + d.rows.map((r) => r.n + " " + r.c).join(" · "));
+  if (d.pundit) lines.push("🎯 Best pundit: " + d.pundit + " (" + d.maxS + ")");
+  lines.push("🥏 Bingo: " + d.bingoN + "/" + BINGO.length);
+  d.awards.forEach((x) => lines.push(x.title + ": " + x.w));
+  return lines.join("\n");
+}
+async function shareRecap() {
+  const text = buildRecapText();
+  const url = location.origin + location.pathname;
+  if (navigator.share) {
+    try { await navigator.share({ title: (TRIP.city || "") + " '" + (TRIP.year || ""), text, url }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(text + "\n" + url); toast("📋 Recap copied — paste it in the chat"); }
+  catch (e) { prompt("Copy the recap:", text + "\n" + url); }
+}
+
+/* ==========================================================================
    RENDER: QUOTE WALL
    ========================================================================== */
 function renderQuoteWho() {
@@ -1059,6 +1134,7 @@ function render() {
   renderBingo();
   renderQuoteWho();
   renderQuotes();
+  renderRecap();
   renderCrew();
 }
 
@@ -1097,6 +1173,7 @@ function renderNowNext() {
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
+document.getElementById("recap-share").addEventListener("click", shareRecap);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
