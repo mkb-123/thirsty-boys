@@ -422,6 +422,12 @@
       "emoji": "🤕",
       "type": "person",
       "q": "First to fall over"
+    },
+    {
+      "id": "bed",
+      "emoji": "😴",
+      "type": "person",
+      "q": "First to bed"
     }
   ],
   "awards": [
@@ -434,20 +440,8 @@
       "title": "🌶️ Best Balti Order"
     },
     {
-      "id": "discgolf",
-      "title": "🥏 Disc Golf Hero"
-    },
-    {
-      "id": "f1",
-      "title": "🏎️ F1 Arcade Champ"
-    },
-    {
       "id": "lost",
       "title": "🧭 Most Lost"
-    },
-    {
-      "id": "bed",
-      "title": "😴 First to Bed"
     },
     {
       "id": "honky",
