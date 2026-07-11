@@ -1335,6 +1335,30 @@ function renderBingo() {
       renderBingo();
     })
   );
+  bingoNotify();
+}
+
+/* Buzz + banner every phone when a new bingo square gets claimed. A single new
+   claim is a live spot → notify; many at once is a bulk load/sync → stay quiet.
+   Un-claims never notify. */
+let seenBingo = {};
+function bingoSnapshot() {
+  const cur = {};
+  Object.keys(state.bingo || {}).forEach((id) => { if (state.bingo[id] != null) cur[id] = state.bingo[id]; });
+  return cur;
+}
+function bingoNotify() {
+  const cur = bingoSnapshot();
+  const fresh = Object.keys(cur).filter((id) => seenBingo[id] !== cur[id]);
+  seenBingo = cur;
+  if (fresh.length !== 1) return;           // 0 = nothing new, >1 = bulk sync
+  const id = fresh[0];
+  const item = BINGO.find((x) => x.id === id);
+  const who = state.names[cur[id]];
+  if (!item || who == null) return;
+  buzz([60, 40, 120]);
+  pop();
+  bigBanner(`🎲 <b>${escapeHtml(who)}</b> spotted: ${item.emoji} ${escapeHtml(item.t)}`);
 }
 
 /* ==========================================================================
@@ -1626,6 +1650,7 @@ async function boot() {
   state = load();
   outbox = loadOutbox();     // resume any edits parked while offline last time
   lastRoundTs = (state.round && state.round.ts) || 0;  // don't re-celebrate an old verdict on load
+  seenBingo = bingoSnapshot();                         // don't re-announce already-spotted squares
   applyLegacyRenames();      // rebrand old default names before first paint
   me = loadMe();
   selectedDrink = loadSelectedDrink();
