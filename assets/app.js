@@ -121,6 +121,7 @@ function defaults() {
     quotes: [], // { text, who, ts }
     bingo: {},  // bingoId -> spotter index (synced)
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
+    round: null, // last "whose round" verdict: { winner, by, ts } (synced)
   };
 }
 function load() {
@@ -1185,21 +1186,51 @@ function badgesFor(i) {
   if (c === 0) out.push("😇");
   return out;
 }
+let roundSpinning = false;      // this phone is mid-animation
+let lastRoundTs = 0;            // last verdict we've already reacted to
 function spinRound() {
   const el = document.getElementById("round-result");
-  if (!el) return;
+  if (!el || roundSpinning || !state.names.length) return;
+  roundSpinning = true;
   const winner = Math.floor(Math.random() * state.names.length);
   let n = 0;
   const iv = setInterval(() => {
     el.textContent = state.names[Math.floor(Math.random() * state.names.length)];
     if (++n > 12) {
       clearInterval(iv);
-      el.textContent = "🍺 " + state.names[winner] + "'s round!";
-      const r = el.getBoundingClientRect();
-      burstConfetti(r.left + r.width / 2, r.top + r.height / 2, 16);
-      pop();
+      roundSpinning = false;
+      // Publish the verdict so every phone lands on the same name.
+      state.round = { winner: winner, by: (me != null && !Number.isNaN(me)) ? me : null, ts: Date.now() };
+      lastRoundTs = state.round.ts;
+      save();
+      rtSet("round", state.round);
+      showRoundVerdict(true);
     }
   }, 80);
+}
+/* Render the shared "whose round" verdict; celebrate a newly-arrived one once. */
+function showRoundVerdict(celebrate) {
+  const el = document.getElementById("round-result");
+  if (!el) return;
+  const r = state.round;
+  if (!r || r.winner == null || !state.names[r.winner]) { if (!roundSpinning) el.textContent = ""; return; }
+  if (roundSpinning) return;   // don't stomp an in-progress local animation
+  const who = state.names[r.winner];
+  const caller = (r.by != null && state.names[r.by]) ? ` (spun by ${escapeHtml(state.names[r.by])})` : "";
+  el.innerHTML = `🍺 ${escapeHtml(who)}'s round!<span class="round-by">${caller}</span>`;
+  if (celebrate) {
+    const box = el.getBoundingClientRect();
+    burstConfetti(box.left + box.width / 2, box.top + box.height / 2, 16);
+    pop();
+  }
+}
+function renderRound() {
+  const r = state.round;
+  // Celebrate only a genuinely NEW verdict that just landed (e.g. another phone
+  // spun) — not an old one being re-shown on load or re-sync.
+  const fresh = r && r.ts && r.ts !== lastRoundTs && (Date.now() - r.ts < 15000);
+  if (r && r.ts) lastRoundTs = r.ts;
+  showRoundVerdict(!!fresh);
 }
 
 /* ==========================================================================
@@ -1358,6 +1389,7 @@ function render() {
   renderBets();
   renderAwards();
   renderBingo();
+  renderRound();
   renderStats();
   renderRecap();
   renderCrew();
@@ -1485,6 +1517,7 @@ async function boot() {
   applyTrip(await loadTrip());
   state = load();
   outbox = loadOutbox();     // resume any edits parked while offline last time
+  lastRoundTs = (state.round && state.round.ts) || 0;  // don't re-celebrate an old verdict on load
   applyLegacyRenames();      // rebrand old default names before first paint
   me = loadMe();
   selectedDrink = loadSelectedDrink();

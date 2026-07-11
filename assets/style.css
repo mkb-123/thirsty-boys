@@ -291,6 +291,7 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 
 /* ---------- WHOSE ROUND ---------- */
 .round-result { text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--amber-2); min-height: 1.3em; margin: 0.4rem 0 0; }
+.round-by { display: block; color: var(--muted); font-weight: 600; font-size: 0.72rem; margin-top: 0.15rem; }
 
 /* ---------- ACHIEVEMENT BADGES ---------- */
 .lb-badges { margin-top: 0.35rem; font-size: 0.95rem; min-height: 1em; letter-spacing: 0.1em; }
