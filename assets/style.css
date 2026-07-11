@@ -213,7 +213,7 @@ body.trip-live .kicker {
   position: fixed;
   left: calc(0.7rem + env(safe-area-inset-left));
   bottom: calc(0.7rem + env(safe-area-inset-bottom));
-  z-index: 180;
+  z-index: 215;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -228,15 +228,39 @@ body.trip-live .kicker {
   color: var(--muted);
   white-space: nowrap;
   opacity: 0.85;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+.net-status:active { transform: scale(0.96); }
 .net-status .net-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a8f9c; flex: 0 0 auto; }
 .net-status.on { color: var(--green); border-color: rgba(75, 191, 135, 0.4); }
 .net-status.on .net-dot { background: var(--green); box-shadow: 0 0 7px var(--green); }
 .net-status.off { color: var(--muted); }
 .net-status.err { color: var(--amber-2); border-color: rgba(244, 169, 51, 0.45); }
 .net-status.err .net-dot { background: var(--amber); }
-/* Lift above the Now/Next bar when it's showing. */
+/* Lift above the Now/Next bar / A2HS hint when they're showing. */
 body.has-nownext .net-status { bottom: calc(4.2rem + env(safe-area-inset-bottom)); }
+body.has-a2hs .net-status { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+
+/* "Who's connected" popover, opened by tapping the pill. */
+.net-pop {
+  position: fixed;
+  left: calc(0.7rem + env(safe-area-inset-left));
+  bottom: calc(3rem + env(safe-area-inset-bottom));
+  z-index: 216;
+  max-width: min(88vw, 300px);
+  background: rgba(15, 18, 32, 0.97);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+body.has-nownext .net-pop { bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
+body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
+.net-pop-title { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.5rem; }
+.net-pop .roster { display: flex; flex-direction: column; gap: 0.4rem; }
 
 /* ---------- SECTIONS ---------- */
 .section {

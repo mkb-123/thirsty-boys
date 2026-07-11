@@ -161,20 +161,57 @@ let syncRef = null;
 let applyingRemote = false;   // guards against echoing remote updates back
 let presencePushed = false;   // only announce "I'm in" once per load
 
+let lastSyncText = "", lastSyncCls = "";
 function setSyncStatus(text, cls) {
+  lastSyncText = text; lastSyncCls = cls || "";
   // Detailed line inside the Drinks tab.
   const el = document.getElementById("sync-status");
   if (el) { el.textContent = text; el.className = "sync-status " + (cls || ""); }
-  // Compact, always-visible connection pill in the sticky nav.
+  updateNetPill();
+}
+
+/* How many crew are online right now (heartbeat seen within FRESH_MS). */
+function connectedCount() {
+  const now = Date.now(), p = state && state.present ? state.present : {};
+  return (state ? state.names : []).reduce((n, _, i) => n + (p[i] && (now - p[i] < FRESH_MS) ? 1 : 0), 0);
+}
+/* Compact, always-visible connection pill — shows connection + head-count. */
+function updateNetPill() {
   const net = document.getElementById("net-status");
-  if (net) {
-    const label = /connect/i.test(text) && cls !== "on" ? "Connecting…"
-      : /Syncing/i.test(text) ? "Syncing…"
-      : cls === "on" ? "Connected"
-      : cls === "err" ? "Sync issue"
-      : "Offline";
-    net.className = "net-status " + (cls || "off");
-    net.innerHTML = `<span class="net-dot"></span>${label}`;
+  if (!net) return;
+  const cls = lastSyncCls;
+  const connecting = /connect/i.test(lastSyncText) && cls !== "on";
+  const syncing = /Syncing/i.test(lastSyncText);
+  let label;
+  if (connecting) label = "Connecting…";
+  else if (syncing) label = "Syncing…";
+  else if (cls === "on") { const n = connectedCount(); label = n > 0 ? n + " online" : "Connected"; }
+  else if (cls === "err") label = "Sync issue";
+  else label = "Offline";
+  net.className = "net-status " + (cls || "off");
+  net.innerHTML = `<span class="net-dot"></span>${label}`;
+  const pop = document.getElementById("net-pop");
+  if (pop) renderNetPop(pop);       // keep an open "who's here" list fresh
+}
+function renderNetPop(pop) {
+  pop.innerHTML = `<div class="net-pop-title">Who's connected</div>${rosterHtml()}`;
+}
+function toggleNetPop() {
+  const existing = document.getElementById("net-pop");
+  if (existing) { existing.remove(); document.removeEventListener("click", closeNetPopOutside); return; }
+  const pop = document.createElement("div");
+  pop.id = "net-pop";
+  pop.className = "net-pop";
+  renderNetPop(pop);
+  document.body.appendChild(pop);
+  setTimeout(() => document.addEventListener("click", closeNetPopOutside), 0);
+}
+function closeNetPopOutside(e) {
+  const pop = document.getElementById("net-pop");
+  if (!pop) { document.removeEventListener("click", closeNetPopOutside); return; }
+  if (!pop.contains(e.target) && !(e.target.closest && e.target.closest("#net-status"))) {
+    pop.remove();
+    document.removeEventListener("click", closeNetPopOutside);
   }
 }
 
@@ -618,6 +655,7 @@ function renderWhoami() {
       el.querySelector("#me-quickadd").addEventListener("click", () => addDrink(me));
     }
   }
+  updateNetPill();       // head-count changes as presence updates
   renderWhoamiModal();
 }
 
@@ -1535,6 +1573,7 @@ document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
+document.getElementById("net-status").addEventListener("click", (e) => { e.stopPropagation(); toggleNetPop(); });
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
@@ -1551,8 +1590,10 @@ function maybeShowA2HS() {
   bar.querySelector(".a2hs-close").addEventListener("click", () => {
     try { localStorage.setItem(A2HS_KEY, "1"); } catch (e) { /* ignore */ }
     bar.remove();
+    document.body.classList.remove("has-a2hs");
   });
   document.body.appendChild(bar);
+  document.body.classList.add("has-a2hs");   // lift the connection pill clear of it
 }
 setTimeout(maybeShowA2HS, 2500);
 
