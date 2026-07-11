@@ -820,6 +820,73 @@ function undoLast() {
   render();
 }
 
+/* ---------- ADMIN: edit anyone's drinks (password-gated) ----------
+   Adjusts a person's count for a specific drink by ±1, keeping the log in step
+   so stats/undo stay consistent. Uses delta writes so it's sync-safe. */
+let adminUnlocked = false;
+function adminAdjust(i, drinkId, delta) {
+  state.tallies[i] = state.tallies[i] || {};
+  const cur = state.tallies[i][drinkId] || 0;
+  const next = Math.max(0, cur + delta);
+  if (next === cur) return;                     // nothing to do (already 0)
+  state.tallies[i][drinkId] = next;
+  if (delta > 0) {
+    state.log.push({ who: i, drink: drinkId, ts: Date.now() });
+    if (state.log.length > 400) state.log = state.log.slice(-400);
+  } else {
+    for (let k = state.log.length - 1; k >= 0; k--) {
+      if (state.log[k].who === i && state.log[k].drink === drinkId) { state.log.splice(k, 1); break; }
+    }
+  }
+  save();
+  rtAdd("tallies/" + i + "/" + drinkId, next - cur);
+  rtSet("log", state.log);
+  render();
+}
+function toggleAdmin() {
+  if (!adminUnlocked) {
+    const pw = prompt("Admin — edit everyone's drinks.\nEnter the password:");
+    if (pw == null) return;
+    if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password."); return; }
+    adminUnlocked = true;
+  } else {
+    adminUnlocked = false;   // tapping again hides the editor
+  }
+  renderAdminEditor();
+}
+function renderAdminEditor() {
+  const box = document.getElementById("admin-editor");
+  if (!box) return;
+  const btn = document.getElementById("admin-btn");
+  if (!adminUnlocked) {
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    if (btn) btn.textContent = "✏️ Edit drinks";
+    return;
+  }
+  if (btn) btn.textContent = "✅ Done editing";
+  box.classList.remove("hidden");
+  box.innerHTML =
+    `<p class="admin-note">✏️ Admin edit — adjust anyone's drinks. Changes sync to everyone.</p>` +
+    state.names.map((n, i) => `
+      <div class="admin-person">
+        <div class="admin-person-head"><span>${escapeHtml(n)}</span><span class="admin-total">${countFor(i)}</span></div>
+        <div class="admin-drinks">
+          ${DRINKS.map((d) => {
+            const c = (state.tallies[i] || {})[d.id] || 0;
+            return `<div class="admin-chip ${c ? "has" : ""}">
+              <button class="admin-step" data-i="${i}" data-drink="${d.id}" data-delta="-1" aria-label="minus" ${c ? "" : "disabled"}>−</button>
+              <span class="admin-c">${d.emoji} ${c}</span>
+              <button class="admin-step" data-i="${i}" data-drink="${d.id}" data-delta="1" aria-label="plus">+</button>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`).join("");
+  box.querySelectorAll(".admin-step").forEach((b) =>
+    b.addEventListener("click", () => adminAdjust(Number(b.dataset.i), b.dataset.drink, Number(b.dataset.delta)))
+  );
+}
+
 const RESET_PASSWORD = "brum26";
 
 /* Password gate for irreversible "reveal to everyone" actions. Same password
@@ -1521,6 +1588,7 @@ function render() {
   renderBingo();
   renderRound();
   renderStats();
+  renderAdminEditor();
   renderRecap();
   renderCrew();
 }
@@ -1572,6 +1640,7 @@ function renderNowNext() {
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
+document.getElementById("admin-btn").addEventListener("click", toggleAdmin);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
 document.getElementById("net-status").addEventListener("click", (e) => { e.stopPropagation(); toggleNetPop(); });
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);

@@ -657,6 +657,25 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .btn-ghost:hover { color: var(--ink); border-color: var(--muted); }
 .btn-ghost.danger:hover { color: var(--claret-2); border-color: var(--claret-2); }
 
+/* Admin drink editor */
+.admin-editor { max-width: 520px; margin: 0.75rem auto 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.admin-note { text-align: center; color: var(--amber-2); font-weight: 700; font-size: 0.82rem; margin: 0 0 0.2rem; }
+.admin-person { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.8rem; }
+.admin-person-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; margin-bottom: 0.5rem; }
+.admin-total { color: var(--amber-2); }
+.admin-drinks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.admin-chip { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.3rem; }
+.admin-chip.has { border-color: rgba(244, 169, 51, 0.5); }
+.admin-c { font-weight: 800; font-size: 0.85rem; min-width: 2.6rem; text-align: center; }
+.admin-step {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card-2); color: var(--ink);
+  font-weight: 900; font-size: 1rem; line-height: 1; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-step:disabled { opacity: 0.3; cursor: default; }
+.admin-step:not(:disabled):active { transform: scale(0.9); }
+
 .log-title { text-align: center; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; margin: 1.5rem 0 0.6rem; }
 .log { list-style: none; padding: 0; margin: 0 auto; max-width: 480px; }
 .log li {
