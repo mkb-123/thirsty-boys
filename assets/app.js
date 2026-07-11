@@ -147,10 +147,20 @@ let applyingRemote = false;   // guards against echoing remote updates back
 let presencePushed = false;   // only announce "I'm in" once per load
 
 function setSyncStatus(text, cls) {
+  // Detailed line inside the Drinks tab.
   const el = document.getElementById("sync-status");
-  if (!el) return;
-  el.textContent = text;
-  el.className = "sync-status " + (cls || "");
+  if (el) { el.textContent = text; el.className = "sync-status " + (cls || ""); }
+  // Compact, always-visible connection pill in the sticky nav.
+  const net = document.getElementById("net-status");
+  if (net) {
+    const label = /connect/i.test(text) && cls !== "on" ? "Connecting…"
+      : /Syncing/i.test(text) ? "Syncing…"
+      : cls === "on" ? "Connected"
+      : cls === "err" ? "Sync issue"
+      : "Offline";
+    net.className = "net-status " + (cls || "off");
+    net.innerHTML = `<span class="net-dot"></span>${label}`;
+  }
 }
 
 function syncEnabled() {
@@ -1027,8 +1037,7 @@ function renderRecap() {
       `<div class="recap-lb-row"><span class="rc-rank">${medal[i] || (i + 1) + "."}</span><span class="rc-who">${escapeHtml(r.n)}</span><span class="rc-n">${r.c}</span></div>`).join("")}</div>
      <div class="recap-stats">
        <div class="recap-stat"><div class="rc-v">${d.total}</div><div class="rc-k">Total drinks</div></div>
-       <div class="recap-stat"><div class="rc-v">${d.bingoN}/${BINGO.length}</div><div class="rc-k">Bingo</div></div>
-       <div class="recap-stat"><div class="rc-v">${state.quotes.length}</div><div class="rc-k">Quotes</div></div>
+       <div class="recap-stat"><div class="rc-v">${d.bingoN}/${BINGO.length}</div><div class="rc-k">Bingo spotted</div></div>
      </div>
      <div class="recap-awards">
        ${d.pundit ? `<div class="rc-aw">🎯 Best pundit: <b>${escapeHtml(d.pundit)}</b> (${d.maxS} correct)</div>` : ""}
@@ -1055,48 +1064,6 @@ async function shareRecap() {
   }
   try { await navigator.clipboard.writeText(text + "\n" + url); toast("📋 Recap copied — paste it in the chat"); }
   catch (e) { prompt("Copy the recap:", text + "\n" + url); }
-}
-
-/* ==========================================================================
-   RENDER: QUOTE WALL
-   ========================================================================== */
-function renderQuoteWho() {
-  const sel = document.getElementById("quote-who");
-  const cur = sel.value;
-  sel.innerHTML = `<option value="">— who said it —</option>` +
-    state.names.map((n, i) => `<option value="${i}">${escapeHtml(n)}</option>`).join("");
-  // Keep the current pick if any, otherwise default to "you".
-  if (cur) sel.value = cur;
-  else if (me != null && !Number.isNaN(me) && state.names[me]) sel.value = String(me);
-}
-function renderQuotes() {
-  const wrap = document.getElementById("quotes-list");
-  if (!state.quotes.length) {
-    wrap.innerHTML = `<p class="quotes-empty">Nothing yet. The weekend is young.</p>`;
-    return;
-  }
-  wrap.innerHTML = state.quotes.slice().reverse().map((q) => {
-    const who = q.who !== "" && state.names[q.who] ? escapeHtml(state.names[q.who]) : "The Thirsty Boys";
-    const when = q.ts
-      ? " · " + new Date(q.ts).toLocaleDateString([], { weekday: "short" }) + " " +
-        new Date(q.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : "";
-    return `
-      <div class="quote-card">
-        <button class="quote-del" data-ts="${escapeAttr(String(q.ts))}" aria-label="Delete">🗑</button>
-        <div class="quote-text">${escapeHtml(q.text)}</div>
-        <div class="quote-meta">— ${who}${when}</div>
-      </div>`;
-  }).join("");
-
-  wrap.querySelectorAll(".quote-del").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      state.quotes = state.quotes.filter((q) => String(q.ts) !== btn.dataset.ts);
-      save();
-      rtSet("quotes", state.quotes);
-      renderQuotes();
-    })
-  );
 }
 
 /* ==========================================================================
@@ -1275,8 +1242,6 @@ function render() {
   renderBets();
   renderAwards();
   renderBingo();
-  renderQuoteWho();
-  renderQuotes();
   renderRecap();
   renderCrew();
 }
@@ -1288,7 +1253,7 @@ function tick() {
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
-const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "quotes", "recap", "crew"];
+const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "recap", "crew"];
 function showTab(id) {
   if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
@@ -1359,21 +1324,6 @@ document.getElementById("hq-copy").addEventListener("click", async (e) => {
     return;
   }
   setTimeout(() => { btn.textContent = "📋 Copy address"; }, 1500);
-});
-
-/* Quote wall: add quote */
-document.getElementById("quote-add").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const textEl = document.getElementById("quote-text");
-  const whoEl = document.getElementById("quote-who");
-  const text = textEl.value.trim();
-  if (!text) return;
-  state.quotes.push({ text, who: whoEl.value === "" ? "" : Number(whoEl.value), ts: Date.now() });
-  textEl.value = "";
-  whoEl.value = "";
-  save();
-  rtSet("quotes", state.quotes);
-  renderQuotes();
 });
 
 /* ==========================================================================
