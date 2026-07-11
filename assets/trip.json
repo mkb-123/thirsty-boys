@@ -244,12 +244,6 @@
       "q": "F1 Arcade fastest lap"
     },
     {
-      "id": "wcscore",
-      "emoji": "⚽",
-      "type": "text",
-      "q": "World Cup 3rd-place score"
-    },
-    {
       "id": "units",
       "emoji": "🍺",
       "type": "person",
@@ -466,10 +460,10 @@
       "q": "First to get told off by staff or a bouncer"
     },
     {
-      "id": "shirt",
-      "emoji": "👕",
+      "id": "innuendo",
+      "emoji": "😏",
       "type": "person",
-      "q": "First to take their top off"
+      "q": "First to make a sexual innuendo"
     },
     {
       "id": "canal",
