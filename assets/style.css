@@ -206,6 +206,34 @@ h1 span {
 .food-now:hover { border-color: var(--amber); }
 .food-now:active { transform: scale(0.99); }
 
+/* Live Now/Next bar (pinned bottom during the trip) */
+.nownext {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 185;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem calc(0.9rem + env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom)) calc(0.9rem + env(safe-area-inset-left));
+  background: rgba(15, 18, 32, 0.96);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--amber);
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.nownext.hidden { display: none; }
+.nn-seg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-seg.nn-next { text-align: right; color: var(--muted); padding-right: 62px; }
+.nn-lab { font-size: 0.6rem; font-weight: 900; letter-spacing: 0.1em; padding: 0.1rem 0.4rem; border-radius: 999px; margin-right: 0.35rem; }
+.nn-seg .nn-lab { background: var(--green); color: #06210f; }
+.nn-seg.nn-next .nn-lab { background: var(--amber); color: #2a1a02; }
+body.has-nownext { padding-bottom: 58px; }
+body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom)); }
+
 /* Floating drink-tracker shortcut */
 .fab-beer {
   position: fixed;

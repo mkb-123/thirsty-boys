@@ -1065,6 +1065,33 @@ function render() {
 function tick() {
   renderCountdown();
   renderItinerary();
+  renderNowNext();
+}
+
+/* Live "Now / Next" bar — only visible during the trip window. */
+function renderNowNext() {
+  const bar = document.getElementById("nownext");
+  if (!bar) return;
+  const now = new Date();
+  if (now < TRIP_START || now > TRIP_END) {
+    bar.classList.add("hidden");
+    document.body.classList.remove("has-nownext");
+    return;
+  }
+  const flat = [];
+  ITINERARY.forEach((d) => d.stops.forEach((s) => flat.push(s)));
+  let cur = null, next = null;
+  for (const s of flat) {
+    if (new Date(s.iso) <= now) cur = s;
+    else { next = s; break; }
+  }
+  const nowTxt = cur ? `${cur.emoji} ${escapeHtml(cur.title)}` : "—";
+  const nextTxt = next ? `${next.emoji} ${escapeHtml(next.title)} · ${next.t}` : "that's the lot 🎉";
+  bar.innerHTML =
+    `<span class="nn-seg"><span class="nn-lab">NOW</span>${nowTxt}</span>` +
+    `<span class="nn-seg nn-next"><span class="nn-lab">NEXT</span>${nextTxt}</span>`;
+  bar.classList.remove("hidden");
+  document.body.classList.add("has-nownext");
 }
 
 document.getElementById("undo-btn").addEventListener("click", undoLast);
