@@ -944,6 +944,54 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 }
 .btn-add:active { transform: scale(0.97); }
 
+/* ---------- LIVE STATS ---------- */
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.7rem; }
+.stat-tile {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem 0.9rem;
+  text-align: center;
+}
+.stat-tile.hot { border-color: rgba(244, 169, 51, 0.5); background: rgba(244, 169, 51, 0.08); }
+.st-v { font-size: 1.9rem; font-weight: 900; color: var(--amber-2); line-height: 1; }
+.st-k { font-size: 0.74rem; font-weight: 700; color: var(--muted); margin-top: 0.35rem; }
+.st-sub { color: var(--ink); font-weight: 800; }
+.stat-break { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0 0.4rem; }
+.db-chip { background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.3rem 0.65rem; font-weight: 800; font-size: 0.85rem; }
+.stat-rows { margin-top: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.stat-rows-head { padding: 0.6rem 0.9rem; font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); border-bottom: 1px solid var(--line); }
+.stat-row { display: flex; align-items: baseline; gap: 0.6rem; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line); }
+.stat-row:last-child { border-bottom: none; }
+.sr-name { flex: 1; font-weight: 800; }
+.sr-c { font-weight: 900; color: var(--amber-2); font-variant-numeric: tabular-nums; }
+.sr-pace { width: 4.5rem; text-align: right; color: var(--muted); font-weight: 700; font-size: 0.85rem; }
+.stat-empty { color: var(--muted); }
+
+/* ---------- DARES DECK ---------- */
+.dare-deck { display: flex; justify-content: center; }
+.dare-card {
+  width: 100%;
+  max-width: 460px;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 1.6rem 1.3rem;
+  border-radius: 20px;
+  background: linear-gradient(160deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+}
+.dare-card.placeholder { border-style: dashed; color: var(--muted); }
+.dare-card.dealt { border-color: rgba(244, 169, 51, 0.5); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); animation: dareIn 0.3s ease; }
+@keyframes dareIn { from { transform: scale(0.94) rotate(-1.5deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.dare-emoji { font-size: 2.6rem; line-height: 1; }
+.dare-text { font-size: 1.25rem; font-weight: 800; margin: 0; }
+.dare-draw { display: block; margin: 1.1rem auto 0; font-size: 1rem; padding: 0.7rem 1.4rem; }
+
 /* ---------- SUNDAY RECAP ---------- */
 .recap-card {
   border: 1px solid rgba(244, 169, 51, 0.4);

@@ -9,7 +9,7 @@
    to reuse this whole app for another city/date. Loaded at startup.
    ========================================================================== */
 let TRIP = {};
-let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [];
+let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [], DARES = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
 let STORE_KEY = "thirstyboys.trip.v1";
 let OUTBOX_KEY = "thirstyboys.trip.outbox";
@@ -42,6 +42,7 @@ function applyTrip(t) {
   BETS = TRIP.bets || [];
   AWARDS = TRIP.awards || [];
   BINGO = TRIP.bingo || [];
+  DARES = TRIP.dares || [];
   const d = TRIP.dates || {};
   TRIP_START = new Date((d.start || "1970-01-01T00:00") + ":00");
   TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
@@ -690,7 +691,7 @@ function addDrink(i) {
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
   state.log.push({ who: i, drink: id, ts: Date.now() });
-  if (state.log.length > 100) state.log = state.log.slice(-100);
+  if (state.log.length > 400) state.log = state.log.slice(-400);
   save();
   // Count as a delta so simultaneous taps both land (online) or queue safely
   // (offline); log written whole.
@@ -1239,6 +1240,97 @@ function renderBingo() {
 }
 
 /* ==========================================================================
+   RENDER: LIVE STATS — computed from the drink tallies + timestamped log.
+   Totals come from the tallies (authoritative); pace/biggest-hour/projection
+   come from the log. Recomputed on the 1s tick so it's genuinely live.
+   ========================================================================== */
+function renderStats() {
+  const wrap = document.getElementById("stats-wrap");
+  if (!wrap) return;
+  const now = Date.now();
+  const totals = state.names.map((_, i) => countFor(i));
+  const total = totals.reduce((a, b) => a + b, 0);
+
+  // Per-drink breakdown across the whole group.
+  const byDrink = {};
+  (state.tallies || []).forEach((t) => { if (t) Object.keys(t).forEach((k) => { byDrink[k] = (byDrink[k] || 0) + (t[k] || 0); }); });
+
+  // Time-based numbers from the timestamped log.
+  const log = (state.log || []).filter((e) => e && e.ts);
+  const firstTs = log.length ? Math.min.apply(null, log.map((e) => e.ts)) : null;
+  const lastHour = log.filter((e) => now - e.ts <= 3600000).length;
+  const spanH = firstTs ? Math.max(0.25, (now - firstTs) / 3600000) : 0;
+  const rate = spanH ? log.length / spanH : 0;
+
+  // Biggest single clock-hour.
+  const buckets = {};
+  log.forEach((e) => {
+    const dt = new Date(e.ts);
+    const key = dt.toLocaleDateString([], { weekday: "short" }) + " " + String(dt.getHours()).padStart(2, "0") + ":00";
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  let bigHour = "", bigN = 0;
+  Object.keys(buckets).forEach((k) => { if (buckets[k] > bigN) { bigN = buckets[k]; bigHour = k; } });
+
+  const inTrip = now >= TRIP_START.getTime() && now <= TRIP_END.getTime();
+  const hoursLeft = inTrip ? Math.max(0, (TRIP_END.getTime() - now) / 3600000) : 0;
+  const projected = inTrip && total > 0 ? total + Math.round(rate * hoursLeft) : null;
+
+  const tiles = [
+    `<div class="stat-tile"><div class="st-v">${total}</div><div class="st-k">Total drinks</div></div>`,
+    `<div class="stat-tile"><div class="st-v">${state.names.length ? (total / state.names.length).toFixed(1) : "0"}</div><div class="st-k">Per head</div></div>`,
+    `<div class="stat-tile"><div class="st-v">${lastHour}</div><div class="st-k">Last hour</div></div>`,
+    `<div class="stat-tile"><div class="st-v">${bigN || 0}</div><div class="st-k">Biggest hour${bigN ? `<br><span class="st-sub">${escapeHtml(bigHour)}</span>` : ""}</div></div>`,
+  ];
+  if (projected != null) tiles.push(`<div class="stat-tile hot"><div class="st-v">${projected}</div><div class="st-k">Projected by Sun</div></div>`);
+
+  const rows = state.names.map((n, i) => ({ n, i, c: totals[i] }))
+    .sort((a, b) => b.c - a.c)
+    .map((r) => {
+      const pace = spanH ? log.filter((e) => e.who === r.i).length / spanH : 0;
+      return `<div class="stat-row"><span class="sr-name">${escapeHtml(r.n)}</span><span class="sr-c">${r.c}</span><span class="sr-pace">${pace.toFixed(1)}/hr</span></div>`;
+    }).join("");
+
+  const dbreak = DRINKS.filter((d) => (byDrink[d.id] || 0) > 0).map((d) => `<span class="db-chip">${d.emoji} ${byDrink[d.id]}</span>`).join("");
+
+  wrap.innerHTML =
+    `<div class="stat-tiles">${tiles.join("")}</div>` +
+    (total > 0
+      ? `<div class="stat-break">${dbreak}</div>
+         <div class="stat-rows"><div class="stat-rows-head">Pace per man</div>${rows}</div>`
+      : `<p class="stat-empty">No drinks logged yet — the stats wake up on the first round. 🍺</p>`);
+}
+
+/* ==========================================================================
+   DARES DECK — draw a random challenge card. Per-device (localStorage), no sync.
+   ========================================================================== */
+const DARE_KEY = "thirstyboys.dare";
+function currentDareIdx() {
+  try { const v = localStorage.getItem(DARE_KEY); return v == null ? -1 : Number(v); } catch (e) { return -1; }
+}
+function renderDares() {
+  const wrap = document.getElementById("dare-deck");
+  if (!wrap) return;
+  if (!DARES.length) { wrap.innerHTML = `<div class="dare-card placeholder"><p>No dares loaded.</p></div>`; return; }
+  const idx = currentDareIdx();
+  if (idx < 0 || idx >= DARES.length) {
+    wrap.innerHTML = `<div class="dare-card placeholder"><div class="dare-emoji">🎴</div><p>Tap “Draw a dare” to flip the top card.</p></div>`;
+    return;
+  }
+  const d = DARES[idx];
+  wrap.innerHTML = `<div class="dare-card dealt"><div class="dare-emoji">${d.emoji || "🎴"}</div><p class="dare-text">${escapeHtml(d.text)}</p></div>`;
+}
+function drawDare() {
+  if (!DARES.length) return;
+  const prev = currentDareIdx();
+  let idx = Math.floor(Math.random() * DARES.length);
+  if (DARES.length > 1 && idx === prev) idx = (idx + 1) % DARES.length; // no instant repeat
+  try { localStorage.setItem(DARE_KEY, String(idx)); } catch (e) { /* ignore */ }
+  renderDares();
+  pop();
+}
+
+/* ==========================================================================
    WEATHER — live 3-day (Fri/Sat/Sun) summary from Open-Meteo (no key, CORS ok)
    ========================================================================== */
 function wxEmoji(c) {
@@ -1296,6 +1388,8 @@ function render() {
   renderBets();
   renderAwards();
   renderBingo();
+  renderDares();
+  renderStats();
   renderRecap();
   renderCrew();
 }
@@ -1304,10 +1398,11 @@ function tick() {
   renderCountdown();
   renderItinerary();
   renderNowNext();
+  renderStats();   // pace / last-hour / projection are time-based → keep live
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
-const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "recap", "crew"];
+const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "dares", "bingo", "stats", "recap", "crew"];
 function showTab(id) {
   if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
@@ -1346,6 +1441,7 @@ document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
+document.getElementById("dare-draw").addEventListener("click", drawDare);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */

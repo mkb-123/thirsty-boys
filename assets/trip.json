@@ -522,5 +522,25 @@
       "emoji": "🌧️",
       "t": "Rain (obviously)"
     }
+  ],
+  "dares": [
+    { "emoji": "🎤", "text": "Order your next round in your best Brummie accent." },
+    { "emoji": "🕺", "text": "Start a dance-off. You go first." },
+    { "emoji": "📸", "text": "Get a photo with a total stranger. Make a mate." },
+    { "emoji": "🍺", "text": "Buy the next round without being asked." },
+    { "emoji": "🗣️", "text": "Talk in a movie-trailer voice for the next 5 minutes." },
+    { "emoji": "🤝", "text": "Convince a stranger you're all in a band. Name the band." },
+    { "emoji": "🎯", "text": "Challenge someone outside the group to whatever game's in front of you." },
+    { "emoji": "🍛", "text": "Order the spiciest thing on the menu and finish it." },
+    { "emoji": "📞", "text": "Ring a mate who isn't here and tell them you love them." },
+    { "emoji": "🤠", "text": "Do your best cowboy walk to the bar and back." },
+    { "emoji": "🎶", "text": "Get the whole group to sing the chorus of a song of your choice." },
+    { "emoji": "🧊", "text": "Next drink has to be a new one you've never had before." },
+    { "emoji": "👑", "text": "Declare yourself king for 10 minutes. Everyone must obey one royal decree." },
+    { "emoji": "🙅", "text": "No phone for the next 30 minutes. Break it and you buy a round." },
+    { "emoji": "🎭", "text": "Do an impression of someone else in the group. They pick who." },
+    { "emoji": "🥂", "text": "Give a heartfelt toast to the boys. Make it emotional." },
+    { "emoji": "🚶", "text": "Swap an item of clothing with someone in the group for the next stop." },
+    { "emoji": "🤣", "text": "Tell your most embarrassing story from a previous night out." }
   ]
 }
