@@ -121,6 +121,58 @@ h1 span {
 .cd-caption { color: var(--muted); margin-top: 0.9rem; font-size: 0.9rem; }
 .cd-caption.live { color: var(--green); font-weight: 700; }
 
+/* ---------- TRIP MODE (home page on the day) ---------- */
+body.trip-live .hero, body.trip-done .hero {
+  background: radial-gradient(120% 120% at 50% 0%, rgba(244, 169, 51, 0.16), transparent 60%);
+}
+body.trip-live .kicker {
+  color: var(--amber-2);
+  font-weight: 900;
+  animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.hero-live { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+.hl-nownext { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.hl-seg {
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 0.35rem 0.75rem; font-size: 0.82rem; font-weight: 700;
+}
+.hl-seg b { color: var(--muted); font-size: 0.62rem; letter-spacing: 0.1em; margin-right: 0.3rem; }
+.hl-seg.hl-next b { color: var(--amber); }
+.hl-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; justify-content: center; font-weight: 800; }
+.hl-stats span { color: var(--amber-2); font-size: 0.95rem; }
+
+/* Full-width whose-round banner */
+.big-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 300;
+  padding: calc(0.9rem + env(safe-area-inset-top)) 1rem 0.9rem;
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #2a1a02;
+  background: linear-gradient(180deg, var(--amber-2), var(--amber));
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(-110%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.big-banner.show { transform: none; }
+
+/* Pull-to-refresh indicator */
+.ptr {
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  z-index: 210;
+  background: var(--card-2); border: 1px solid var(--line);
+  color: var(--ink); font-weight: 800; font-size: 0.8rem;
+  padding: 0.4rem 0.9rem; border-radius: 0 0 12px 12px;
+  opacity: 0; transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.ptr.show { opacity: 1; }
+
 /* ---------- TABS ---------- */
 .tabs {
   position: sticky;

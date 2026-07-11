@@ -474,6 +474,59 @@ function renderCountdown() {
 }
 
 /* ==========================================================================
+   TRIP MODE — the home page switches character on the day: a LIVE hero with
+   the day, the current/next stop, and live stats; and a "wrapped" state once
+   it's over. Before the trip it stays as the normal countdown.
+   ========================================================================== */
+function renderTripMode() {
+  const now = new Date();
+  const kicker = document.querySelector(".hero .kicker");
+  const live = document.getElementById("hero-live");
+  const before = now < TRIP_START;
+  const after = now > TRIP_END;
+  document.body.classList.toggle("trip-live", !before && !after);
+  document.body.classList.toggle("trip-done", after);
+
+  if (before) {
+    if (kicker) kicker.textContent = "The Thirsty Boys present";
+    if (live) { live.classList.add("hidden"); live.innerHTML = ""; }
+    return;
+  }
+  const total = state.names.reduce((s, _, i) => s + countFor(i), 0);
+  if (after) {
+    if (kicker) kicker.textContent = "🏁 That's a wrap";
+    if (live) {
+      live.classList.remove("hidden");
+      live.innerHTML = `<div class="hl-stats"><span>🍺 ${total} sunk</span><span>👑 ${escapeHtml(topName())}</span></div>`;
+    }
+    return;
+  }
+  // During the trip: LIVE hero with the day, now/next, and live stats.
+  if (kicker) kicker.textContent = "🔴 LIVE · " + now.toLocaleDateString([], { weekday: "long" });
+  if (!live) return;
+  live.classList.remove("hidden");
+  const flat = [];
+  ITINERARY.forEach((d) => d.stops.forEach((s) => flat.push(s)));
+  let cur = null, next = null;
+  for (const s of flat) { if (new Date(s.iso) <= now) cur = s; else { next = s; break; } }
+  const nowTxt = cur ? `${cur.emoji} ${escapeHtml(cur.title)}` : "warming up…";
+  const nextTxt = next ? `${next.emoji} ${escapeHtml(next.title)} · ${next.t}` : "last one 🎉";
+  const log = (state.log || []).filter((e) => e && e.ts);
+  const lastHour = log.filter((e) => Date.now() - e.ts <= 3600000).length;
+  live.innerHTML =
+    `<div class="hl-nownext"><span class="hl-seg"><b>NOW</b> ${nowTxt}</span><span class="hl-seg hl-next"><b>NEXT</b> ${nextTxt}</span></div>` +
+    `<div class="hl-stats"><span>🍺 ${total}</span><span>👑 ${escapeHtml(topName())}</span><span>🔥 ${lastHour} last hr</span></div>`;
+}
+function topName() {
+  const rows = state.names.map((n, i) => ({ n, c: countFor(i) })).sort((a, b) => b.c - a.c);
+  return rows[0] && rows[0].c > 0 ? rows[0].n : "—";
+}
+/* Which tab opens by default depends on the trip phase. */
+function defaultTab() {
+  return new Date() > TRIP_END ? "recap" : "itinerary";
+}
+
+/* ==========================================================================
    RENDER: DRINK BAR (picker)
    ========================================================================== */
 function renderDrinkBar() {
@@ -1222,7 +1275,22 @@ function showRoundVerdict(celebrate) {
     const box = el.getBoundingClientRect();
     burstConfetti(box.left + box.width / 2, box.top + box.height / 2, 16);
     pop();
+    buzz([90, 40, 90, 40, 180]);
+    bigBanner(`🍺 <b>${escapeHtml(who)}</b>'s round!`);
   }
+}
+function buzz(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* not supported */ } }
+/* Full-width headline banner (used for the shared whose-round verdict). */
+function bigBanner(html) {
+  const old = document.getElementById("big-banner");
+  if (old) old.remove();
+  const el = document.createElement("div");
+  el.id = "big-banner";
+  el.className = "big-banner";
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 400); }, 4000);
 }
 function renderRound() {
   const r = state.round;
@@ -1397,6 +1465,7 @@ function render() {
 
 function tick() {
   renderCountdown();
+  renderTripMode();
   renderItinerary();
   renderNowNext();
   renderStats();   // pace / last-hour / projection are time-based → keep live
@@ -1463,6 +1532,45 @@ function maybeShowA2HS() {
 }
 setTimeout(maybeShowA2HS, 2500);
 
+/* ---------- PULL-TO-REFRESH — pull down at the top to force a resync. ---------- */
+function doPullRefresh() {
+  flushOutbox();
+  render();
+  tick();
+  if (typeof checkForUpdate === "function") checkForUpdate(true);
+  toast(rtLive() ? "Synced ✓" : (window.THIRSTY_CONFIG && window.THIRSTY_CONFIG.firebase ? "📴 Offline — will sync when connected" : "Saved on this device"));
+}
+(function pullToRefresh() {
+  let startY = 0, pulling = false, ind = null;
+  const THRESH = 70;
+  function indicator() {
+    if (!ind) { ind = document.createElement("div"); ind.className = "ptr"; document.body.appendChild(ind); }
+    return ind;
+  }
+  window.addEventListener("touchstart", (e) => {
+    pulling = window.scrollY <= 0 && e.touches.length === 1;
+    if (pulling) startY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener("touchmove", (e) => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 4) { if (ind) ind.classList.remove("show"); return; }
+    const el = indicator();
+    el.classList.add("show");
+    el.style.transform = `translateX(-50%) translateY(${Math.min(dy, 80)}px)`;
+    el.textContent = dy >= THRESH ? "↑ Release to sync" : "↓ Pull to sync";
+  }, { passive: true });
+  window.addEventListener("touchend", () => {
+    if (!pulling) return;
+    pulling = false;
+    if (!ind) return;
+    const fire = ind.textContent.indexOf("Release") !== -1;
+    ind.classList.remove("show");
+    ind.style.transform = "";
+    if (fire) doPullRefresh();
+  }, { passive: true });
+})();
+
 /* HQ: copy address (for pasting into a taxi app etc.) */
 document.getElementById("hq-copy").addEventListener("click", async (e) => {
   const btn = e.currentTarget;
@@ -1525,7 +1633,7 @@ async function boot() {
 
   renderDrinkBar();
   render();
-  showTab(location.hash.replace("#", "") || "itinerary");
+  showTab(location.hash.replace("#", "") || defaultTab());
   tick();
   setInterval(tick, 1000);
   initSync();
