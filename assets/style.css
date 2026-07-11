@@ -1076,6 +1076,28 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .chart-now { fill: var(--amber-2); font-size: 11px; font-weight: 900; }
 .chart-proj { fill: var(--amber); font-size: 10px; font-weight: 800; opacity: 0.85; }
 .chart-x { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.68rem; font-weight: 700; margin-top: 0.1rem; }
+.chart-title { display: flex; align-items: center; gap: 0.4rem; }
+.chart-info-btn {
+  margin-left: auto;
+  width: 20px; height: 20px; flex: 0 0 auto;
+  border-radius: 50%; border: 1px solid var(--line);
+  background: var(--card-2); color: var(--amber-2);
+  font-size: 0.7rem; font-weight: 900; line-height: 1; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chart-info-btn:active { transform: scale(0.9); }
+.stat-tile.hot { cursor: pointer; }
+.model-info {
+  display: none;
+  margin-top: 0.7rem; padding-top: 0.7rem;
+  border-top: 1px dashed var(--line);
+  color: var(--muted); font-size: 0.82rem; line-height: 1.4;
+}
+.model-info.open { display: block; }
+.model-info .mi-h { font-weight: 900; color: var(--ink); margin-bottom: 0.4rem; }
+.model-info p { margin: 0 0 0.5rem; }
+.model-info ul { margin: 0 0 0.5rem; padding-left: 1.1rem; }
+.model-info li { margin: 0.15rem 0; }
 
 /* ---------- SUNDAY RECAP ---------- */
 .recap-card {

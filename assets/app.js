@@ -983,6 +983,15 @@ function progressBar(done, total, doneWord, todoWord) {
     <div class="mp-text">You've ${doneWord} <b>${done}</b> / ${total}${tail}</div>
   </div>`;
 }
+/* Tap the ⓘ or the "Projected by Sun" tile to explain the projection model. */
+document.addEventListener("click", (e) => {
+  if (!e.target.closest) return;
+  if (!e.target.closest(".chart-info-btn, .stat-tile.hot")) return;
+  modelInfoOpen = !modelInfoOpen;
+  const panel = document.getElementById("model-info");
+  if (panel) panel.classList.toggle("open", modelInfoOpen);
+});
+
 /* One delegated handler for every deck's ‹ › arrows (survives re-renders). */
 document.addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest(".deck-arrow");
@@ -1650,7 +1659,7 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
   const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const endLab = projecting ? new Date(tripEnd).toLocaleDateString([], { weekday: "short" }) + " " + new Date(tripEnd).toLocaleTimeString([], { hour: "2-digit" }) : "now";
   return `<div class="stat-chart">
-    <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}</div>
+    <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}<button class="chart-info-btn" type="button" aria-label="How the projection works">ⓘ</button></div>
     <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time with an itinerary-aware projection to the end of the trip">
       <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
       <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
@@ -1661,6 +1670,26 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
       <text x="${nowX}" y="${(parseFloat(nowY) - 7).toFixed(1)}" text-anchor="middle" class="chart-now">${N}</text>
     </svg>
     <div class="chart-x"><span>${hhmm(xStart)}</span><span>${escapeHtml(endLab)}</span></div>
+    ${modelInfoHtml()}
+  </div>`;
+}
+/* Tap-to-explain panel describing the projection model (persists across the
+   1s re-render via modelInfoOpen). */
+let modelInfoOpen = false;
+function modelInfoHtml() {
+  return `<div class="model-info${modelInfoOpen ? " open" : ""}" id="model-info">
+    <div class="mi-h">📊 How “Projected by Sun” is worked out</div>
+    <p>Every drink is timestamped, so we know your pace so far (drinks per “drinking hour”). Then we look ahead at the itinerary and weight each upcoming half-hour by how boozy it's likely to be:</p>
+    <ul>
+      <li>🍺 Bars &amp; nightlife — full pace</li>
+      <li>🍛 BYOB curry — full</li>
+      <li>🎯 Games (TOCA / F1) — most of it</li>
+      <li>🍔 Food — about half</li>
+      <li>🥏 Activities — a bit</li>
+      <li>🥐 Recovery brunch — barely</li>
+      <li>🛌 3–11am (asleep) — next to nothing</li>
+    </ul>
+    <p>Your pace × those weighted hours to Sunday = the dashed line — steep through the pubs, flat overnight. It's a bit of fun, not a promise. 🍻</p>
   </div>`;
 }
 
