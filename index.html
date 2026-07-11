@@ -43,7 +43,6 @@
     <a href="#bingo" class="tab">Bingo</a>
     <a href="#recap" class="tab">Recap</a>
     <a href="#crew" class="tab">Crew</a>
-    <span class="net-status off" id="net-status" aria-live="polite" title="Connection status"><span class="net-dot"></span>Connecting…</span>
   </nav>
 
   <main>
@@ -60,7 +59,8 @@
           <div class="hq-addr">9 Sloane Street, Birmingham, B1 3DZ</div>
         </div>
         <div class="hq-actions">
-          <a class="hq-btn" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Take me home</a>
+          <a class="hq-btn hq-walk" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Walk home</a>
+          <a class="hq-btn" id="hq-uber" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location" target="_blank" rel="noopener">🚕 Uber home</a>
           <button class="hq-btn ghost" id="hq-copy">📋 Copy address</button>
         </div>
       </div>
@@ -135,6 +135,9 @@
 
   <!-- Live "Now / Next" bar — only shows during the trip -->
   <a class="nownext hidden" id="nownext" href="#itinerary" aria-label="Jump to the itinerary"></a>
+
+  <!-- Discreet, always-visible connection indicator -->
+  <div class="net-status off" id="net-status" aria-live="polite" title="Connection status"><span class="net-dot"></span>Connecting…</div>
 
   <!-- Always-there shortcut to the drink tracker -->
   <a class="fab-beer" href="#tracker" aria-label="Jump to the drink tracker">🍺</a>

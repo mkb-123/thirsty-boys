@@ -155,26 +155,36 @@ h1 span {
   box-shadow: 0 2px 10px rgba(245, 166, 35, 0.35);
 }
 
-/* Always-visible connection pill (lives in the sticky nav, wraps with tabs). */
+/* Discreet, always-visible connection indicator — floats bottom-left, out of
+   the way of the nav and the beer FAB. */
 .net-status {
+  position: fixed;
+  left: calc(0.7rem + env(safe-area-inset-left));
+  bottom: calc(0.7rem + env(safe-area-inset-bottom));
+  z-index: 180;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  padding: 0.4rem 0.7rem;
+  padding: 0.32rem 0.6rem;
   border-radius: 999px;
-  background: var(--card);
+  background: rgba(15, 18, 32, 0.85);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   color: var(--muted);
   white-space: nowrap;
+  opacity: 0.85;
 }
 .net-status .net-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a8f9c; flex: 0 0 auto; }
-.net-status.on { color: var(--green); border-color: rgba(75, 191, 135, 0.45); }
+.net-status.on { color: var(--green); border-color: rgba(75, 191, 135, 0.4); }
 .net-status.on .net-dot { background: var(--green); box-shadow: 0 0 7px var(--green); }
 .net-status.off { color: var(--muted); }
 .net-status.err { color: var(--amber-2); border-color: rgba(244, 169, 51, 0.45); }
 .net-status.err .net-dot { background: var(--amber); }
+/* Lift above the Now/Next bar when it's showing. */
+body.has-nownext .net-status { bottom: calc(4.2rem + env(safe-area-inset-bottom)); }
 
 /* ---------- SECTIONS ---------- */
 .section {

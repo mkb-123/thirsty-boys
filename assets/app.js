@@ -141,7 +141,7 @@ function save() {
    live in synced state, so changing the default alone wouldn't update a room
    that was seeded under the old name. Idempotent — once the new name has
    propagated there's no "Mitul" left to match. Scoped to this trip's room. */
-const LEGACY_RENAMES = { Mitul: "Mr Finance" };
+const LEGACY_RENAMES = { Mitul: "Mr Finance", Director: "The Director" };
 function applyLegacyRenames() {
   if (window.__houseCode !== "brum26") return;
   let changed = false;
@@ -1390,8 +1390,16 @@ function applyTripToDOM() {
     if (addr) addr.textContent = TRIP.hq.address || "";
     const lab = document.querySelector(".hq-label");
     if (lab && TRIP.hq.label) lab.textContent = TRIP.hq.label;
-    const walk = document.querySelector(".hq-btn");
+    const walk = document.querySelector(".hq-walk");
     if (walk && TRIP.hq.mapsQuery) walk.href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(TRIP.hq.mapsQuery) + "&travelmode=walking";
+    // Uber home — prefills the destination reliably with coordinates.
+    const uber = document.getElementById("hq-uber");
+    if (uber && TRIP.hq.lat != null && TRIP.hq.lon != null) {
+      uber.href = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
+        + "&dropoff%5Blatitude%5D=" + TRIP.hq.lat
+        + "&dropoff%5Blongitude%5D=" + TRIP.hq.lon
+        + "&dropoff%5Bnickname%5D=" + encodeURIComponent(TRIP.hq.label || "HQ");
+    }
   }
   // Weather link
   if (TRIP.weather && TRIP.weather.bbc) {
