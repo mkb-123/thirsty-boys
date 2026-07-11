@@ -1496,6 +1496,60 @@ function bingoNotify() {
    Totals come from the tallies (authoritative); pace/biggest-hour/projection
    come from the log. Recomputed on the 1s tick so it's genuinely live.
    ========================================================================== */
+/* ---- Itinerary-aware drink projection ----
+   "current rate × hours left" over-counts sleep and quiet stretches. Instead we
+   weight each future half-hour by how boozy the itinerary is then, calibrate
+   against drinks-per-weighted-hour actually logged so far, and integrate. */
+function stopIntensity(s) {
+  const e = (s && s.emoji) || "";
+  const has = (set) => set.some((x) => e.indexOf(x) >= 0);
+  if (has(["🍛"])) return 1.0;                                          // BYOB curry
+  if (has(["🍺", "🍷", "🍸", "🍹", "🤠", "⚽", "🎤", "🍾"])) return 1.2;   // bar / nightlife
+  if (has(["🎯", "🏎", "🎮"])) return 0.9;                              // games, drink in hand
+  if (has(["🔄"])) return 0.7;                                          // free time
+  if (has(["🌮", "🍔", "🥙", "🍗", "🍕", "🌯"])) return 0.6;            // food
+  if (has(["🥏"])) return 0.4;                                          // sober-ish activity
+  if (has(["🥐", "☕", "🍩"])) return 0.2;                              // recovery brunch
+  if (has(["🚆", "🔑", "🚕", "👋", "🧭"])) return 0.1;                  // logistics
+  return 0.5;
+}
+function flatStopsSorted() {
+  const f = [];
+  ITINERARY.forEach((d) => (d.stops || []).forEach((s) => f.push(s)));
+  return f.sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
+}
+function intensityAt(ts, flat) {
+  const h = new Date(ts).getHours();
+  if (h >= 3 && h < 11) return 0.05;                    // dead hours — asleep
+  let active = null;
+  for (let i = 0; i < flat.length; i++) {
+    if (new Date(flat[i].iso).getTime() <= ts) active = flat[i]; else break;
+  }
+  return active ? stopIntensity(active) : 0;
+}
+function weightedHours(from, to, flat) {
+  if (to <= from) return 0;
+  let w = 0; const step = 1800000;
+  for (let t = from; t < to; t += step) w += intensityAt(t, flat) * (Math.min(step, to - t) / 3600000);
+  return w;
+}
+/* Returns { projected, points } — the model's end total and the bent curve. */
+function projectDrinks(baseCount, firstTs, now) {
+  const tripEnd = TRIP_END.getTime();
+  if (!(now >= TRIP_START.getTime() && now <= tripEnd) || baseCount <= 0 || !firstTs) return { projected: null, points: [] };
+  const flat = flatStopsSorted();
+  const wElapsed = Math.max(0.5, weightedHours(firstTs, now, flat));
+  const perW = baseCount / wElapsed;                    // drinks per weighted-hour
+  const points = [];
+  let cum = baseCount; const step = 1800000;
+  for (let t = now; t < tripEnd; t += step) {
+    const seg = Math.min(step, tripEnd - t) / 3600000;
+    cum += perW * intensityAt(t, flat) * seg;
+    points.push({ t: Math.min(t + step, tripEnd), c: cum });
+  }
+  return { projected: Math.round(cum), points: points };
+}
+
 function renderStats() {
   const wrap = document.getElementById("stats-wrap");
   if (!wrap) return;
@@ -1526,9 +1580,15 @@ function renderStats() {
   let bigHour = "", bigN = 0;
   Object.keys(buckets).forEach((k) => { if (buckets[k] > bigN) { bigN = buckets[k]; bigHour = k; } });
 
-  const inTrip = now >= TRIP_START.getTime() && now <= TRIP_END.getTime();
-  const hoursLeft = inTrip ? Math.max(0, (TRIP_END.getTime() - now) / 3600000) : 0;
-  const projected = inTrip && total > 0 ? total + Math.round(rate * hoursLeft) : null;
+  // Longest gap between drinks (group) — the "dry spell".
+  const ts = log.map((e) => e.ts).sort((a, b) => a - b);
+  let dryMs = 0;
+  for (let i = 1; i < ts.length; i++) dryMs = Math.max(dryMs, ts[i] - ts[i - 1]);
+  const dryLabel = dryMs >= 3600000 ? Math.floor(dryMs / 3600000) + "h " + Math.round((dryMs % 3600000) / 60000) + "m" : Math.round(dryMs / 60000) + "m";
+
+  // Itinerary-aware projection (bent curve + end total).
+  const proj = projectDrinks(log.length, firstTs, now);
+  const projected = proj.projected;
 
   const tiles = [
     `<div class="stat-tile"><div class="st-v">${total}</div><div class="st-k">Total drinks</div></div>`,
@@ -1537,6 +1597,7 @@ function renderStats() {
     `<div class="stat-tile"><div class="st-v">${lastHour}</div><div class="st-k">Last hour</div></div>`,
     `<div class="stat-tile"><div class="st-v">${bigN || 0}</div><div class="st-k">Biggest hour${bigN ? `<br><span class="st-sub">${escapeHtml(bigHour)}</span>` : ""}</div></div>`,
   ];
+  if (ts.length >= 2) tiles.push(`<div class="stat-tile"><div class="st-v">${dryLabel}</div><div class="st-k">Longest dry spell</div></div>`);
   if (projected != null) tiles.push(`<div class="stat-tile hot"><div class="st-v">${projected}</div><div class="st-k">Projected by Sun</div></div>`);
 
   const rows = state.names.map((n, i) => ({ n, i, c: totals[i] }))
@@ -1547,7 +1608,7 @@ function renderStats() {
     }).join("");
 
   const dbreak = DRINKS.filter((d) => (byDrink[d.id] || 0) > 0).map((d) => `<span class="db-chip">${d.emoji} ${byDrink[d.id]}</span>`).join("");
-  const chart = drinkChartSvg(log, now, firstTs, rate, inTrip);
+  const chart = drinkChartSvg(log, now, firstTs, proj.points);
 
   wrap.innerHTML =
     `<div class="stat-tiles">${tiles.join("")}</div>` +
@@ -1559,18 +1620,19 @@ function renderStats() {
 }
 
 /* Cumulative drinks over time as an inline SVG line chart: solid = what's
-   actually been logged, dashed = projection to the end of the trip at the
-   current rate. One series, so no legend; the title names it. */
-function drinkChartSvg(log, now, firstTs, rate, inTrip) {
+   actually been logged; dashed = the itinerary-aware projection (a bent curve —
+   steep through bars, flat overnight). One series, so no legend. */
+function drinkChartSvg(log, now, firstTs, projPoints) {
   const valid = (log || []).filter((e) => e && e.ts).sort((a, b) => a.ts - b.ts);
   if (!valid.length || !firstTs) return "";
   const W = 320, H = 150, padL = 12, padR = 14, padT = 16, padB = 20;
   const N = valid.length;
+  const pts = projPoints || [];
+  const projecting = pts.length > 0;
+  const projEnd = projecting ? Math.round(pts[pts.length - 1].c) : N;
   const tripEnd = TRIP_END.getTime();
-  const projecting = inTrip && rate > 0 && tripEnd > now;
-  const projN = projecting ? Math.round(N + rate * (tripEnd - now) / 3600000) : N;
   const xStart = firstTs, xEnd = projecting ? tripEnd : Math.max(now, valid[N - 1].ts);
-  const ymax = Math.max(4, projN, N);
+  const ymax = Math.max(4, projEnd, N);
   const spanX = Math.max(1, xEnd - xStart);
   const sx = (t) => padL + (Math.min(Math.max(t, xStart), xEnd) - xStart) / spanX * (W - padL - padR);
   const sy = (c) => H - padB - (c / ymax) * (H - padT - padB);
@@ -1578,15 +1640,18 @@ function drinkChartSvg(log, now, firstTs, rate, inTrip) {
   valid.forEach((e, i) => { d += ` L ${sx(e.ts).toFixed(1)} ${sy(i + 1).toFixed(1)}`; });
   const nowX = sx(now).toFixed(1), nowY = sy(N).toFixed(1);
   d += ` L ${nowX} ${nowY}`;
-  const proj = (projecting && projN > N)
-    ? `<path d="M ${nowX} ${nowY} L ${sx(tripEnd).toFixed(1)} ${sy(projN).toFixed(1)}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 4" opacity="0.55" stroke-linecap="round"/>
-       <text x="${(sx(tripEnd) - 2).toFixed(1)}" y="${(sy(projN) - 5).toFixed(1)}" text-anchor="end" class="chart-proj">~${projN}</text>`
-    : "";
+  let proj = "";
+  if (projecting) {
+    let pd = `M ${nowX} ${nowY}`;
+    pts.forEach((p) => { pd += ` L ${sx(p.t).toFixed(1)} ${sy(p.c).toFixed(1)}`; });
+    proj = `<path d="${pd}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 4" opacity="0.55" stroke-linecap="round" stroke-linejoin="round"/>
+       <text x="${(sx(tripEnd) - 2).toFixed(1)}" y="${(sy(projEnd) - 5).toFixed(1)}" text-anchor="end" class="chart-proj">~${projEnd}</text>`;
+  }
   const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const endLab = projecting ? new Date(tripEnd).toLocaleDateString([], { weekday: "short" }) + " " + new Date(tripEnd).toLocaleTimeString([], { hour: "2-digit" }) : "now";
   return `<div class="stat-chart">
     <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}</div>
-    <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time, projected to the end of the trip">
+    <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time with an itinerary-aware projection to the end of the trip">
       <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
       <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
       <text x="${padL}" y="${(sy(ymax) - 4).toFixed(1)}" class="chart-ymax">${ymax}</text>
