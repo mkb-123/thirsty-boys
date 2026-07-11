@@ -970,30 +970,6 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .sr-pace { width: 4.5rem; text-align: right; color: var(--muted); font-weight: 700; font-size: 0.85rem; }
 .stat-empty { color: var(--muted); }
 
-/* ---------- DARES DECK ---------- */
-.dare-deck { display: flex; justify-content: center; }
-.dare-card {
-  width: 100%;
-  max-width: 460px;
-  min-height: 190px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  text-align: center;
-  padding: 1.6rem 1.3rem;
-  border-radius: 20px;
-  background: linear-gradient(160deg, var(--card-2), var(--card));
-  border: 1px solid var(--line);
-}
-.dare-card.placeholder { border-style: dashed; color: var(--muted); }
-.dare-card.dealt { border-color: rgba(244, 169, 51, 0.5); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); animation: dareIn 0.3s ease; }
-@keyframes dareIn { from { transform: scale(0.94) rotate(-1.5deg); opacity: 0; } to { transform: none; opacity: 1; } }
-.dare-emoji { font-size: 2.6rem; line-height: 1; }
-.dare-text { font-size: 1.25rem; font-weight: 800; margin: 0; }
-.dare-draw { display: block; margin: 1.1rem auto 0; font-size: 1rem; padding: 0.7rem 1.4rem; }
-
 /* ---------- SUNDAY RECAP ---------- */
 .recap-card {
   border: 1px solid rgba(244, 169, 51, 0.4);

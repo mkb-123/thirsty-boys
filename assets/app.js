@@ -9,7 +9,7 @@
    to reuse this whole app for another city/date. Loaded at startup.
    ========================================================================== */
 let TRIP = {};
-let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [], DARES = [];
+let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
 let STORE_KEY = "thirstyboys.trip.v1";
 let OUTBOX_KEY = "thirstyboys.trip.outbox";
@@ -42,7 +42,6 @@ function applyTrip(t) {
   BETS = TRIP.bets || [];
   AWARDS = TRIP.awards || [];
   BINGO = TRIP.bingo || [];
-  DARES = TRIP.dares || [];
   const d = TRIP.dates || {};
   TRIP_START = new Date((d.start || "1970-01-01T00:00") + ":00");
   TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
@@ -1302,35 +1301,6 @@ function renderStats() {
 }
 
 /* ==========================================================================
-   DARES DECK — draw a random challenge card. Per-device (localStorage), no sync.
-   ========================================================================== */
-const DARE_KEY = "thirstyboys.dare";
-function currentDareIdx() {
-  try { const v = localStorage.getItem(DARE_KEY); return v == null ? -1 : Number(v); } catch (e) { return -1; }
-}
-function renderDares() {
-  const wrap = document.getElementById("dare-deck");
-  if (!wrap) return;
-  if (!DARES.length) { wrap.innerHTML = `<div class="dare-card placeholder"><p>No dares loaded.</p></div>`; return; }
-  const idx = currentDareIdx();
-  if (idx < 0 || idx >= DARES.length) {
-    wrap.innerHTML = `<div class="dare-card placeholder"><div class="dare-emoji">🎴</div><p>Tap “Draw a dare” to flip the top card.</p></div>`;
-    return;
-  }
-  const d = DARES[idx];
-  wrap.innerHTML = `<div class="dare-card dealt"><div class="dare-emoji">${d.emoji || "🎴"}</div><p class="dare-text">${escapeHtml(d.text)}</p></div>`;
-}
-function drawDare() {
-  if (!DARES.length) return;
-  const prev = currentDareIdx();
-  let idx = Math.floor(Math.random() * DARES.length);
-  if (DARES.length > 1 && idx === prev) idx = (idx + 1) % DARES.length; // no instant repeat
-  try { localStorage.setItem(DARE_KEY, String(idx)); } catch (e) { /* ignore */ }
-  renderDares();
-  pop();
-}
-
-/* ==========================================================================
    WEATHER — live 3-day (Fri/Sat/Sun) summary from Open-Meteo (no key, CORS ok)
    ========================================================================== */
 function wxEmoji(c) {
@@ -1388,7 +1358,6 @@ function render() {
   renderBets();
   renderAwards();
   renderBingo();
-  renderDares();
   renderStats();
   renderRecap();
   renderCrew();
@@ -1402,7 +1371,7 @@ function tick() {
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
-const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "dares", "bingo", "stats", "recap", "crew"];
+const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "stats", "recap", "crew"];
 function showTab(id) {
   if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
@@ -1441,7 +1410,6 @@ document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
-document.getElementById("dare-draw").addEventListener("click", drawDare);
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
