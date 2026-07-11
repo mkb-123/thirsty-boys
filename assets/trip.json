@@ -307,6 +307,78 @@
       "emoji": "🥏",
       "type": "text",
       "q": "Group disc golf total — call the number"
+    },
+    {
+      "id": "round1",
+      "emoji": "💸",
+      "type": "person",
+      "q": "Who buys the first round"
+    },
+    {
+      "id": "laststand",
+      "emoji": "🏆",
+      "type": "person",
+      "q": "Last man standing Saturday night"
+    },
+    {
+      "id": "sick",
+      "emoji": "🤮",
+      "type": "person",
+      "q": "First (if any) to be sick"
+    },
+    {
+      "id": "totalpints",
+      "emoji": "🍺",
+      "type": "text",
+      "q": "Total pints across the group by Sunday"
+    },
+    {
+      "id": "kebab",
+      "emoji": "🥙",
+      "type": "person",
+      "q": "First to order food after midnight"
+    },
+    {
+      "id": "snore",
+      "emoji": "😮‍💨",
+      "type": "person",
+      "q": "Loudest snorer at HQ"
+    },
+    {
+      "id": "battery",
+      "emoji": "🔋",
+      "type": "person",
+      "q": "First phone to die"
+    },
+    {
+      "id": "sing",
+      "emoji": "🎤",
+      "type": "person",
+      "q": "First to grab the mic at Low Places"
+    },
+    {
+      "id": "argument",
+      "emoji": "🗣️",
+      "type": "person",
+      "q": "Starts the first daft argument"
+    },
+    {
+      "id": "never",
+      "emoji": "🙅",
+      "type": "person",
+      "q": "First to say 'never drinking again'"
+    },
+    {
+      "id": "keys",
+      "emoji": "🔑",
+      "type": "person",
+      "q": "First to lose keys / wallet / phone"
+    },
+    {
+      "id": "ubers",
+      "emoji": "🚕",
+      "type": "text",
+      "q": "Total Ubers taken all weekend"
     }
   ],
   "awards": [
