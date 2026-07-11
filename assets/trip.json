@@ -25,9 +25,9 @@
   },
   "crew": [
     {
-      "name": "Mitul",
-      "emoji": "🧑‍✈️",
-      "role": "The Ringleader"
+      "name": "Mr Finance",
+      "emoji": "💰",
+      "role": "The Money"
     },
     {
       "name": "Big Ben",
@@ -91,18 +91,11 @@
           "lon": -1.896291
         },
         {
-          "t": "19:15",
-          "iso": "2026-07-17T19:15",
-          "emoji": "🚕",
-          "title": "Uber to Balti Triangle",
-          "desc": "Leave in good time — it's a 20-25 min drive PLUS the off-licence stop for cold beers (BYOB!)."
-        },
-        {
           "t": "19:45",
           "iso": "2026-07-17T19:45",
           "emoji": "🍛",
           "title": "Royal Watan Kashmiri",
-          "desc": "BYOB balti feast.",
+          "desc": "BYOB balti feast in the Balti Triangle — 20-25 min Uber from HQ, grab cold beers en route.",
           "tag": "booked",
           "map": "Royal Watan Kashmiri Birmingham",
           "menu": "https://www.royal-watan.co.uk/",
@@ -114,8 +107,10 @@
           "iso": "2026-07-17T21:30",
           "emoji": "🍷",
           "title": "Arch 13",
-          "desc": "Another wine bar. Naturally.",
-          "map": "Arch 13 Birmingham"
+          "desc": "Another wine bar. Naturally. (Arch 13 at Connolly's, 220 Livery Street.)",
+          "map": "Arch 13 at Connolly's 220 Livery Street Birmingham B3 1EU",
+          "lat": 52.484581,
+          "lon": -1.901566
         }
       ]
     },

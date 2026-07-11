@@ -772,6 +772,31 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .deck-arrow:hover, .deck-arrow:active { background: var(--card-2); border-color: var(--amber); }
 .deck-count { font-weight: 800; color: var(--muted); min-width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
 
+/* "You've done N of M" progress shown above the deck */
+.mine-progress { margin: 0 0 0.9rem; }
+.mp-bar { height: 8px; border-radius: 999px; background: var(--card-2); overflow: hidden; border: 1px solid var(--line); }
+.mp-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber-2), var(--amber)); transition: width 0.35s ease; }
+.mp-text { margin-top: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.mp-text b { color: var(--amber-2); }
+
+/* Per-card "done / to-do" state markers */
+.bet-card, .award-card { position: relative; }
+.mine-mark {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+.mine-mark.done { background: rgba(75, 191, 135, 0.18); color: var(--green); }
+.mine-mark.todo { background: rgba(244, 169, 51, 0.18); color: var(--amber-2); }
+.mine-mark.revealed { background: var(--card-2); color: var(--muted); }
+.bet-card.mine-todo, .award-card.mine-todo { border-left: 3px solid var(--amber); }
+.bet-card.mine-done, .award-card.mine-done { border-left: 3px solid var(--green); }
+
 /* ---------- BETS ---------- */
 .bets { display: block; }
 .bet-card {

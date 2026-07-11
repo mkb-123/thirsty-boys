@@ -132,9 +132,23 @@ function load() {
   return base;
 }
 function save() {
-  // Local cache only. Remote writes are granular (see rtSet/rtTxn) so two
+  // Local cache only. Remote writes are granular (see rtSet/rtAdd) so two
   // phones acting at once never clobber each other's whole state.
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+}
+
+/* One-off rename that also reaches the already-seeded shared room: crew names
+   live in synced state, so changing the default alone wouldn't update a room
+   that was seeded under the old name. Idempotent — once the new name has
+   propagated there's no "Mitul" left to match. Scoped to this trip's room. */
+const LEGACY_RENAMES = { Mitul: "Mr Finance" };
+function applyLegacyRenames() {
+  if (window.__houseCode !== "brum26") return;
+  let changed = false;
+  state.names.forEach((n, i) => {
+    if (LEGACY_RENAMES[n]) { state.names[i] = LEGACY_RENAMES[n]; rtSet("names/" + i, state.names[i]); changed = true; }
+  });
+  if (changed) save();
 }
 
 /* ==========================================================================
@@ -313,6 +327,7 @@ async function initSync() {
       if (state.log && !Array.isArray(state.log)) state.log = Object.keys(state.log).map((k) => state.log[k]);
       if (!Array.isArray(state.quotes)) state.quotes = state.quotes ? Object.keys(state.quotes).map((k) => state.quotes[k]) : [];
       applyingRemote = false;
+      applyLegacyRenames();     // rebrand any old default name in the shared room
       save();     // remote is now the local truth too (outbox still holds any un-synced edits)
       // Any edits made while offline are in the outbox — push them now so this
       // snapshot's overwrite doesn't lose them.
@@ -771,6 +786,19 @@ function wireDeck(id, restoreScroll) {
   deck.addEventListener("scroll", () => window.requestAnimationFrame(update), { passive: true });
   update();
 }
+/* "You've done N of M" bar shown above a deck so it's clear, at a glance,
+   what you've completed and what's still outstanding. */
+function progressBar(done, total, doneWord, todoWord) {
+  const todo = total - done;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const tail = todo > 0
+    ? ` · <b>${todo}</b> still to ${todoWord}`
+    : ` · all done! 🎉`;
+  return `<div class="mine-progress">
+    <div class="mp-bar"><span style="width:${pct}%"></span></div>
+    <div class="mp-text">You've ${doneWord} <b>${done}</b> / ${total}${tail}</div>
+  </div>`;
+}
 /* One delegated handler for every deck's ‹ › arrows (survives re-renders). */
 document.addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest(".deck-arrow");
@@ -823,10 +851,19 @@ function renderBets() {
       `</div>`
     : "";
 
+  // Your own progress: how many you've called vs still need to call.
+  const myProg = claimed ? progressBar(
+    BETS.filter((bt) => { const bb = getBet(bt.id); return bb.calls[me] != null && bb.calls[me] !== ""; }).length,
+    BETS.length, "called", "call") : "";
+
   const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = scoreboard + deckWrap(BETS.map((bet) => {
+  wrap.innerHTML = scoreboard + myProg + deckWrap(BETS.map((bet) => {
     const b = getBet(bet.id);
     const callCount = Object.keys(b.calls).length;
+    const mineIn = claimed && b.calls[me] != null && b.calls[me] !== "";
+    const cardCls = b.revealed ? "is-revealed" : (!claimed ? "" : (mineIn ? "mine-done" : "mine-todo"));
+    const mark = b.revealed ? `<span class="mine-mark revealed">👁 Revealed</span>`
+      : (!claimed ? "" : (mineIn ? `<span class="mine-mark done">✅ Called</span>` : `<span class="mine-mark todo">◻️ Your call needed</span>`));
     let body;
 
     if (b.revealed) {
@@ -869,7 +906,7 @@ function renderBets() {
         <button class="btn-ghost bet-reveal" data-bet="${bet.id}">👁 Reveal calls</button>`;
     }
 
-    return `<div class="bet-card"><p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
+    return `<div class="bet-card ${cardCls}">${mark}<p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
   }).join(""), "bets-deck");
 
   wrap.querySelectorAll("[data-bet-call]").forEach((el) =>
@@ -925,12 +962,20 @@ function renderAwards() {
   const claimed = hasClaimed();
   const total = state.names.length;
 
+  const myProg = claimed ? progressBar(
+    AWARDS.filter((aw) => getAward(aw.id).votes[me] != null).length,
+    AWARDS.length, "voted", "vote") : "";
+
   const prevScroll = (document.getElementById("awards-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = deckWrap(AWARDS.map((a) => {
+  wrap.innerHTML = myProg + deckWrap(AWARDS.map((a) => {
     const data = getAward(a.id);
     const voteCount = Object.keys(data.votes).length;
     const tally = {};
     Object.values(data.votes).forEach((n) => { tally[n] = (tally[n] || 0) + 1; });
+    const mineIn = claimed && data.votes[me] != null;
+    const cardCls = data.revealed ? "is-revealed" : (!claimed ? "" : (mineIn ? "mine-done" : "mine-todo"));
+    const mark = data.revealed ? `<span class="mine-mark revealed">👁 Revealed</span>`
+      : (!claimed ? "" : (mineIn ? `<span class="mine-mark done">✅ Voted</span>` : `<span class="mine-mark todo">◻️ Your vote needed</span>`));
 
     let body;
     if (data.revealed) {
@@ -963,7 +1008,7 @@ function renderAwards() {
         <p class="award-status">🗳️ ${voteCount}/${total} voted${mine != null ? ` · your pick is in 🔒` : ""}</p>
         <button class="btn-ghost award-reveal" data-award="${a.id}">👁 Reveal results</button>`;
     }
-    return `<div class="award-card"><p class="award-title">${a.title}</p>${body}</div>`;
+    return `<div class="award-card ${cardCls}">${mark}<p class="award-title">${a.title}</p>${body}</div>`;
   }).join(""), "awards-deck");
 
   wrap.querySelectorAll(".award-select").forEach((sel) =>
@@ -1359,6 +1404,7 @@ async function boot() {
   applyTrip(await loadTrip());
   state = load();
   outbox = loadOutbox();     // resume any edits parked while offline last time
+  applyLegacyRenames();      // rebrand old default names before first paint
   me = loadMe();
   selectedDrink = loadSelectedDrink();
   applyTripToDOM();
