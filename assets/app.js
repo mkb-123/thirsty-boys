@@ -738,24 +738,25 @@ function renderLeaderboard() {
    ========================================================================== */
 function renderTracker() {
   const grid = document.getElementById("tracker-grid");
-  const sel = drinkById(selectedDrink);
   grid.innerHTML = state.names.map((n, i) => {
     const tally = state.tallies[i] || {};
     const breakdown = DRINKS.filter((d) => tally[d.id])
       .map((d) => `${d.emoji}${tally[d.id]}`).join("  ") || "—";
     const isYou = i === me;
+    // Tap the exact drink for THIS person — logs their drink, not yours.
+    const drinkBtns = DRINKS.map((d) => `<button class="person-drink" data-i="${i}" data-drink="${d.id}" title="Add ${d.label}" aria-label="Add ${d.label} for ${escapeAttr(n)}">${d.emoji}</button>`).join("");
     return `
       <div class="person ${isYou ? "you" : ""}">
         <div class="person-name-static">${escapeHtml(n)}${isYou ? `<span class="you-tag">You</span>` : ""}</div>
         <div class="person-count">${countFor(i)}</div>
         <div class="person-count-lab">${countFor(i) === 1 ? "drink" : "drinks"}</div>
-        <button class="person-add" data-i="${i}">+ ${sel.emoji} ${sel.label}</button>
+        <div class="person-drinks">${drinkBtns}</div>
         <div class="person-mini">${breakdown}</div>
       </div>`;
   }).join("");
 
-  grid.querySelectorAll(".person-add").forEach((btn) =>
-    btn.addEventListener("click", () => addDrink(Number(btn.dataset.i)))
+  grid.querySelectorAll(".person-drink").forEach((btn) =>
+    btn.addEventListener("click", () => addDrinkFor(Number(btn.dataset.i), btn.dataset.drink))
   );
 }
 
@@ -806,8 +807,9 @@ function renderCrew() {
 /* ==========================================================================
    ACTIONS
    ========================================================================== */
-function addDrink(i) {
-  const id = selectedDrink;
+function addDrink(i) { addDrinkFor(i, selectedDrink); }   // "quick add for me" path
+function addDrinkFor(i, id) {
+  if (!id) id = selectedDrink;
   const prevLeader = currentLeader();
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
@@ -820,7 +822,7 @@ function addDrink(i) {
   rtSet("log", state.log);
   render();
   // Celebrate: small burst from the button; big fanfare when the crown changes.
-  const btn = document.querySelector('.person-add[data-i="' + i + '"]');
+  const btn = document.querySelector('.person-drink[data-i="' + i + '"][data-drink="' + id + '"]') || document.querySelector('.person-add[data-i="' + i + '"]');
   if (btn) { const r = btn.getBoundingClientRect(); burstConfetti(r.left + r.width / 2, r.top, 12); }
   const newLeader = currentLeader();
   if (newLeader != null && newLeader !== prevLeader) {
@@ -995,6 +997,13 @@ document.addEventListener("click", (e) => {
   modelInfoOpen = !modelInfoOpen;
   const panel = document.getElementById("model-info");
   if (panel) panel.classList.toggle("open", modelInfoOpen);
+});
+/* Toggle the chart between group total and a line per person. */
+document.addEventListener("click", (e) => {
+  if (!e.target.closest || !e.target.closest(".chart-mode-btn")) return;
+  chartMode = chartMode === "group" ? "person" : "group";
+  try { localStorage.setItem("thirstyboys.chartmode", chartMode); } catch (err) { /* ignore */ }
+  if (typeof renderStats === "function") renderStats();
 });
 
 /* One delegated handler for every deck's ‹ › arrows (survives re-renders). */
@@ -1547,15 +1556,24 @@ function weightedHours(from, to, flat) {
   for (let t = from; t < to; t += step) w += intensityAt(t, flat) * (Math.min(step, to - t) / 3600000);
   return w;
 }
-/* Returns { projected, points } — the model's end total and the bent curve. */
-function projectDrinks(baseCount, firstTs, now) {
+/* Returns { projected, points } — the model's end total and the bent curve.
+   Rate blends your whole-trip average with your RECENT pace (last 3h) so it
+   tracks the session you're actually in, not just the long-run average. */
+function projectDrinks(logTs, firstTs, now) {
   const tripEnd = TRIP_END.getTime();
-  if (!(now >= TRIP_START.getTime() && now <= tripEnd) || baseCount <= 0 || !firstTs) return { projected: null, points: [] };
+  const N = (logTs || []).length;
+  if (!(now >= TRIP_START.getTime() && now <= tripEnd) || N <= 0 || !firstTs) return { projected: null, points: [] };
   const flat = flatStopsSorted();
   const wElapsed = Math.max(0.5, weightedHours(firstTs, now, flat));
-  const perW = baseCount / wElapsed;                    // drinks per weighted-hour
+  const overallPerW = N / wElapsed;
+  // Recent pace over the last 3h of (weighted) drinking time.
+  const recentFrom = Math.max(firstTs, now - 3 * 3600000);
+  const recentDrinks = logTs.filter((t) => t >= recentFrom).length;
+  const recentW = weightedHours(recentFrom, now, flat);
+  const recentPerW = recentW > 0.3 ? recentDrinks / recentW : null;
+  const perW = (recentPerW != null && recentDrinks >= 2) ? (0.6 * recentPerW + 0.4 * overallPerW) : overallPerW;
   const points = [];
-  let cum = baseCount; const step = 1800000;
+  let cum = N; const step = 1800000;
   for (let t = now; t < tripEnd; t += step) {
     const seg = Math.min(step, tripEnd - t) / 3600000;
     cum += perW * intensityAt(t, flat) * seg;
@@ -1600,8 +1618,8 @@ function renderStats() {
   for (let i = 1; i < ts.length; i++) dryMs = Math.max(dryMs, ts[i] - ts[i - 1]);
   const dryLabel = dryMs >= 3600000 ? Math.floor(dryMs / 3600000) + "h " + Math.round((dryMs % 3600000) / 60000) + "m" : Math.round(dryMs / 60000) + "m";
 
-  // Itinerary-aware projection (bent curve + end total).
-  const proj = projectDrinks(log.length, firstTs, now);
+  // Itinerary-aware projection (bent curve + end total), recency-weighted.
+  const proj = projectDrinks(ts, firstTs, now);
   const projected = proj.projected;
 
   const tiles = [
@@ -1633,14 +1651,52 @@ function renderStats() {
       : `<p class="stat-empty">No drinks logged yet — the stats wake up on the first round. 🍺</p>`);
 }
 
-/* Cumulative drinks over time as an inline SVG line chart: solid = what's
-   actually been logged; dashed = the itinerary-aware projection (a bent curve —
-   steep through bars, flat overnight). One series, so no legend. */
+/* Drinks over time as an inline SVG line chart. Two modes (toggle in the title):
+   GROUP — one amber cumulative line + the itinerary-aware projection (dashed);
+   PERSON — a cumulative line per lad (validated colour set), with a legend so
+   identity is never colour-alone. */
+const CREW_COLORS = ["#3987e5", "#199e70", "#c98500", "#008300", "#9085e9", "#e66767"];
+let chartMode = (function () { try { return localStorage.getItem("thirstyboys.chartmode") === "person" ? "person" : "group"; } catch (e) { return "group"; } })();
 function drinkChartSvg(log, now, firstTs, projPoints) {
   const valid = (log || []).filter((e) => e && e.ts).sort((a, b) => a.ts - b.ts);
   if (!valid.length || !firstTs) return "";
   const W = 320, H = 150, padL = 12, padR = 14, padT = 16, padB = 20;
   const N = valid.length;
+  const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const modeBtn = `<button class="chart-mode-btn" type="button">${chartMode === "group" ? "Per person" : "Group"}</button>`;
+
+  if (chartMode === "person") {
+    const xEnd = Math.max(now, valid[N - 1].ts);
+    const spanX = Math.max(1, xEnd - firstTs);
+    const sx = (t) => padL + (Math.min(Math.max(t, firstTs), xEnd) - firstTs) / spanX * (W - padL - padR);
+    const perTotals = state.names.map((_, i) => valid.filter((e) => e.who === i).length);
+    const ymax = Math.max(4, ...perTotals);
+    const sy = (c) => H - padB - (c / ymax) * (H - padT - padB);
+    let paths = "", legend = "";
+    state.names.forEach((nm, i) => {
+      const mine = valid.filter((e) => e.who === i);
+      if (!mine.length) return;
+      const col = CREW_COLORS[i % CREW_COLORS.length];
+      let dd = `M ${sx(firstTs).toFixed(1)} ${sy(0).toFixed(1)}`;
+      mine.forEach((e, k) => { dd += ` L ${sx(e.ts).toFixed(1)} ${sy(k + 1).toFixed(1)}`; });
+      dd += ` L ${sx(xEnd).toFixed(1)} ${sy(mine.length).toFixed(1)}`;
+      paths += `<path d="${dd}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      legend += `<span class="lg-item"><span class="lg-dot" style="background:${col}"></span>${escapeHtml(nm)} ${mine.length}</span>`;
+    });
+    return `<div class="stat-chart">
+      <div class="chart-title">Drinks over time · per person<span class="chart-actions">${modeBtn}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time, one line per person">
+        <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
+        <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
+        <text x="${padL}" y="${(sy(ymax) - 4).toFixed(1)}" class="chart-ymax">${ymax}</text>
+        ${paths}
+      </svg>
+      <div class="chart-x"><span>${hhmm(firstTs)}</span><span>now</span></div>
+      <div class="chart-legend">${legend}</div>
+    </div>`;
+  }
+
+  // GROUP mode (with projection)
   const pts = projPoints || [];
   const projecting = pts.length > 0;
   const projEnd = projecting ? Math.round(pts[pts.length - 1].c) : N;
@@ -1661,10 +1717,9 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
     proj = `<path d="${pd}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 4" opacity="0.55" stroke-linecap="round" stroke-linejoin="round"/>
        <text x="${(sx(tripEnd) - 2).toFixed(1)}" y="${(sy(projEnd) - 5).toFixed(1)}" text-anchor="end" class="chart-proj">~${projEnd}</text>`;
   }
-  const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const endLab = projecting ? new Date(tripEnd).toLocaleDateString([], { weekday: "short" }) + " " + new Date(tripEnd).toLocaleTimeString([], { hour: "2-digit" }) : "now";
   return `<div class="stat-chart">
-    <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}<button class="chart-info-btn" type="button" aria-label="How the projection works">ⓘ</button></div>
+    <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}<span class="chart-actions">${modeBtn}<button class="chart-info-btn" type="button" aria-label="How the projection works">ⓘ</button></span></div>
     <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time with an itinerary-aware projection to the end of the trip">
       <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
       <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
@@ -1793,7 +1848,10 @@ function renderNowNext() {
   }
   const nowTxt = cur ? `${cur.emoji} ${escapeHtml(cur.title)}` : "—";
   const nextTxt = next ? `${next.emoji} ${escapeHtml(next.title)} · ${next.t}` : "that's the lot 🎉";
+  // During the trip the connection dot folds INTO this bar (tap for who's here),
+  // so the separate floating pill is hidden and the bottom isn't crowded.
   bar.innerHTML =
+    `<button class="nn-net ${lastSyncCls || "off"}" type="button" aria-label="Who's connected"><span class="net-dot"></span></button>` +
     `<span class="nn-seg"><span class="nn-lab">NOW</span>${nowTxt}</span>` +
     `<span class="nn-seg nn-next"><span class="nn-lab">NEXT</span>${nextTxt}</span>`;
   bar.classList.remove("hidden");
@@ -1806,6 +1864,12 @@ document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("admin-btn").addEventListener("click", toggleAdmin);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
 document.getElementById("net-status").addEventListener("click", (e) => { e.stopPropagation(); toggleNetPop(); });
+/* The connection dot folded into the Now/Next bar opens the same popover. */
+document.addEventListener("click", (e) => {
+  if (!e.target.closest || !e.target.closest(".nn-net")) return;
+  e.preventDefault(); e.stopPropagation();
+  toggleNetPop();
+});
 document.getElementById("modal-skip").addEventListener("click", closeWhoamiModal);
 
 /* Add-to-Home-Screen hint — shown once, only when not already installed. */
