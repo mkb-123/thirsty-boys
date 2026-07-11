@@ -1066,6 +1066,17 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .sr-pace { width: 4.5rem; text-align: right; color: var(--muted); font-weight: 700; font-size: 0.85rem; }
 .stat-empty { color: var(--muted); }
 
+/* Projection line chart */
+.stat-chart { margin-top: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0.8rem 0.9rem 0.5rem; }
+.chart-title { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.4rem; }
+.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-axis { stroke: var(--line); stroke-width: 1; }
+.chart-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.6; }
+.chart-ymax { fill: var(--muted); font-size: 9px; font-weight: 700; }
+.chart-now { fill: var(--amber-2); font-size: 11px; font-weight: 900; }
+.chart-proj { fill: var(--amber); font-size: 10px; font-weight: 800; opacity: 0.85; }
+.chart-x { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.68rem; font-weight: 700; margin-top: 0.1rem; }
+
 /* ---------- SUNDAY RECAP ---------- */
 .recap-card {
   border: 1px solid rgba(244, 169, 51, 0.4);

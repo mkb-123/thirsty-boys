@@ -1511,7 +1511,9 @@ function renderStats() {
   const log = (state.log || []).filter((e) => e && e.ts);
   const firstTs = log.length ? Math.min.apply(null, log.map((e) => e.ts)) : null;
   const lastHour = log.filter((e) => now - e.ts <= 3600000).length;
-  const spanH = firstTs ? Math.max(0.25, (now - firstTs) / 3600000) : 0;
+  // Floor the window at 1h so the first few drinks don't extrapolate to a silly
+  // rate/projection; it stabilises naturally as the weekend (incl. sleep) goes on.
+  const spanH = firstTs ? Math.max(1, (now - firstTs) / 3600000) : 0;
   const rate = spanH ? log.length / spanH : 0;
 
   // Biggest single clock-hour.
@@ -1531,6 +1533,7 @@ function renderStats() {
   const tiles = [
     `<div class="stat-tile"><div class="st-v">${total}</div><div class="st-k">Total drinks</div></div>`,
     `<div class="stat-tile"><div class="st-v">${state.names.length ? (total / state.names.length).toFixed(1) : "0"}</div><div class="st-k">Per head</div></div>`,
+    `<div class="stat-tile"><div class="st-v">${rate.toFixed(1)}</div><div class="st-k">Drinks / hour</div></div>`,
     `<div class="stat-tile"><div class="st-v">${lastHour}</div><div class="st-k">Last hour</div></div>`,
     `<div class="stat-tile"><div class="st-v">${bigN || 0}</div><div class="st-k">Biggest hour${bigN ? `<br><span class="st-sub">${escapeHtml(bigHour)}</span>` : ""}</div></div>`,
   ];
@@ -1544,13 +1547,56 @@ function renderStats() {
     }).join("");
 
   const dbreak = DRINKS.filter((d) => (byDrink[d.id] || 0) > 0).map((d) => `<span class="db-chip">${d.emoji} ${byDrink[d.id]}</span>`).join("");
+  const chart = drinkChartSvg(log, now, firstTs, rate, inTrip);
 
   wrap.innerHTML =
     `<div class="stat-tiles">${tiles.join("")}</div>` +
     (total > 0
-      ? `<div class="stat-break">${dbreak}</div>
+      ? chart +
+        `<div class="stat-break">${dbreak}</div>
          <div class="stat-rows"><div class="stat-rows-head">Pace per man</div>${rows}</div>`
       : `<p class="stat-empty">No drinks logged yet — the stats wake up on the first round. 🍺</p>`);
+}
+
+/* Cumulative drinks over time as an inline SVG line chart: solid = what's
+   actually been logged, dashed = projection to the end of the trip at the
+   current rate. One series, so no legend; the title names it. */
+function drinkChartSvg(log, now, firstTs, rate, inTrip) {
+  const valid = (log || []).filter((e) => e && e.ts).sort((a, b) => a.ts - b.ts);
+  if (!valid.length || !firstTs) return "";
+  const W = 320, H = 150, padL = 12, padR = 14, padT = 16, padB = 20;
+  const N = valid.length;
+  const tripEnd = TRIP_END.getTime();
+  const projecting = inTrip && rate > 0 && tripEnd > now;
+  const projN = projecting ? Math.round(N + rate * (tripEnd - now) / 3600000) : N;
+  const xStart = firstTs, xEnd = projecting ? tripEnd : Math.max(now, valid[N - 1].ts);
+  const ymax = Math.max(4, projN, N);
+  const spanX = Math.max(1, xEnd - xStart);
+  const sx = (t) => padL + (Math.min(Math.max(t, xStart), xEnd) - xStart) / spanX * (W - padL - padR);
+  const sy = (c) => H - padB - (c / ymax) * (H - padT - padB);
+  let d = `M ${sx(xStart).toFixed(1)} ${sy(0).toFixed(1)}`;
+  valid.forEach((e, i) => { d += ` L ${sx(e.ts).toFixed(1)} ${sy(i + 1).toFixed(1)}`; });
+  const nowX = sx(now).toFixed(1), nowY = sy(N).toFixed(1);
+  d += ` L ${nowX} ${nowY}`;
+  const proj = (projecting && projN > N)
+    ? `<path d="M ${nowX} ${nowY} L ${sx(tripEnd).toFixed(1)} ${sy(projN).toFixed(1)}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 4" opacity="0.55" stroke-linecap="round"/>
+       <text x="${(sx(tripEnd) - 2).toFixed(1)}" y="${(sy(projN) - 5).toFixed(1)}" text-anchor="end" class="chart-proj">~${projN}</text>`
+    : "";
+  const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const endLab = projecting ? new Date(tripEnd).toLocaleDateString([], { weekday: "short" }) + " " + new Date(tripEnd).toLocaleTimeString([], { hour: "2-digit" }) : "now";
+  return `<div class="stat-chart">
+    <div class="chart-title">Drinks over time${projecting ? " · projected to Sun" : ""}</div>
+    <svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Cumulative drinks over time, projected to the end of the trip">
+      <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
+      <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
+      <text x="${padL}" y="${(sy(ymax) - 4).toFixed(1)}" class="chart-ymax">${ymax}</text>
+      <path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${proj}
+      <circle cx="${nowX}" cy="${nowY}" r="3.5" fill="var(--amber-2)"/>
+      <text x="${nowX}" y="${(parseFloat(nowY) - 7).toFixed(1)}" text-anchor="middle" class="chart-now">${N}</text>
+    </svg>
+    <div class="chart-x"><span>${hhmm(xStart)}</span><span>${escapeHtml(endLab)}</span></div>
+  </div>`;
 }
 
 /* ==========================================================================
