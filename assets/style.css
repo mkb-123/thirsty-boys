@@ -677,15 +677,24 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .admin-step:not(:disabled):active { transform: scale(0.9); }
 
 .log-title { text-align: center; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; margin: 1.5rem 0 0.6rem; }
-.log { list-style: none; padding: 0; margin: 0 auto; max-width: 480px; }
+.log {
+  list-style: none; padding: 0; margin: 0 auto; max-width: 480px;
+  max-height: 340px; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+}
 .log li {
   display: flex;
   justify-content: space-between;
+  gap: 0.6rem;
   padding: 0.5rem 0.85rem;
   border-bottom: 1px solid var(--line);
   font-size: 0.88rem;
 }
-.log li span:last-child { color: var(--muted); }
+.log li:last-child { border-bottom: none; }
+.log-who { min-width: 0; }
+.log-when { color: var(--muted); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+#log-count { color: var(--amber-2); }
 .log-empty { text-align: center; color: var(--muted); font-size: 0.85rem; }
 
 /* ---------- CREW ---------- */

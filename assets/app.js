@@ -764,14 +764,19 @@ function renderTracker() {
    ========================================================================== */
 function renderLog() {
   const ul = document.getElementById("log");
+  if (!ul) return;
+  const countEl = document.getElementById("log-count");
+  if (countEl) countEl.textContent = state.log.length ? " (" + state.log.length + ")" : "";
   if (!state.log.length) {
-    ul.innerHTML = `<li class="log-empty">No rounds yet. Get thirsty.</li>`;
+    ul.innerHTML = `<li class="log-empty">No drinks logged yet. Get thirsty.</li>`;
     return;
   }
-  ul.innerHTML = state.log.slice(-8).reverse().map((e) => {
+  // Full audit log — every drink, newest first, with who / what / when.
+  ul.innerHTML = state.log.slice().reverse().map((e) => {
     const d = drinkById(e.drink);
-    const time = new Date(e.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    return `<li><span>${d ? d.emoji : "🍺"} ${escapeHtml(state.names[e.who] || "?")} — ${d ? d.label : escapeHtml(String(e.drink))}</span><span>${escapeHtml(time)}</span></li>`;
+    const dt = new Date(e.ts);
+    const when = dt.toLocaleDateString([], { weekday: "short" }) + " " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return `<li><span class="log-who">${d ? d.emoji : "🍺"} ${escapeHtml(state.names[e.who] || "?")} — ${d ? d.label : escapeHtml(String(e.drink))}</span><span class="log-when">${escapeHtml(when)}</span></li>`;
   }).join("");
 }
 
