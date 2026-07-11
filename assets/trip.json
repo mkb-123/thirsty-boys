@@ -12,7 +12,9 @@
   "hq": {
     "label": "HQ · Airbnb",
     "address": "9 Sloane Street, Birmingham, B1 3DZ",
-    "mapsQuery": "9 Sloane Street Birmingham B1 3DZ"
+    "mapsQuery": "9 Sloane Street Birmingham B1 3DZ",
+    "lat": 52.483172,
+    "lon": -1.912536
   },
   "weather": {
     "lat": 52.4862,
@@ -63,7 +65,9 @@
           "desc": "Snow Hill arches · Birmingham Lager & fat naans.",
           "tag": "booked",
           "map": "The Indian Brewery Snow Hill Birmingham",
-          "menu": "https://www.indianbrewery.com/menu"
+          "menu": "https://www.indianbrewery.com/menu",
+          "lat": 52.484688,
+          "lon": -1.901491
         },
         {
           "t": "15:00",
@@ -71,7 +75,9 @@
           "emoji": "🔑",
           "title": "Check into Airbnb",
           "desc": "9 Sloane Street — HQ. Mr Science arrives.",
-          "map": "9 Sloane Street Birmingham B1 3DZ"
+          "map": "9 Sloane Street Birmingham B1 3DZ",
+          "lat": 52.483172,
+          "lon": -1.912536
         },
         {
           "t": "17:30",
@@ -80,7 +86,9 @@
           "title": "TOCA Social",
           "desc": "Bullring · football games & drinks. Booking ref: 4K2WGY43LF43",
           "tag": "booked",
-          "map": "TOCA Social Bullring Birmingham"
+          "map": "TOCA Social Bullring Birmingham",
+          "lat": 52.476642,
+          "lon": -1.896291
         },
         {
           "t": "19:15",
@@ -97,7 +105,9 @@
           "desc": "BYOB balti feast.",
           "tag": "booked",
           "map": "Royal Watan Kashmiri Birmingham",
-          "menu": "https://www.royal-watan.co.uk/"
+          "menu": "https://www.royal-watan.co.uk/",
+          "lat": 52.447665,
+          "lon": -1.91297
         },
         {
           "t": "21:30",
@@ -120,7 +130,9 @@
           "title": "Disc Golf @ Ackers",
           "desc": "Ackers Adventure · shake off the balti.",
           "tag": "booked",
-          "map": "Ackers Adventure Birmingham"
+          "map": "Ackers Adventure Birmingham",
+          "lat": 52.459468,
+          "lon": -1.860493
         },
         {
           "t": "12:30",
@@ -130,7 +142,9 @@
           "desc": "Tacos at The Loft — upstairs at 1000 Trades, JQ.",
           "tag": "walkin",
           "map": "1000 Trades Birmingham",
-          "menu": "https://1000trades.org.uk/food/"
+          "menu": "https://1000trades.org.uk/food/",
+          "lat": 52.485183,
+          "lon": -1.91144
         },
         {
           "t": "14:00",
@@ -139,7 +153,9 @@
           "title": "F1 Arcade",
           "desc": "Chamberlain Sq · race sims & rounds.",
           "tag": "booked",
-          "map": "F1 Arcade Birmingham"
+          "map": "F1 Arcade Birmingham",
+          "lat": 52.479755,
+          "lon": -1.905439
         },
         {
           "t": "16:00",
@@ -156,7 +172,9 @@
           "desc": "Big feed, many options.",
           "tag": "walkin",
           "map": "Alfred Works food hall Birmingham",
-          "menu": "https://alfredworks.co.uk/food-partners/"
+          "menu": "https://alfredworks.co.uk/food-partners/",
+          "lat": 52.4753,
+          "lon": -1.883757
         },
         {
           "t": "20:00",
@@ -164,7 +182,9 @@
           "emoji": "🤠",
           "title": "Low Places",
           "desc": "Honky-tonk. Yeehaw.",
-          "map": "Low Places Birmingham"
+          "map": "Low Places Birmingham",
+          "lat": 52.476359,
+          "lon": -1.882702
         },
         {
           "t": "22:00",
@@ -172,7 +192,9 @@
           "emoji": "⚽",
           "title": "World Cup 3rd Place Playoff",
           "desc": "Luna Springs, Digbeth · big screen.",
-          "map": "Luna Springs Digbeth Birmingham"
+          "map": "Luna Springs Digbeth Birmingham",
+          "lat": 52.475317,
+          "lon": -1.881127
         }
       ]
     },
@@ -187,7 +209,9 @@
           "title": "Medicine Bakery",
           "desc": "Pastries & coffee. Gentle recovery.",
           "map": "Medicine Bakery Birmingham",
-          "menu": "https://www.medicinebakery.co.uk/birmingham-menu/"
+          "menu": "https://www.medicinebakery.co.uk/birmingham-menu/",
+          "lat": 52.466911,
+          "lon": -1.929097
         },
         {
           "t": "12:00",

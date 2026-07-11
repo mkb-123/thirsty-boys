@@ -279,13 +279,15 @@ function renderItinerary() {
       const map = s.map
         ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(s.map)}" target="_blank" rel="noopener">📍 Map</a>`
         : "";
-      const dirs = s.map
-        ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Get there</a>`
-        : "";
+      // Uber prefills the destination reliably only with coordinates, so use
+      // them when we have them; otherwise fall back to Maps directions.
+      const uber = (s.lat != null && s.lon != null)
+        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${s.lat}&dropoff%5Blongitude%5D=${s.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(s.title)}" target="_blank" rel="noopener">🚕 Uber</a>`
+        : (s.map ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Get there</a>` : "");
       const menu = s.menu
         ? `<a href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>`
         : "";
-      const tags = (tag || map || dirs || menu) ? `<div class="stop-tags">${tag}${map}${dirs}${menu}</div>` : "";
+      const tags = (tag || map || uber || menu) ? `<div class="stop-tags">${tag}${map}${uber}${menu}</div>` : "";
 
       return `
         <div class="${cls}">

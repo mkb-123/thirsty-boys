@@ -188,16 +188,20 @@ h1 span {
 .wx-rain { font-size: 0.66rem; color: var(--blue); }
 
 .food-now {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
   margin-bottom: 1.5rem;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink);
   font-weight: 800;
   font-size: 0.92rem;
-  padding: 0.7rem;
+  padding: 0.75rem;
   border-radius: 12px;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
 .food-now:hover { border-color: var(--amber); }
 .food-now:active { transform: scale(0.99); }
@@ -390,7 +394,7 @@ h1 span {
 }
 .stop-body h4 { margin: 0 0 0.2rem; font-size: 1.02rem; }
 .stop-body p { margin: 0; color: var(--muted); font-size: 0.9rem; }
-.stop-tags { margin-top: 0.5rem; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.stop-tags { margin-top: 0.55rem; display: flex; gap: 0.4rem 0.75rem; flex-wrap: wrap; align-items: center; }
 .tag-pill {
   font-size: 0.68rem;
   font-weight: 800;
@@ -402,7 +406,7 @@ h1 span {
 .tag-booked { background: rgba(75, 191, 135, 0.18); color: #8fe6bb; }
 .tag-walkin { background: rgba(244, 169, 51, 0.18); color: var(--amber-2); }
 .tag-now { background: var(--green); color: #06210f; }
-.stop-tags a { color: var(--blue); font-size: 0.8rem; font-weight: 700; text-decoration: none; }
+.stop-tags a { color: var(--blue); font-size: 0.82rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .stop-tags a:hover { text-decoration: underline; }
 .emoji { font-size: 1.1rem; }
 
