@@ -298,12 +298,6 @@
       "q": "First to phone home / the missus"
     },
     {
-      "id": "disctotal",
-      "emoji": "🥏",
-      "type": "text",
-      "q": "Group disc golf total — call the number"
-    },
-    {
       "id": "round1",
       "emoji": "💸",
       "type": "person",
@@ -434,6 +428,60 @@
       "emoji": "🤖",
       "type": "person",
       "q": "First to mention AI"
+    },
+    {
+      "id": "gameschamp",
+      "emoji": "🏅",
+      "type": "person",
+      "q": "Overall games champ (TOCA + F1 + disc golf)"
+    },
+    {
+      "id": "shotround",
+      "emoji": "🥃",
+      "type": "person",
+      "q": "First to buy a round of shots"
+    },
+    {
+      "id": "missing",
+      "emoji": "👻",
+      "type": "person",
+      "q": "First to go missing for 10+ minutes"
+    },
+    {
+      "id": "ex",
+      "emoji": "💔",
+      "type": "person",
+      "q": "First to bring up an ex"
+    },
+    {
+      "id": "emotional",
+      "emoji": "🥲",
+      "type": "person",
+      "q": "First to get emotional (happy tears count)"
+    },
+    {
+      "id": "gohome",
+      "emoji": "🏠",
+      "type": "person",
+      "q": "First to suggest going home"
+    },
+    {
+      "id": "toldoff",
+      "emoji": "🚫",
+      "type": "person",
+      "q": "First to get told off by staff or a bouncer"
+    },
+    {
+      "id": "shirt",
+      "emoji": "👕",
+      "type": "person",
+      "q": "First to take their top off"
+    },
+    {
+      "id": "canal",
+      "emoji": "🛶",
+      "type": "person",
+      "q": "First to end up in (or nearly in) a canal"
     }
   ],
   "awards": [

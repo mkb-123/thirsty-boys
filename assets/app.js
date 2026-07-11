@@ -1603,27 +1603,20 @@ function escapeAttr(s) { return escapeHtml(s); }
 /* ==========================================================================
    MAIN RENDER + LOOPS
    ========================================================================== */
+/* Run a renderer defensively — a failure in one section must never blank the
+   rest of the app (this is what turned an unexpected data shape into a dead
+   screen on the installed PWA). */
+function safe(fn) {
+  try { fn(); } catch (e) { try { console.error("render error: " + (fn.name || "anon"), e); } catch (_) { /* ignore */ } }
+}
 function render() {
-  renderWhoami();
-  renderLeaderboard();
-  renderTracker();
-  renderLog();
-  renderBets();
-  renderAwards();
-  renderBingo();
-  renderRound();
-  renderStats();
-  renderAdminEditor();
-  renderRecap();
-  renderCrew();
+  [renderWhoami, renderLeaderboard, renderTracker, renderLog, renderBets, renderAwards,
+   renderBingo, renderRound, renderStats, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
 }
 
 function tick() {
-  renderCountdown();
-  renderTripMode();
-  renderItinerary();
-  renderNowNext();
-  renderStats();   // pace / last-hour / projection are time-based → keep live
+  // pace / last-hour / projection are time-based → keep renderStats live
+  [renderCountdown, renderTripMode, renderItinerary, renderNowNext, renderStats].forEach(safe);
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
@@ -1823,7 +1816,7 @@ const AUTOUPDATE_KEY = "tb.autoupdated";
    Skipped on file:// and when the build is unstamped (local dev). */
 if ("serviceWorker" in navigator && location.protocol.startsWith("http") && BUILD !== "__" + "BUILD__") {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => { /* offline install fails silently */ });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => { /* offline install fails silently */ });
   });
 }
 
