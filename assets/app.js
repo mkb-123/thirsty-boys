@@ -856,8 +856,13 @@ function renderBets() {
     BETS.filter((bt) => { const bb = getBet(bt.id); return bb.calls[me] != null && bb.calls[me] !== ""; }).length,
     BETS.length, "called", "call") : "";
 
+  // Sort the ones still needing YOUR call to the front (stable within groups):
+  // 0 = not called yet, 1 = called, 2 = revealed/locked.
+  const betRank = (bet) => { const b = getBet(bet.id); return b.revealed ? 2 : (b.calls[me] != null && b.calls[me] !== "" ? 1 : 0); };
+  const orderedBets = claimed ? BETS.map((b, i) => [b, i]).sort((x, y) => (betRank(x[0]) - betRank(y[0])) || (x[1] - y[1])).map((p) => p[0]) : BETS;
+
   const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = scoreboard + myProg + deckWrap(BETS.map((bet) => {
+  wrap.innerHTML = scoreboard + myProg + deckWrap(orderedBets.map((bet) => {
     const b = getBet(bet.id);
     const callCount = Object.keys(b.calls).length;
     const mineIn = claimed && b.calls[me] != null && b.calls[me] !== "";
@@ -966,8 +971,12 @@ function renderAwards() {
     AWARDS.filter((aw) => getAward(aw.id).votes[me] != null).length,
     AWARDS.length, "voted", "vote") : "";
 
+  // Ones still needing YOUR vote first: 0 = not voted, 1 = voted, 2 = revealed.
+  const awardRank = (aw) => { const d = getAward(aw.id); return d.revealed ? 2 : (d.votes[me] != null ? 1 : 0); };
+  const orderedAwards = claimed ? AWARDS.map((a, i) => [a, i]).sort((x, y) => (awardRank(x[0]) - awardRank(y[0])) || (x[1] - y[1])).map((p) => p[0]) : AWARDS;
+
   const prevScroll = (document.getElementById("awards-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = myProg + deckWrap(AWARDS.map((a) => {
+  wrap.innerHTML = myProg + deckWrap(orderedAwards.map((a) => {
     const data = getAward(a.id);
     const voteCount = Object.keys(data.votes).length;
     const tally = {};
