@@ -379,6 +379,54 @@
       "emoji": "🚕",
       "type": "text",
       "q": "Total Ubers taken all weekend"
+    },
+    {
+      "id": "onemore",
+      "emoji": "🍻",
+      "type": "person",
+      "q": "First to say 'one more?'"
+    },
+    {
+      "id": "asleepuber",
+      "emoji": "💤",
+      "type": "person",
+      "q": "First to fall asleep in an Uber"
+    },
+    {
+      "id": "work",
+      "emoji": "💼",
+      "type": "person",
+      "q": "First to bring up work"
+    },
+    {
+      "id": "photo",
+      "emoji": "📸",
+      "type": "person",
+      "q": "First to take a photo"
+    },
+    {
+      "id": "tab",
+      "emoji": "💷",
+      "type": "text",
+      "q": "Biggest single bar tab (£)"
+    },
+    {
+      "id": "shots",
+      "emoji": "🥃",
+      "type": "text",
+      "q": "Total shots ordered all weekend"
+    },
+    {
+      "id": "groupchat",
+      "emoji": "📱",
+      "type": "person",
+      "q": "Last to reply in the group chat"
+    },
+    {
+      "id": "fallover",
+      "emoji": "🤕",
+      "type": "person",
+      "q": "First to fall over"
     }
   ],
   "awards": [

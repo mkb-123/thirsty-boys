@@ -1144,6 +1144,16 @@ function tick() {
   renderNowNext();
 }
 
+/* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
+const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "quotes", "recap", "crew"];
+function showTab(id) {
+  if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
+  TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.getAttribute("href") === "#" + id));
+  try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
+}
+window.addEventListener("hashchange", () => showTab(location.hash.replace("#", "")));
+
 /* Live "Now / Next" bar — only visible during the trip window. */
 function renderNowNext() {
   const bar = document.getElementById("nownext");
@@ -1261,6 +1271,7 @@ async function boot() {
 
   renderDrinkBar();
   render();
+  showTab(location.hash.replace("#", "") || "itinerary");
   tick();
   setInterval(tick, 1000);
   initSync();
