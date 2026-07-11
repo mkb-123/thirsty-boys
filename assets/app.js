@@ -372,7 +372,7 @@ async function initSync() {
     // or park in the outbox — and flush the outbox the instant we're back.
     firebase.database().ref(".info/connected").on("value", (s) => {
       connected = s.val() === true;
-      if (connected) flushOutbox();
+      if (connected) { flushOutbox(); beat(); }   // re-stamp presence on every (re)connect
       refreshSyncStatus();
     });
 
@@ -395,8 +395,14 @@ async function initSync() {
       // Any edits made while offline are in the outbox — push them now so this
       // snapshot's overwrite doesn't lose them.
       flushOutbox();
-      // If this phone has claimed an identity, announce "I'm in" — but only once.
-      if (!presencePushed && markMePresent()) { presencePushed = true; rtSet("present/" + me, state.present[me]); }
+      // Keep MY own presence fresh locally so a stale server snapshot can't
+      // make me read as "Away" the moment I connect; the heartbeat (+ beat on
+      // connect) writes it out so the others see me too.
+      if (me != null && !Number.isNaN(me) && state.names[me]) {
+        state.present = state.present || {};
+        state.present[me] = Date.now();
+        if (!presencePushed) { presencePushed = true; rtSet("present/" + me, state.present[me]); }
+      }
       refreshSyncStatus();
       renderDrinkBar();
       render();
@@ -2003,6 +2009,7 @@ async function boot() {
 
   // First thing on first load: ask who you are.
   if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
+  else beat();   // already claimed → stamp presence now so you show as "In" immediately
 
   // Heartbeat: refresh presence every 2 min + on foreground; re-render roster
   // each minute so stale lads slide to "Away".
