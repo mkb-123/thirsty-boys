@@ -124,11 +124,37 @@ function defaults() {
     round: null, // last "whose round" verdict: { winner, by, ts } (synced)
   };
 }
+/* Firebase collapses collections with sparse/sequential numeric keys into
+   arrays (and drops empties), so a room can come back with tallies as an object
+   {"2":{...}}, present as an array, etc. Coerce everything back to the shapes
+   the app expects — otherwise things like state.tallies.forEach() blow up. */
+function normalizeState(s) {
+  const n = (Array.isArray(s.names) && s.names.length) || DEFAULT_NAMES.length;
+  // tallies → dense array of per-person objects
+  const arr = [];
+  for (let i = 0; i < n; i++) arr[i] = {};
+  if (Array.isArray(s.tallies)) s.tallies.forEach((t, i) => { if (t && i < n) arr[i] = t; });
+  else if (s.tallies && typeof s.tallies === "object") {
+    Object.keys(s.tallies).forEach((k) => { const i = Number(k); if (!isNaN(i) && i >= 0 && i < n) arr[i] = s.tallies[k] || {}; });
+  }
+  s.tallies = arr;
+  // log / quotes → arrays
+  if (!Array.isArray(s.log)) s.log = s.log ? Object.keys(s.log).map((k) => s.log[k]) : [];
+  if (!Array.isArray(s.quotes)) s.quotes = s.quotes ? Object.keys(s.quotes).map((k) => s.quotes[k]) : [];
+  // present → object { index: lastSeen }
+  if (Array.isArray(s.present)) { const o = {}; s.present.forEach((v, i) => { if (v != null) o[i] = v; }); s.present = o; }
+  else if (!s.present || typeof s.present !== "object") s.present = {};
+  // bingo / bets / awards → objects
+  if (!s.bingo || typeof s.bingo !== "object") s.bingo = {};
+  if (!s.bets || typeof s.bets !== "object") s.bets = {};
+  if (!s.awards || typeof s.awards !== "object") s.awards = {};
+  return s;
+}
 function load() {
   const base = defaults();
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return Object.assign(base, JSON.parse(raw));
+    if (raw) return normalizeState(Object.assign(base, JSON.parse(raw)));
   } catch (e) { /* ignore */ }
   return base;
 }
@@ -360,10 +386,9 @@ async function initSync() {
         return;
       }
       applyingRemote = true;
-      state = Object.assign(defaults(), remote);
-      // Firebase drops empty collections and may return keyed objects; normalise.
-      if (state.log && !Array.isArray(state.log)) state.log = Object.keys(state.log).map((k) => state.log[k]);
-      if (!Array.isArray(state.quotes)) state.quotes = state.quotes ? Object.keys(state.quotes).map((k) => state.quotes[k]) : [];
+      // Firebase may return collections as arrays/objects and drop empties;
+      // normaliseState coerces everything back to the shapes the app expects.
+      state = normalizeState(Object.assign(defaults(), remote));
       applyingRemote = false;
       applyLegacyRenames();     // rebrand any old default name in the shared room
       save();     // remote is now the local truth too (outbox still holds any un-synced edits)
