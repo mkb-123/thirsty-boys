@@ -12,6 +12,7 @@ let TRIP = {};
 let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
 let STORE_KEY = "thirstyboys.trip.v1";
+let OUTBOX_KEY = "thirstyboys.trip.outbox";
 let HQ_ADDRESS = "";
 
 /* Drink types and titles are generic — not trip-specific. */
@@ -46,6 +47,8 @@ function applyTrip(t) {
   TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
   const hc = String(TRIP.houseCode || "trip").replace(/[^a-z0-9_-]/gi, "_");
   STORE_KEY = "thirstyboys." + hc + ".v1";
+  OUTBOX_KEY = "thirstyboys." + hc + ".outbox";
+  window.__houseCode = hc;
   HQ_ADDRESS = (TRIP.hq && TRIP.hq.address) || "";
 }
 
@@ -179,15 +182,79 @@ async function loadFirebase(timeoutMs) {
   ]);
 }
 
-/* ---- Granular remote writes: each change touches only its own child path,
-   and drink counts use a transaction, so concurrent taps can't clobber. ---- */
-function rtReady() { return !!(syncRef && !applyingRemote); }
-function rtSet(path, value) { if (rtReady()) { try { syncRef.child(path).set(value); } catch (e) { /* offline */ } } }
-function rtRemove(path) { if (rtReady()) { try { syncRef.child(path).remove(); } catch (e) { /* offline */ } } }
-function rtTxn(path, fn) { if (rtReady()) { try { syncRef.child(path).transaction(fn); } catch (e) { /* offline */ } } }
-function seedRemote() { if (rtReady()) { try { syncRef.set(JSON.parse(JSON.stringify(state))); } catch (e) { /* offline */ } } }
+/* ---- Offline-first granular writes ------------------------------------------
+   Every change touches only its own child path (drink counts add a delta), so
+   concurrent taps never clobber. When we're offline the write is parked in a
+   durable localStorage OUTBOX and replayed, in order, the moment we reconnect —
+   so anything done with no signal survives even a full reload and syncs later.
+   `connected` mirrors Firebase's own .info/connected so we never double-count:
+   online → write straight through (Firebase owns any in-session queue);
+   offline → outbox only. ------------------------------------------------------ */
+let connected = false;          // mirrors firebase .info/connected
+let outbox = [];                // pending ops while offline: {op,path,value|delta}
+
+function loadOutbox() { try { return JSON.parse(localStorage.getItem(OUTBOX_KEY)) || []; } catch (e) { return []; } }
+function saveOutbox() { try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox)); } catch (e) { /* ignore */ } }
+function enqueue(op) { outbox.push(op); saveOutbox(); refreshSyncStatus(); }
+
+function rtLive() { return !!(syncRef && connected); }
+function rtSet(path, value) {
+  if (applyingRemote) return;                 // don't echo a remote update back
+  if (rtLive()) { try { syncRef.child(path).set(value); return; } catch (e) { /* fall through to outbox */ } }
+  enqueue({ op: "set", path: path, value: value });
+}
+function rtRemove(path) {
+  if (applyingRemote) return;
+  if (rtLive()) { try { syncRef.child(path).remove(); return; } catch (e) { /* fall through */ } }
+  enqueue({ op: "remove", path: path });
+}
+function rtAdd(path, delta) {                 // additive count change (± n)
+  if (applyingRemote) return;
+  if (rtLive()) { try { syncRef.child(path).transaction((v) => Math.max(0, (v || 0) + delta)); return; } catch (e) { /* fall through */ } }
+  enqueue({ op: "add", path: path, delta: delta });
+}
+function seedRemote() {                        // full-room overwrite (reset / first seed)
+  const snapshot = JSON.parse(JSON.stringify(state));
+  // A whole-state write already captures every local edit, so any queued
+  // deltas are now redundant — clearing them prevents a double-count on flush.
+  if (rtLive()) { try { syncRef.set(snapshot); outbox = []; saveOutbox(); return; } catch (e) { /* fall through */ } }
+  outbox = [{ op: "seedroot", value: snapshot }];
+  saveOutbox();
+  refreshSyncStatus();
+}
+
+/* Replay everything parked while offline, in order, then clear the outbox. */
+function flushOutbox() {
+  if (!syncRef || !connected || !outbox.length) return;
+  const pending = outbox.slice();
+  outbox = []; saveOutbox();
+  const failed = [];
+  pending.forEach((o) => {
+    try {
+      if (o.op === "set") syncRef.child(o.path).set(o.value);
+      else if (o.op === "remove") syncRef.child(o.path).remove();
+      else if (o.op === "add") syncRef.child(o.path).transaction((v) => Math.max(0, (v || 0) + o.delta));
+      else if (o.op === "seedroot") syncRef.set(o.value);
+    } catch (e) { failed.push(o); }
+  });
+  if (failed.length) { outbox = failed.concat(outbox); saveOutbox(); }
+  refreshSyncStatus();
+}
+
+/* One place that decides what the little status pill says. */
+function refreshSyncStatus() {
+  const code = window.__houseCode || "";
+  if (rtLive()) {
+    setSyncStatus(outbox.length ? "🔄 Syncing " + outbox.length + "…" : "🟢 Live · house “" + code + "”", "on");
+  } else if (syncRef || (window.THIRSTY_CONFIG && window.THIRSTY_CONFIG.firebase)) {
+    setSyncStatus(outbox.length ? "📴 Offline · " + outbox.length + " change" + (outbox.length === 1 ? "" : "s") + " waiting" : "📴 Offline — saved here, will sync", "off");
+  } else {
+    setSyncStatus("📴 Saved on this device only", "off");
+  }
+}
 
 async function initSync() {
+  if (syncRef) return;            // already wired — Firebase auto-reconnects itself
   const cfgPre = window.THIRSTY_CONFIG;
   if (!cfgPre || !cfgPre.firebase || !cfgPre.firebase.databaseURL) {
     setSyncStatus("📴 Saved on this device only", "off");
@@ -197,7 +264,9 @@ async function initSync() {
   try {
     await loadFirebase(10000);
   } catch (e) {
-    setSyncStatus("📴 No connection — saved on this device", "off");
+    // No signal to fetch the SDK — everything still works locally and the
+    // 'online' listener retries this the moment a connection appears.
+    refreshSyncStatus();
     return;
   }
   if (!syncEnabled()) {
@@ -207,17 +276,25 @@ async function initSync() {
   const cfg = window.THIRSTY_CONFIG;
   const code = (cfg.houseCode || "default").replace(/[.#$/\[\]]/g, "_");
   try {
-    firebase.initializeApp(cfg.firebase);
+    if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg.firebase);
     syncRef = firebase.database().ref("houses/" + code);
     setSyncStatus("🔄 Connecting…", "off");
+
+    // Track the live connection so writes know whether to go straight through
+    // or park in the outbox — and flush the outbox the instant we're back.
+    firebase.database().ref(".info/connected").on("value", (s) => {
+      connected = s.val() === true;
+      if (connected) flushOutbox();
+      refreshSyncStatus();
+    });
 
     syncRef.on("value", (snap) => {
       const remote = snap.val();
       if (!remote) {
         // Nothing shared yet — seed the room with our current state.
         if (markMePresent()) presencePushed = true;
-        setSyncStatus("🟢 Live · house “" + code + "”", "on");
         seedRemote();
+        refreshSyncStatus();
         return;
       }
       applyingRemote = true;
@@ -226,9 +303,13 @@ async function initSync() {
       if (state.log && !Array.isArray(state.log)) state.log = Object.keys(state.log).map((k) => state.log[k]);
       if (!Array.isArray(state.quotes)) state.quotes = state.quotes ? Object.keys(state.quotes).map((k) => state.quotes[k]) : [];
       applyingRemote = false;
+      save();     // remote is now the local truth too (outbox still holds any un-synced edits)
+      // Any edits made while offline are in the outbox — push them now so this
+      // snapshot's overwrite doesn't lose them.
+      flushOutbox();
       // If this phone has claimed an identity, announce "I'm in" — but only once.
       if (!presencePushed && markMePresent()) { presencePushed = true; rtSet("present/" + me, state.present[me]); }
-      setSyncStatus("🟢 Live · house “" + code + "”", "on");
+      refreshSyncStatus();
       renderDrinkBar();
       render();
     }, (err) => {
@@ -238,6 +319,10 @@ async function initSync() {
     setSyncStatus("⚠️ Sync failed to start. Using this device.", "err");
   }
 }
+
+// Cold-started with no signal? Retry the whole handshake when a connection appears.
+window.addEventListener("online", () => { if (!syncRef) initSync(); refreshSyncStatus(); });
+window.addEventListener("offline", () => { connected = false; refreshSyncStatus(); });
 
 /* ---------- HELPERS ---------- */
 function countFor(i) {
@@ -582,8 +667,9 @@ function addDrink(i) {
   state.log.push({ who: i, drink: id, ts: Date.now() });
   if (state.log.length > 100) state.log = state.log.slice(-100);
   save();
-  // Count via a transaction so simultaneous taps both land; log written whole.
-  rtTxn("tallies/" + i + "/" + id, (v) => (v || 0) + 1);
+  // Count as a delta so simultaneous taps both land (online) or queue safely
+  // (offline); log written whole.
+  rtAdd("tallies/" + i + "/" + id, 1);
   rtSet("log", state.log);
   render();
   // Celebrate: small burst from the button; big fanfare when the crown changes.
@@ -612,7 +698,7 @@ function undoLast() {
   const t = state.tallies[entry.who];
   if (t && t[entry.drink]) t[entry.drink] -= 1;
   save();
-  rtTxn("tallies/" + entry.who + "/" + entry.drink, (v) => Math.max(0, (v || 0) - 1));
+  rtAdd("tallies/" + entry.who + "/" + entry.drink, -1);
   rtSet("log", state.log);
   render();
 }
@@ -640,6 +726,49 @@ function resetAll() {
   renderDrinkBar();
   render();
 }
+
+/* ==========================================================================
+   SWIPE DECK — turn a long list of cards into a swipeable, snap-scrolling deck
+   so 34 bets aren't 34 screens of scrolling. One card at a time, next peeking;
+   swipe (or tap ‹ ›) to move; a counter shows where you are.
+   ========================================================================== */
+function deckWrap(cardsHtml, id) {
+  return `<div class="deck" id="${id}">${cardsHtml}</div>
+    <div class="deck-nav">
+      <button class="deck-arrow" type="button" data-deck="${id}" data-dir="-1" aria-label="Previous">‹</button>
+      <span class="deck-count" id="${id}-count"></span>
+      <button class="deck-arrow" type="button" data-deck="${id}" data-dir="1" aria-label="Next">›</button>
+    </div>`;
+}
+function deckStep(deck) {
+  const first = deck.children[0];
+  if (!first) return deck.clientWidth || 1;
+  const cs = getComputedStyle(deck);
+  const gap = parseFloat(cs.columnGap || cs.gap || "0") || 0;
+  return first.getBoundingClientRect().width + gap;
+}
+function wireDeck(id, restoreScroll) {
+  const deck = document.getElementById(id);
+  if (!deck) return;
+  if (restoreScroll) deck.scrollLeft = restoreScroll;   // keep your place across re-renders
+  const countEl = document.getElementById(id + "-count");
+  const n = deck.children.length;
+  const update = () => {
+    if (!countEl || !n) return;
+    const idx = Math.min(n, Math.max(1, Math.round(deck.scrollLeft / deckStep(deck)) + 1));
+    countEl.textContent = idx + " / " + n;
+  };
+  deck.addEventListener("scroll", () => window.requestAnimationFrame(update), { passive: true });
+  update();
+}
+/* One delegated handler for every deck's ‹ › arrows (survives re-renders). */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest && e.target.closest(".deck-arrow");
+  if (!btn) return;
+  const deck = document.getElementById(btn.getAttribute("data-deck"));
+  if (!deck || !deck.children.length) return;
+  deck.scrollBy({ left: deckStep(deck) * Number(btn.getAttribute("data-dir")), behavior: "smooth" });
+});
 
 /* ==========================================================================
    RENDER: BETS
@@ -684,7 +813,8 @@ function renderBets() {
       `</div>`
     : "";
 
-  wrap.innerHTML = scoreboard + BETS.map((bet) => {
+  const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
+  wrap.innerHTML = scoreboard + deckWrap(BETS.map((bet) => {
     const b = getBet(bet.id);
     const callCount = Object.keys(b.calls).length;
     let body;
@@ -730,7 +860,7 @@ function renderBets() {
     }
 
     return `<div class="bet-card"><p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
-  }).join("");
+  }).join(""), "bets-deck");
 
   wrap.querySelectorAll("[data-bet-call]").forEach((el) =>
     el.addEventListener("change", () => {
@@ -766,6 +896,7 @@ function renderBets() {
       b.revealed = false; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", false); renderBets();
     })
   );
+  wireDeck("bets-deck", prevScroll);
 }
 
 /* ==========================================================================
@@ -784,7 +915,8 @@ function renderAwards() {
   const claimed = hasClaimed();
   const total = state.names.length;
 
-  wrap.innerHTML = AWARDS.map((a) => {
+  const prevScroll = (document.getElementById("awards-deck") || {}).scrollLeft || 0;
+  wrap.innerHTML = deckWrap(AWARDS.map((a) => {
     const data = getAward(a.id);
     const voteCount = Object.keys(data.votes).length;
     const tally = {};
@@ -822,7 +954,7 @@ function renderAwards() {
         <button class="btn-ghost award-reveal" data-award="${a.id}">👁 Reveal results</button>`;
     }
     return `<div class="award-card"><p class="award-title">${a.title}</p>${body}</div>`;
-  }).join("");
+  }).join(""), "awards-deck");
 
   wrap.querySelectorAll(".award-select").forEach((sel) =>
     sel.addEventListener("change", () => {
@@ -847,6 +979,7 @@ function renderAwards() {
       a.revealed = false; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", false); renderAwards();
     })
   );
+  wireDeck("awards-deck", prevScroll);
 }
 
 /* ==========================================================================
@@ -1275,6 +1408,7 @@ function applyTripToDOM() {
 async function boot() {
   applyTrip(await loadTrip());
   state = load();
+  outbox = loadOutbox();     // resume any edits parked while offline last time
   me = loadMe();
   selectedDrink = loadSelectedDrink();
   applyTripToDOM();
@@ -1306,6 +1440,14 @@ boot();
    ========================================================================== */
 const BUILD = window.TB_BUILD || "dev";
 const AUTOUPDATE_KEY = "tb.autoupdated";
+
+/* Register the service worker so the app opens and runs with no signal.
+   Skipped on file:// and when the build is unstamped (local dev). */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http") && BUILD !== "__" + "BUILD__") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* offline install fails silently */ });
+  });
+}
 
 function hardRefresh() {
   // A changed query string bypasses the cached HTML entirely.

@@ -708,8 +708,51 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .sync-status.off { color: var(--muted); }
 .sync-status.err { color: var(--claret-2); }
 
+/* ---------- SWIPE DECK ---------- */
+.deck {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.25rem 0.25rem 0.5rem;
+  margin: 0 -0.25rem;
+  overscroll-behavior-x: contain;
+}
+.deck::-webkit-scrollbar { display: none; }
+.deck > .bet-card, .deck > .award-card {
+  scroll-snap-align: center;
+  flex: 0 0 86%;            /* one card at a time, the next just peeking */
+  max-width: 460px;
+  align-self: stretch;
+}
+.deck-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+.deck-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.deck-arrow:hover, .deck-arrow:active { background: var(--card-2); border-color: var(--amber); }
+.deck-count { font-weight: 800; color: var(--muted); min-width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+
 /* ---------- BETS ---------- */
-.bets { display: flex; flex-direction: column; gap: 1rem; }
+.bets { display: block; }
 .bet-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -778,7 +821,7 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .bet-reveal, .bet-reopen { width: 100%; margin-top: 0.7rem; }
 
 /* ---------- AWARDS ---------- */
-.awards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.awards { display: block; }
 .award-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -948,7 +991,6 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
   /* single-column stacks read better than cramped 2-ups on a phone */
   .leaderboard { grid-template-columns: repeat(2, 1fr); }
   .tracker-grid { grid-template-columns: repeat(2, 1fr); }
-  .awards { grid-template-columns: 1fr; }
   .bet-picks { grid-template-columns: repeat(2, 1fr); }
   .crew { grid-template-columns: repeat(2, 1fr); }
   /* bigger, thumb-friendly tap targets */

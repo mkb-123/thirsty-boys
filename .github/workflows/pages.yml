@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Stamp asset URLs with commit hash (cache busting)
-        run: sed -i "s/__BUILD__/${GITHUB_SHA::8}/g" index.html version.json
+        run: sed -i "s/__BUILD__/${GITHUB_SHA::8}/g" index.html version.json sw.js
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
