@@ -618,6 +618,16 @@ function undoLast() {
 }
 
 const RESET_PASSWORD = "brum26";
+
+/* Password gate for irreversible "reveal to everyone" actions. Same password
+   as reset so there's only one to remember. Returns true if OK to proceed. */
+function confirmReveal(what) {
+  const pw = prompt("Reveal " + what + " to the WHOLE crew — no un-seeing it.\nEnter the password to confirm:");
+  if (pw == null) return false;             // cancelled
+  if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password — nothing was revealed."); return false; }
+  return true;
+}
+
 function resetAll() {
   const pw = prompt("This wipes ALL drinks & names for EVERYONE.\nEnter the reset password to confirm:");
   if (pw == null) return;                 // cancelled
@@ -745,7 +755,7 @@ function renderBets() {
   );
   wrap.querySelectorAll(".bet-reveal").forEach((btn) =>
     btn.addEventListener("click", () => {
-      if (!confirm("Reveal everyone's calls to the whole crew? No un-seeing it.")) return;
+      if (!confirmReveal("everyone's calls")) return;
       const id = btn.dataset.bet, b = getBet(id);
       b.revealed = true; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", true); renderBets();
     })
@@ -826,7 +836,7 @@ function renderAwards() {
   );
   wrap.querySelectorAll(".award-reveal").forEach((b) =>
     b.addEventListener("click", () => {
-      if (!confirm("Reveal the result to the whole crew? No un-seeing it.")) return;
+      if (!confirmReveal("the award results")) return;
       const id = b.dataset.award, a = getAward(id);
       a.revealed = true; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", true); renderAwards();
     })
