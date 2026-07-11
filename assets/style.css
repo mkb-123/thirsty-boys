@@ -223,6 +223,8 @@ body.has-nownext .net-status { bottom: calc(4.2rem + env(safe-area-inset-bottom)
 .wx-temp { font-size: 0.82rem; font-weight: 800; }
 .wx-rain { font-size: 0.66rem; color: var(--blue); }
 
+.find-now { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; }
+.find-now .food-now { margin-bottom: 0; flex: 1; }
 .food-now {
   display: block;
   width: 100%;

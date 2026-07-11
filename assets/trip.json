@@ -428,6 +428,12 @@
       "emoji": "😴",
       "type": "person",
       "q": "First to bed"
+    },
+    {
+      "id": "ai",
+      "emoji": "🤖",
+      "type": "person",
+      "q": "First to mention AI"
     }
   ],
   "awards": [
