@@ -263,6 +263,21 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .net-pop-title { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.5rem; }
 .net-pop .roster { display: flex; flex-direction: column; gap: 0.4rem; }
 
+/* ---------- PUBS ON THE BENCH ---------- */
+.pub-area { margin-bottom: 1.4rem; }
+.pub-area-h { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--amber); margin: 0 0 0.6rem; }
+.pub {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 0.8rem 0.95rem; margin-bottom: 0.6rem;
+}
+.pub-head { display: flex; align-items: baseline; gap: 0.5rem; }
+.pub-emoji { font-size: 1.15rem; }
+.pub-name { font-weight: 800; }
+.pub-desc { color: var(--muted); font-size: 0.86rem; margin: 0.35rem 0 0.55rem; }
+.pub-links { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; }
+.pub-links a { color: var(--amber-2); font-weight: 700; font-size: 0.85rem; text-decoration: none; }
+.pub-links a:hover { text-decoration: underline; }
+
 /* ---------- SECTIONS ---------- */
 .section {
   max-width: 900px;

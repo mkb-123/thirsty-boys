@@ -9,7 +9,7 @@
    to reuse this whole app for another city/date. Loaded at startup.
    ========================================================================== */
 let TRIP = {};
-let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [];
+let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [], PUBS = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
 let STORE_KEY = "thirstyboys.trip.v1";
 let OUTBOX_KEY = "thirstyboys.trip.outbox";
@@ -42,6 +42,7 @@ function applyTrip(t) {
   BETS = TRIP.bets || [];
   AWARDS = TRIP.awards || [];
   BINGO = TRIP.bingo || [];
+  PUBS = TRIP.pubs || [];
   const d = TRIP.dates || {};
   TRIP_START = new Date((d.start || "1970-01-01T00:00") + ":00");
   TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
@@ -1497,6 +1498,33 @@ function renderBingo() {
   bingoNotify();
 }
 
+/* ==========================================================================
+   RENDER: PUBS ON THE BENCH — reserve boozers, grouped by area, with map +
+   Uber deep links. Not timed; dip in during free time or if a plan falls flat.
+   ========================================================================== */
+function renderPubs() {
+  const wrap = document.getElementById("pubs-list");
+  if (!wrap) return;
+  if (!PUBS.length) { wrap.innerHTML = ""; return; }
+  const areas = [];
+  PUBS.forEach((p) => { if (areas.indexOf(p.area || "More") === -1) areas.push(p.area || "More"); });
+  wrap.innerHTML = areas.map((area) => {
+    const items = PUBS.filter((p) => (p.area || "More") === area).map((p) => {
+      const map = p.map ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.map)}" target="_blank" rel="noopener">📍 Map</a>` : "";
+      const uber = (p.lat != null && p.lon != null)
+        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${p.lat}&dropoff%5Blongitude%5D=${p.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">🚕 Uber</a>`
+        : "";
+      const menu = p.menu ? `<a href="${escapeAttr(p.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>` : "";
+      return `<div class="pub">
+        <div class="pub-head"><span class="pub-emoji">${p.emoji || "🍺"}</span><span class="pub-name">${escapeHtml(p.name)}</span></div>
+        <p class="pub-desc">${escapeHtml(p.desc || "")}</p>
+        <div class="pub-links">${map}${uber}${menu}</div>
+      </div>`;
+    }).join("");
+    return `<div class="pub-area"><h3 class="pub-area-h">${escapeHtml(area)}</h3>${items}</div>`;
+  }).join("");
+}
+
 /* Buzz + banner every phone when a new bingo square gets claimed. A single new
    claim is a live spot → notify; many at once is a bulk load/sync → stay quiet.
    Un-claims never notify. */
@@ -1817,7 +1845,7 @@ function safe(fn) {
 }
 function render() {
   [renderWhoami, renderLeaderboard, renderTracker, renderLog, renderBets, renderAwards,
-   renderBingo, renderRound, renderStats, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
+   renderBingo, renderPubs, renderRound, renderStats, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
 }
 
 function tick() {
@@ -1826,7 +1854,7 @@ function tick() {
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
-const TAB_IDS = ["itinerary", "tracker", "bets", "awards", "bingo", "stats", "recap", "crew"];
+const TAB_IDS = ["itinerary", "pubs", "tracker", "bets", "awards", "bingo", "stats", "recap", "crew"];
 function showTab(id) {
   if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
