@@ -456,19 +456,20 @@ function renderItinerary() {
         : s.tag === "booked" ? `<span class="tag-pill tag-booked">Booked</span>`
         : s.tag === "walkin" ? `<span class="tag-pill tag-walkin">Walk-in</span>`
         : "";
+      // Compact icon-only action links so the row never wraps the nav.
       const map = s.map
-        ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(s.map)}" target="_blank" rel="noopener">📍 Map</a>`
+        ? `<a class="ic" title="Open in Maps" aria-label="Open in Maps" href="https://www.google.com/maps/search/${encodeURIComponent(s.map)}" target="_blank" rel="noopener">📍</a>`
         : "";
       // Uber prefills the destination reliably only with coordinates, so use
       // them when we have them; otherwise fall back to Maps directions.
       const uber = (s.lat != null && s.lon != null)
-        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${s.lat}&dropoff%5Blongitude%5D=${s.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(s.title)}" target="_blank" rel="noopener">🚕 Uber</a>`
-        : (s.map ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕 Get there</a>` : "");
+        ? `<a class="ic" title="Uber here" aria-label="Uber here" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${s.lat}&dropoff%5Blongitude%5D=${s.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(s.title)}" target="_blank" rel="noopener">🚕</a>`
+        : (s.map ? `<a class="ic" title="Directions" aria-label="Directions" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.map)}" target="_blank" rel="noopener">🚕</a>` : "");
       const menu = s.menu
-        ? `<a href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>`
+        ? `<a class="ic" title="Menu" aria-label="Menu" href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️</a>`
         : "";
       const insta = s.insta
-        ? `<a class="link-insta" href="${escapeAttr(s.insta)}" target="_blank" rel="noopener">📸 Insta</a>`
+        ? `<a class="ic link-insta" title="Instagram" aria-label="Instagram" href="${escapeAttr(s.insta)}" target="_blank" rel="noopener">📸</a>`
         : "";
       const tags = (tag || map || uber || menu || insta) ? `<div class="stop-tags">${tag}${map}${uber}${menu}${insta}</div>` : "";
 
@@ -1514,12 +1515,12 @@ function renderPubs() {
   PUBS.forEach((p) => { if (areas.indexOf(p.area || "More") === -1) areas.push(p.area || "More"); });
   wrap.innerHTML = areas.map((area) => {
     const items = PUBS.filter((p) => (p.area || "More") === area).map((p) => {
-      const map = p.map ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.map)}" target="_blank" rel="noopener">📍 Map</a>` : "";
+      const map = p.map ? `<a class="ic" title="Open in Maps" aria-label="Open in Maps" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.map)}" target="_blank" rel="noopener">📍</a>` : "";
       const uber = (p.lat != null && p.lon != null)
-        ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${p.lat}&dropoff%5Blongitude%5D=${p.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">🚕 Uber</a>`
+        ? `<a class="ic" title="Uber here" aria-label="Uber here" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${p.lat}&dropoff%5Blongitude%5D=${p.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">🚕</a>`
         : "";
-      const menu = p.menu ? `<a href="${escapeAttr(p.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>` : "";
-      const insta = p.insta ? `<a class="link-insta" href="${escapeAttr(p.insta)}" target="_blank" rel="noopener">📸 Insta</a>` : "";
+      const menu = p.menu ? `<a class="ic" title="Menu" aria-label="Menu" href="${escapeAttr(p.menu)}" target="_blank" rel="noopener">🍽️</a>` : "";
+      const insta = p.insta ? `<a class="ic link-insta" title="Instagram" aria-label="Instagram" href="${escapeAttr(p.insta)}" target="_blank" rel="noopener">📸</a>` : "";
       return `<div class="pub">
         <div class="pub-head"><span class="pub-emoji">${p.emoji || "🍺"}</span><span class="pub-name">${escapeHtml(p.name)}</span></div>
         <p class="pub-desc">${escapeHtml(p.desc || "")}</p>
@@ -1833,31 +1834,49 @@ function wxEmoji(c) {
   if (c <= 82) return "🌦️";
   return "⛈️";
 }
+function wxDayLabel(iso) {
+  // "2026-07-17" -> "Fri" (parsed as UTC noon to dodge TZ edge cases)
+  const d = new Date(iso + "T12:00:00Z");
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] || iso.slice(5);
+}
 async function fetchWeather() {
   const el = document.getElementById("weather-days");
   if (!el) return;
   const w = TRIP.weather || {};
   if (!w.lat || !w.lon) { el.innerHTML = ""; return; }
-  const labels = ["Fri", "Sat", "Sun"];
+  const base = "https://api.open-meteo.com/v1/forecast?latitude=" + w.lat + "&longitude=" + w.lon +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FLondon";
+  // Prefer the trip's own days; if they're outside the forecast window (opened
+  // weeks early) the API returns no rows, so fall back to a rolling 3-day view
+  // so there's ALWAYS a live forecast on screen instead of a dead fallback.
+  const tripUrl = base + "&start_date=" + (w.start || "") + "&end_date=" + (w.end || "");
+  const rollUrl = base + "&forecast_days=3";
   try {
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + w.lat + "&longitude=" + w.lon +
-      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
-      "&timezone=Europe%2FLondon&start_date=" + (w.start || "") + "&end_date=" + (w.end || "");
-    // no-store so a long-lived PWA never serves a stale (or once-failed) forecast
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) throw new Error("wx");
-    const d = await r.json();
-    el.innerHTML = d.daily.time.map((t, i) => {
+    let d = null;
+    if (w.start && w.end) {
+      const r = await fetch(tripUrl, { cache: "no-store" });
+      if (r.ok) d = await r.json();
+    }
+    if (!d || !d.daily || !d.daily.time || !d.daily.time.length) {
+      const r2 = await fetch(rollUrl, { cache: "no-store" });
+      if (!r2.ok) throw new Error("wx");
+      d = await r2.json();
+    }
+    if (!d.daily || !d.daily.time || !d.daily.time.length) throw new Error("wx-empty");
+    const days = d.daily.time.map((t, i) => {
       const hi = Math.round(d.daily.temperature_2m_max[i]);
       const lo = Math.round(d.daily.temperature_2m_min[i]);
       const rain = d.daily.precipitation_probability_max[i];
       return `<div class="wx-day">
-        <span class="wx-d">${labels[i] || t.slice(5)}</span>
+        <span class="wx-d">${wxDayLabel(t)}</span>
         <span class="wx-emoji">${wxEmoji(d.daily.weather_code[i])}</span>
         <span class="wx-temp">${hi}°/${lo}°</span>
         <span class="wx-rain">💧${rain == null ? "–" : rain}%</span>
       </div>`;
     }).join("");
+    // A freshness stamp so a stable forecast still visibly reads as "live".
+    const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    el.innerHTML = days + `<span class="wx-updated" title="Forecast last refreshed">↻ ${stamp}</span>`;
   } catch (e) {
     // Don't clobber a good forecast we already painted on a transient blip —
     // only show the fallback if the strip is still empty/loading.
@@ -1971,6 +1990,7 @@ function doPullRefresh() {
   flushOutbox();
   render();
   tick();
+  fetchWeather();   // a manual pull should visibly refresh the forecast too
   if (typeof checkForUpdate === "function") checkForUpdate(true);
   toast(rtLive() ? "Synced ✓" : (window.THIRSTY_CONFIG && window.THIRSTY_CONFIG.firebase ? "📴 Offline — will sync when connected" : "Saved on this device"));
 }

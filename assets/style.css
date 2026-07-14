@@ -288,6 +288,12 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .pub-links { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; }
 .pub-links a { color: var(--amber-2); font-weight: 700; font-size: 0.85rem; text-decoration: none; }
 .pub-links a:hover { text-decoration: underline; }
+/* Icon-only action links (Map / Uber / Menu / Insta) — compact so the row
+   never wraps. Emoji stays full-colour; the tap target is generous. */
+.stop-tags a.ic, .pub-links a.ic {
+  font-size: 1.15rem; line-height: 1; padding: 0.15rem 0.1rem; text-decoration: none;
+}
+.stop-tags a.ic:hover, .pub-links a.ic:hover { transform: translateY(-1px); }
 /* Instagram links get a hint of the IG magenta wherever they appear. */
 .link-insta { color: #d6407f !important; }
 
@@ -327,6 +333,7 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .wx-emoji { font-size: 1.3rem; }
 .wx-temp { font-size: 0.82rem; font-weight: 800; }
 .wx-rain { font-size: 0.66rem; color: var(--blue); }
+.wx-updated { flex: 0 0 auto; align-self: center; font-size: 0.6rem; font-weight: 700; color: var(--muted); opacity: 0.8; white-space: nowrap; }
 
 .find-now { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; }
 .find-now .food-now { margin-bottom: 0; flex: 1; }
