@@ -618,6 +618,46 @@
   ],
   "pubs": [
     {
+      "name": "The Queens Arms",
+      "emoji": "🍺",
+      "area": "By HQ · Jewellery Quarter",
+      "desc": "Grade II listed 1870s boozer, Art Nouveau tiled front, Cask Marque ales. ~5 min from HQ.",
+      "map": "Queens Arms, 150 Newhall Street, Birmingham B3 1RY",
+      "lat": 52.483642,
+      "lon": -1.906609,
+      "insta": "https://www.instagram.com/queensarmsb3/"
+    },
+    {
+      "name": "The Rose Villa Tavern",
+      "emoji": "🏛️",
+      "area": "By HQ · Jewellery Quarter",
+      "desc": "Iconic JQ pub — stunning tiled interior, terrace over the Chamberlain Clock. ~5 min from HQ.",
+      "map": "Rose Villa Tavern, 172 Warstone Lane, Birmingham B18 6JW",
+      "lat": 52.487195,
+      "lon": -1.912179,
+      "insta": "https://www.instagram.com/rosevillatavern/"
+    },
+    {
+      "name": "The Red Lion",
+      "emoji": "🦁",
+      "area": "By HQ · Jewellery Quarter",
+      "desc": "Joule's taphouse with a street-art gallery inside, weekly guest ales & great food. ~5 min from HQ.",
+      "map": "Red Lion, 95 Warstone Lane, Birmingham B18 6NG",
+      "lat": 52.486879,
+      "lon": -1.91581,
+      "insta": "https://www.instagram.com/redlionhockley/"
+    },
+    {
+      "name": "The Lord Clifden",
+      "emoji": "🎨",
+      "area": "By HQ · Jewellery Quarter",
+      "desc": "160-year JQ institution — best Guinness & beer garden in Brum, Desi food, big-screen sport. ~10 min from HQ.",
+      "map": "Lord Clifden, 34 Great Hampton Street, Birmingham B18 6AA",
+      "lat": 52.490336,
+      "lon": -1.909024,
+      "insta": "https://www.instagram.com/lordclifden/"
+    },
+    {
       "name": "Pure Bar",
       "emoji": "🍺",
       "area": "City centre",
