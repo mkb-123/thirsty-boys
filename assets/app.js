@@ -1531,33 +1531,80 @@ function renderPubs() {
   }).join("");
 }
 
-/* Integrated map for the Pubs section — a keyless OpenStreetMap embed framing
-   every bench pub, with a "pin drop" of each spot's marker. Injected once (the
-   iframe reloads if we rewrite it every render), and only when the pubs section
-   has coordinates to show. */
+/* Integrated map for the Pubs section. Leaflet (loaded on demand, like
+   Firebase) gives us a real multi-pin map — one emoji pin per bench pub —
+   which the single-marker OSM embed couldn't. Falls back to that embed if
+   Leaflet can't load (offline / CDN blocked), so there's always a map. */
+function loadLeaflet() {
+  if (window.__leaflet) return window.__leaflet;
+  window.__leaflet = new Promise((resolve, reject) => {
+    if (window.L) { resolve(window.L); return; }
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    js.onload = () => window.L ? resolve(window.L) : reject(new Error("leaflet missing"));
+    js.onerror = () => reject(new Error("leaflet failed"));
+    document.head.appendChild(js);
+    setTimeout(() => reject(new Error("leaflet timeout")), 8000);
+  });
+  return window.__leaflet;
+}
+function pubMapPoints() { return PUBS.filter((p) => p.lat != null && p.lon != null); }
+function googleAllPinsUrl(pts) {
+  return "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(pts.map((p) => p.name + " Birmingham").join(" OR "));
+}
+/* Build the container + fallback link once (not rebuilt every render). */
 function renderPubsMap() {
   const box = document.getElementById("pubs-map");
   if (!box || box.dataset.ready === "1") return;
-  const pts = PUBS.filter((p) => p.lat != null && p.lon != null);
+  const pts = pubMapPoints();
   if (!pts.length) { box.style.display = "none"; return; }
-  const lats = pts.map((p) => p.lat), lons = pts.map((p) => p.lon);
-  // Bounding box + a little padding so no pin sits on the edge.
-  const pad = 0.006;
-  const minLat = Math.min.apply(null, lats) - pad, maxLat = Math.max.apply(null, lats) + pad;
-  const minLon = Math.min.apply(null, lons) - pad, maxLon = Math.max.apply(null, lons) + pad;
-  const bbox = [minLon, minLat, maxLon, maxLat].join(",");
-  // OSM's embed only paints one marker, so drop it on the most central pub.
-  const cLat = (minLat + maxLat) / 2, cLon = (minLon + maxLon) / 2;
-  let best = pts[0], bestD = Infinity;
-  pts.forEach((p) => { const d = (p.lat - cLat) ** 2 + (p.lon - cLon) ** 2; if (d < bestD) { bestD = d; best = p; } });
-  const src = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) +
-    "&layer=mapnik&marker=" + best.lat + "," + best.lon;
-  const bigMap = "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent(pts.map((p) => p.name + " Birmingham").join(" OR "));
-  box.innerHTML =
-    `<iframe class="pubs-map-frame" src="${escapeAttr(src)}" loading="lazy" title="Map of the bench pubs" referrerpolicy="no-referrer-when-downgrade"></iframe>` +
-    `<a class="pubs-map-open" href="${escapeAttr(bigMap)}" target="_blank" rel="noopener">↗ Open all pins in Google Maps</a>`;
   box.dataset.ready = "1";
+  box.innerHTML =
+    `<div class="pubs-map-canvas" id="pubs-map-canvas"></div>` +
+    `<a class="pubs-map-open" href="${escapeAttr(googleAllPinsUrl(pts))}" target="_blank" rel="noopener">↗ Open all pins in Google Maps</a>`;
+}
+let pubsMap = null;
+/* Init/refresh the Leaflet map. Must run when the container is VISIBLE (a map
+   built in a display:none box gets zero size), so it's driven from showTab. */
+function initPubsMap() {
+  const canvas = document.getElementById("pubs-map-canvas");
+  if (!canvas) return;
+  if (pubsMap) { try { pubsMap.invalidateSize(); } catch (e) { /* ignore */ } return; }
+  const pts = pubMapPoints();
+  if (!pts.length) return;
+  loadLeaflet().then((L) => {
+    if (pubsMap || !document.getElementById("pubs-map-canvas")) return;
+    const map = L.map(canvas, { scrollWheelZoom: false, attributionControl: true });
+    pubsMap = map;
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, attribution: "© OpenStreetMap",
+    }).addTo(map);
+    pts.forEach((p) => {
+      // Emoji pin via divIcon — no external marker image to break.
+      const icon = L.divIcon({ className: "pub-pin", html: `<span>${p.emoji || "🍺"}</span>`, iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
+      L.marker([p.lat, p.lon], { icon, title: p.name })
+        .addTo(map)
+        .bindPopup(`<b>${escapeHtml(p.emoji || "🍺")} ${escapeHtml(p.name)}</b><br>${escapeHtml(p.area || "")}`);
+    });
+    map.fitBounds(pts.map((p) => [p.lat, p.lon]), { padding: [28, 28], maxZoom: 15 });
+    setTimeout(() => { try { map.invalidateSize(); } catch (e) { /* ignore */ } }, 60);
+  }).catch(() => {
+    // Leaflet unavailable → single-marker OSM embed so a map still shows.
+    const canvas2 = document.getElementById("pubs-map-canvas");
+    if (!canvas2 || pubsMap) return;
+    const lats = pts.map((p) => p.lat), lons = pts.map((p) => p.lon), pad = 0.006;
+    const bbox = [Math.min.apply(null, lons) - pad, Math.min.apply(null, lats) - pad,
+      Math.max.apply(null, lons) + pad, Math.max.apply(null, lats) + pad].join(",");
+    const cLat = (Math.min.apply(null, lats) + Math.max.apply(null, lats)) / 2;
+    const cLon = (Math.min.apply(null, lons) + Math.max.apply(null, lons)) / 2;
+    const src = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) + "&layer=mapnik&marker=" + cLat + "," + cLon;
+    canvas2.outerHTML = `<iframe class="pubs-map-frame" src="${escapeAttr(src)}" loading="lazy" title="Map of the bench pubs"></iframe>`;
+  });
 }
 
 /* Buzz + banner every phone when a new bingo square gets claimed. A single new
@@ -1918,6 +1965,9 @@ function showTab(id) {
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.getAttribute("href") === "#" + id));
   try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
+  // The pub map must init while its container is visible (Leaflet needs real
+  // dimensions), so kick it off / resize it the moment the Pubs tab opens.
+  if (id === "pubs") { try { initPubsMap(); } catch (e) { /* ignore */ } }
 }
 window.addEventListener("hashchange", () => showTab(location.hash.replace("#", "")));
 

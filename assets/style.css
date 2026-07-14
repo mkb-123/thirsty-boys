@@ -269,6 +269,14 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
   margin-bottom: 1.3rem; background: var(--card);
 }
 .pubs-map-frame { display: block; width: 100%; height: 260px; border: 0; }
+.pubs-map-canvas { width: 100%; height: 280px; background: #0b0e1a; }
+/* Emoji pins (Leaflet divIcon) — no external marker image to break. */
+.pub-pin { display: flex; align-items: center; justify-content: center; }
+.pub-pin span {
+  font-size: 1.5rem; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+}
+.leaflet-popup-content { font-weight: 600; }
+.leaflet-container { background: #0b0e1a; font: inherit; }
 .pubs-map-open {
   display: block; text-align: center; padding: 0.6rem; font-size: 0.85rem;
   font-weight: 700; color: var(--amber-2); text-decoration: none;
