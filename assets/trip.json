@@ -67,7 +67,8 @@
           "map": "The Indian Brewery Snow Hill Birmingham",
           "menu": "https://www.indianbrewery.com/menu",
           "lat": 52.484688,
-          "lon": -1.901491
+          "lon": -1.901491,
+          "insta": "https://www.instagram.com/indianbrewery/"
         },
         {
           "t": "15:00",
@@ -88,7 +89,8 @@
           "tag": "walkin",
           "map": "The Wellington Bennetts Hill Birmingham B2 5SN",
           "lat": 52.480527,
-          "lon": -1.9004432
+          "lon": -1.9004432,
+          "insta": "https://www.instagram.com/wellyrealale/"
         },
         {
           "t": "17:30",
@@ -99,7 +101,8 @@
           "tag": "booked",
           "map": "TOCA Social Bullring Birmingham",
           "lat": 52.476642,
-          "lon": -1.896291
+          "lon": -1.896291,
+          "insta": "https://www.instagram.com/tocasocialuk/"
         },
         {
           "t": "19:45",
@@ -111,7 +114,8 @@
           "map": "Royal Watan Kashmiri Birmingham",
           "menu": "https://www.royal-watan.co.uk/",
           "lat": 52.447665,
-          "lon": -1.91297
+          "lon": -1.91297,
+          "insta": "https://www.instagram.com/royal_watan/"
         },
         {
           "t": "21:30",
@@ -121,7 +125,8 @@
           "desc": "Another wine bar. Naturally. (Arch 13 at Connolly's, 220 Livery Street.)",
           "map": "Arch 13 at Connolly's 220 Livery Street Birmingham B3 1EU",
           "lat": 52.484581,
-          "lon": -1.901566
+          "lon": -1.901566,
+          "insta": "https://www.instagram.com/arch13bar/"
         },
         {
           "t": "22:30",
@@ -148,7 +153,8 @@
           "tag": "booked",
           "map": "Ackers Adventure Birmingham",
           "lat": 52.459468,
-          "lon": -1.860493
+          "lon": -1.860493,
+          "insta": "https://www.instagram.com/ackersadventure/"
         },
         {
           "t": "12:30",
@@ -160,7 +166,8 @@
           "map": "1000 Trades Birmingham",
           "menu": "https://1000trades.org.uk/food/",
           "lat": 52.485183,
-          "lon": -1.91144
+          "lon": -1.91144,
+          "insta": "https://www.instagram.com/1000tradesjq/"
         },
         {
           "t": "14:00",
@@ -171,7 +178,8 @@
           "tag": "booked",
           "map": "F1 Arcade Birmingham",
           "lat": 52.479755,
-          "lon": -1.905439
+          "lon": -1.905439,
+          "insta": "https://www.instagram.com/f1arcade/"
         },
         {
           "t": "16:00",
@@ -183,7 +191,8 @@
           "map": "Albert Schloss Chamberlain Square Birmingham B3 3AX",
           "menu": "https://albertsschloss.com/location/birmingham/",
           "lat": 52.4799844,
-          "lon": -1.9050709
+          "lon": -1.9050709,
+          "insta": "https://www.instagram.com/albertsschloss/"
         },
         {
           "t": "18:30",
@@ -195,7 +204,8 @@
           "map": "Alfred Works food hall Birmingham",
           "menu": "https://alfredworks.co.uk/food-partners/",
           "lat": 52.4753,
-          "lon": -1.883757
+          "lon": -1.883757,
+          "insta": "https://www.instagram.com/alfred_works/"
         },
         {
           "t": "20:00",
@@ -205,7 +215,8 @@
           "desc": "Honky-tonk. Yeehaw.",
           "map": "Low Places Birmingham",
           "lat": 52.476359,
-          "lon": -1.882702
+          "lon": -1.882702,
+          "insta": "https://www.instagram.com/low.places.bar/"
         },
         {
           "t": "21:15",
@@ -216,7 +227,8 @@
           "tag": "walkin",
           "map": "Kilder Shaws Passage Digbeth Birmingham B5 5JG",
           "lat": 52.4783873,
-          "lon": -1.8901467
+          "lon": -1.8901467,
+          "insta": "https://www.instagram.com/kilder_bar/"
         },
         {
           "t": "22:00",
@@ -226,7 +238,8 @@
           "desc": "Luna Springs, Digbeth · big screen.",
           "map": "Luna Springs Digbeth Birmingham",
           "lat": 52.475317,
-          "lon": -1.881127
+          "lon": -1.881127,
+          "insta": "https://www.instagram.com/luna_springs_digbeth/"
         }
       ]
     },
@@ -243,7 +256,8 @@
           "map": "Medicine Bakery Birmingham",
           "menu": "https://www.medicinebakery.co.uk/birmingham-menu/",
           "lat": 52.466911,
-          "lon": -1.929097
+          "lon": -1.929097,
+          "insta": "https://www.instagram.com/medicinebakery/"
         },
         {
           "t": "12:00",
@@ -603,11 +617,66 @@
     }
   ],
   "pubs": [
-    { "name": "Pure Bar", "emoji": "🍺", "area": "City centre", "desc": "Purity-owned, cracking beer selection.", "map": "Purecraft Bar Waterloo Street Birmingham B2 5TJ", "lat": 52.4801273, "lon": -1.9014853 },
-    { "name": "The Good Intent", "emoji": "🍺", "area": "City centre", "desc": "Tucked in Piccadilly Arcade — local beer.", "map": "The Good Intent Piccadilly Arcade Birmingham", "lat": 52.4789423, "lon": -1.900048 },
-    { "name": "Tiger Bites Pig", "emoji": "🥟", "area": "City centre", "desc": "Taiwanese bao — excellent. A cracking food stop.", "map": "Tiger Bites Pig Church Street Birmingham B3 2NP", "menu": "https://tigerbitespig.co.uk/", "lat": 52.4820518, "lon": -1.9002567 },
-    { "name": "The Woodman", "emoji": "🍺", "area": "Digbeth", "desc": "Grand old tiled pub, proper beer, Digbeth edge.", "map": "The Woodman New Canal Street Birmingham B5 5LG", "lat": 52.4817194, "lon": -1.8867966 },
-    { "name": "The Wolf", "emoji": "🐺", "area": "Out of town", "desc": "Out-of-town pub — worth the trek for the beer.", "map": "The Wolf Constitution Hill Birmingham", "lat": 52.4864962, "lon": -1.9017338 },
-    { "name": "Burning Soul Brewery", "emoji": "🔥", "area": "Out of town", "desc": "Industrial-estate brewery taproom (weekend hours).", "map": "Burning Soul Brewing Mott Street Birmingham B19 3HE", "lat": 52.4889578, "lon": -1.9053981 }
+    {
+      "name": "Pure Bar",
+      "emoji": "🍺",
+      "area": "City centre",
+      "desc": "Purity-owned, cracking beer selection.",
+      "map": "Purecraft Bar Waterloo Street Birmingham B2 5TJ",
+      "lat": 52.4801273,
+      "lon": -1.9014853,
+      "insta": "https://www.instagram.com/purecraftbarandkitchen/"
+    },
+    {
+      "name": "The Good Intent",
+      "emoji": "🍺",
+      "area": "City centre",
+      "desc": "Tucked in Piccadilly Arcade — local beer.",
+      "map": "The Good Intent Piccadilly Arcade Birmingham",
+      "lat": 52.4789423,
+      "lon": -1.900048,
+      "insta": "https://www.instagram.com/the_goodintent_pub/"
+    },
+    {
+      "name": "Tiger Bites Pig",
+      "emoji": "🥟",
+      "area": "City centre",
+      "desc": "Taiwanese bao — excellent. A cracking food stop.",
+      "map": "Tiger Bites Pig Church Street Birmingham B3 2NP",
+      "menu": "https://tigerbitespig.co.uk/",
+      "lat": 52.4820518,
+      "lon": -1.9002567,
+      "insta": "https://www.instagram.com/_tigerbitespig/"
+    },
+    {
+      "name": "The Woodman",
+      "emoji": "🍺",
+      "area": "Digbeth",
+      "desc": "Grand old tiled pub, proper beer, Digbeth edge.",
+      "map": "The Woodman New Canal Street Birmingham B5 5LG",
+      "lat": 52.4817194,
+      "lon": -1.8867966,
+      "insta": "https://www.instagram.com/woodmanbrum/"
+    },
+    {
+      "name": "The Wolf",
+      "emoji": "🐺",
+      "area": "Out of town",
+      "desc": "Out-of-town pub — worth the trek for the beer.",
+      "map": "The Wolf Constitution Hill Birmingham",
+      "lat": 52.4864962,
+      "lon": -1.9017338,
+      "insta": "https://www.instagram.com/thewolfbirmingham/"
+    },
+    {
+      "name": "Burning Soul Brewery",
+      "emoji": "🔥",
+      "area": "Out of town",
+      "desc": "Industrial-estate brewery taproom (weekend hours).",
+      "map": "Burning Soul Brewing Mott Street Birmingham B19 3HE",
+      "lat": 52.4889578,
+      "lon": -1.9053981,
+      "insta": "https://www.instagram.com/burningsoulbrewing/"
+    }
   ]
 }

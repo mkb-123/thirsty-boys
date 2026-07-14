@@ -264,6 +264,17 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .net-pop .roster { display: flex; flex-direction: column; gap: 0.4rem; }
 
 /* ---------- PUBS ON THE BENCH ---------- */
+.pubs-map {
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  margin-bottom: 1.3rem; background: var(--card);
+}
+.pubs-map-frame { display: block; width: 100%; height: 260px; border: 0; }
+.pubs-map-open {
+  display: block; text-align: center; padding: 0.6rem; font-size: 0.85rem;
+  font-weight: 700; color: var(--amber-2); text-decoration: none;
+  border-top: 1px solid var(--line);
+}
+.pubs-map-open:hover { text-decoration: underline; }
 .pub-area { margin-bottom: 1.4rem; }
 .pub-area-h { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--amber); margin: 0 0 0.6rem; }
 .pub {
@@ -277,6 +288,8 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .pub-links { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; }
 .pub-links a { color: var(--amber-2); font-weight: 700; font-size: 0.85rem; text-decoration: none; }
 .pub-links a:hover { text-decoration: underline; }
+/* Instagram links get a hint of the IG magenta wherever they appear. */
+.link-insta { color: #d6407f !important; }
 
 /* ---------- SECTIONS ---------- */
 .section {

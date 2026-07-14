@@ -467,7 +467,10 @@ function renderItinerary() {
       const menu = s.menu
         ? `<a href="${escapeAttr(s.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>`
         : "";
-      const tags = (tag || map || uber || menu) ? `<div class="stop-tags">${tag}${map}${uber}${menu}</div>` : "";
+      const insta = s.insta
+        ? `<a class="link-insta" href="${escapeAttr(s.insta)}" target="_blank" rel="noopener">📸 Insta</a>`
+        : "";
+      const tags = (tag || map || uber || menu || insta) ? `<div class="stop-tags">${tag}${map}${uber}${menu}${insta}</div>` : "";
 
       return `
         <div class="${cls}">
@@ -1506,6 +1509,7 @@ function renderPubs() {
   const wrap = document.getElementById("pubs-list");
   if (!wrap) return;
   if (!PUBS.length) { wrap.innerHTML = ""; return; }
+  renderPubsMap();
   const areas = [];
   PUBS.forEach((p) => { if (areas.indexOf(p.area || "More") === -1) areas.push(p.area || "More"); });
   wrap.innerHTML = areas.map((area) => {
@@ -1515,14 +1519,44 @@ function renderPubs() {
         ? `<a href="https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=${p.lat}&dropoff%5Blongitude%5D=${p.lon}&dropoff%5Bnickname%5D=${encodeURIComponent(p.name)}" target="_blank" rel="noopener">🚕 Uber</a>`
         : "";
       const menu = p.menu ? `<a href="${escapeAttr(p.menu)}" target="_blank" rel="noopener">🍽️ Menu</a>` : "";
+      const insta = p.insta ? `<a class="link-insta" href="${escapeAttr(p.insta)}" target="_blank" rel="noopener">📸 Insta</a>` : "";
       return `<div class="pub">
         <div class="pub-head"><span class="pub-emoji">${p.emoji || "🍺"}</span><span class="pub-name">${escapeHtml(p.name)}</span></div>
         <p class="pub-desc">${escapeHtml(p.desc || "")}</p>
-        <div class="pub-links">${map}${uber}${menu}</div>
+        <div class="pub-links">${map}${uber}${menu}${insta}</div>
       </div>`;
     }).join("");
     return `<div class="pub-area"><h3 class="pub-area-h">${escapeHtml(area)}</h3>${items}</div>`;
   }).join("");
+}
+
+/* Integrated map for the Pubs section — a keyless OpenStreetMap embed framing
+   every bench pub, with a "pin drop" of each spot's marker. Injected once (the
+   iframe reloads if we rewrite it every render), and only when the pubs section
+   has coordinates to show. */
+function renderPubsMap() {
+  const box = document.getElementById("pubs-map");
+  if (!box || box.dataset.ready === "1") return;
+  const pts = PUBS.filter((p) => p.lat != null && p.lon != null);
+  if (!pts.length) { box.style.display = "none"; return; }
+  const lats = pts.map((p) => p.lat), lons = pts.map((p) => p.lon);
+  // Bounding box + a little padding so no pin sits on the edge.
+  const pad = 0.006;
+  const minLat = Math.min.apply(null, lats) - pad, maxLat = Math.max.apply(null, lats) + pad;
+  const minLon = Math.min.apply(null, lons) - pad, maxLon = Math.max.apply(null, lons) + pad;
+  const bbox = [minLon, minLat, maxLon, maxLat].join(",");
+  // OSM's embed only paints one marker, so drop it on the most central pub.
+  const cLat = (minLat + maxLat) / 2, cLon = (minLon + maxLon) / 2;
+  let best = pts[0], bestD = Infinity;
+  pts.forEach((p) => { const d = (p.lat - cLat) ** 2 + (p.lon - cLon) ** 2; if (d < bestD) { bestD = d; best = p; } });
+  const src = "https://www.openstreetmap.org/export/embed.html?bbox=" + encodeURIComponent(bbox) +
+    "&layer=mapnik&marker=" + best.lat + "," + best.lon;
+  const bigMap = "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(pts.map((p) => p.name + " Birmingham").join(" OR "));
+  box.innerHTML =
+    `<iframe class="pubs-map-frame" src="${escapeAttr(src)}" loading="lazy" title="Map of the bench pubs" referrerpolicy="no-referrer-when-downgrade"></iframe>` +
+    `<a class="pubs-map-open" href="${escapeAttr(bigMap)}" target="_blank" rel="noopener">↗ Open all pins in Google Maps</a>`;
+  box.dataset.ready = "1";
 }
 
 /* Buzz + banner every phone when a new bingo square gets claimed. A single new
@@ -1809,7 +1843,8 @@ async function fetchWeather() {
     const url = "https://api.open-meteo.com/v1/forecast?latitude=" + w.lat + "&longitude=" + w.lon +
       "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
       "&timezone=Europe%2FLondon&start_date=" + (w.start || "") + "&end_date=" + (w.end || "");
-    const r = await fetch(url);
+    // no-store so a long-lived PWA never serves a stale (or once-failed) forecast
+    const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) throw new Error("wx");
     const d = await r.json();
     el.innerHTML = d.daily.time.map((t, i) => {
@@ -1824,7 +1859,11 @@ async function fetchWeather() {
       </div>`;
     }).join("");
   } catch (e) {
-    el.innerHTML = `<span class="muted">🌦️ Birmingham forecast — tap BBC for the latest</span>`;
+    // Don't clobber a good forecast we already painted on a transient blip —
+    // only show the fallback if the strip is still empty/loading.
+    if (!el.querySelector(".wx-day")) {
+      el.innerHTML = `<span class="muted">🌦️ Birmingham forecast — tap BBC for the latest</span>`;
+    }
   }
 }
 
@@ -2034,6 +2073,10 @@ async function boot() {
   setInterval(tick, 1000);
   initSync();
   fetchWeather();
+  // Keep the forecast live: refresh every 30 min and whenever the app is
+  // brought back to the foreground (a PWA can sit open for days).
+  setInterval(fetchWeather, 30 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) fetchWeather(); });
 
   // First thing on first load: ask who you are.
   if (me == null || Number.isNaN(me) || !state.names[me]) openWhoamiModal();
