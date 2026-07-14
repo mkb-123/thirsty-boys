@@ -80,6 +80,17 @@
           "lon": -1.912536
         },
         {
+          "t": "16:15",
+          "iso": "2026-07-17T16:15",
+          "emoji": "🍺",
+          "title": "The Wellington",
+          "desc": "Pre-TOCA session — 12+ real ales and a roof terrace. City centre, short walk to the Bullring.",
+          "tag": "walkin",
+          "map": "The Wellington Bennetts Hill Birmingham B2 5SN",
+          "lat": 52.480527,
+          "lon": -1.9004432
+        },
+        {
           "t": "17:30",
           "iso": "2026-07-17T17:30",
           "emoji": "🎯",
@@ -195,6 +206,17 @@
           "map": "Low Places Birmingham",
           "lat": 52.476359,
           "lon": -1.882702
+        },
+        {
+          "t": "21:15",
+          "iso": "2026-07-18T21:15",
+          "emoji": "🍺",
+          "title": "Kilder",
+          "desc": "Craft beer in a railway arch — quick pint on the way to the big screen.",
+          "tag": "walkin",
+          "map": "Kilder Shaws Passage Digbeth Birmingham B5 5JG",
+          "lat": 52.4783873,
+          "lon": -1.8901467
         },
         {
           "t": "22:00",
@@ -581,11 +603,9 @@
     }
   ],
   "pubs": [
-    { "name": "The Wellington", "emoji": "🍺", "area": "City centre", "desc": "12+ real ales and a roof terrace — lovely old-boy's pub.", "map": "The Wellington Bennetts Hill Birmingham B2 5SN", "lat": 52.480527, "lon": -1.9004432 },
     { "name": "Pure Bar", "emoji": "🍺", "area": "City centre", "desc": "Purity-owned, cracking beer selection.", "map": "Purecraft Bar Waterloo Street Birmingham B2 5TJ", "lat": 52.4801273, "lon": -1.9014853 },
     { "name": "The Good Intent", "emoji": "🍺", "area": "City centre", "desc": "Tucked in Piccadilly Arcade — local beer.", "map": "The Good Intent Piccadilly Arcade Birmingham", "lat": 52.4789423, "lon": -1.900048 },
     { "name": "Tiger Bites Pig", "emoji": "🥟", "area": "City centre", "desc": "Taiwanese bao — excellent. A cracking food stop.", "map": "Tiger Bites Pig Church Street Birmingham B3 2NP", "menu": "https://tigerbitespig.co.uk/", "lat": 52.4820518, "lon": -1.9002567 },
-    { "name": "Kilder", "emoji": "🍺", "area": "Digbeth", "desc": "Craft beer in a railway arch — on the way to Luna Springs.", "map": "Kilder Shaws Passage Digbeth Birmingham B5 5JG", "lat": 52.4783873, "lon": -1.8901467 },
     { "name": "The Woodman", "emoji": "🍺", "area": "Digbeth", "desc": "Grand old tiled pub, proper beer, Digbeth edge.", "map": "The Woodman New Canal Street Birmingham B5 5LG", "lat": 52.4817194, "lon": -1.8867966 },
     { "name": "The Wolf", "emoji": "🐺", "area": "Out of town", "desc": "Out-of-town pub — worth the trek for the beer.", "map": "The Wolf Constitution Hill Birmingham", "lat": 52.4864962, "lon": -1.9017338 },
     { "name": "Burning Soul Brewery", "emoji": "🔥", "area": "Out of town", "desc": "Industrial-estate brewery taproom (weekend hours).", "map": "Burning Soul Brewing Mott Street Birmingham B19 3HE", "lat": 52.4889578, "lon": -1.9053981 }
