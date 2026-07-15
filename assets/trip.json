@@ -717,6 +717,33 @@
       "lat": 52.4889578,
       "lon": -1.9053981,
       "insta": "https://www.instagram.com/burningsoulbrewing/"
+    },
+    {
+      "name": "The Distillery",
+      "emoji": "🛶",
+      "area": "Outdoor",
+      "desc": "Big canalside terrace by Brindleyplace — proper afternoon sun-trap, Sadler's ales on tap.",
+      "map": "The Distillery Sheepcote Street Birmingham",
+      "lat": 52.4789079,
+      "lon": -1.9177893
+    },
+    {
+      "name": "The Canal House",
+      "emoji": "⚓",
+      "area": "Outdoor",
+      "desc": "Sprawling canal-side deck near Gas Street Basin — rammed (for good reason) when the sun's out.",
+      "map": "The Canal House Bridge Street Birmingham",
+      "lat": 52.477534,
+      "lon": -1.908097
+    },
+    {
+      "name": "The Old Crown",
+      "emoji": "🏰",
+      "area": "Outdoor",
+      "desc": "Birmingham's oldest pub (1368) with a courtyard garden — a characterful stop on the Digbeth route.",
+      "map": "The Old Crown High Street Deritend Birmingham",
+      "lat": 52.4748118,
+      "lon": -1.8835547
     }
   ]
 }
