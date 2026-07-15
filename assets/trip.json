@@ -725,7 +725,8 @@
       "desc": "Big canalside terrace by Brindleyplace — proper afternoon sun-trap, Sadler's ales on tap.",
       "map": "The Distillery Sheepcote Street Birmingham",
       "lat": 52.4789079,
-      "lon": -1.9177893
+      "lon": -1.9177893,
+      "insta": "https://www.instagram.com/distilleryb16/"
     },
     {
       "name": "The Canal House",
@@ -734,7 +735,8 @@
       "desc": "Sprawling canal-side deck near Gas Street Basin — rammed (for good reason) when the sun's out.",
       "map": "The Canal House Bridge Street Birmingham",
       "lat": 52.477534,
-      "lon": -1.908097
+      "lon": -1.908097,
+      "insta": "https://www.instagram.com/thecanalhouseuk/"
     },
     {
       "name": "The Old Crown",
@@ -743,7 +745,8 @@
       "desc": "Birmingham's oldest pub (1368) with a courtyard garden — a characterful stop on the Digbeth route.",
       "map": "The Old Crown High Street Deritend Birmingham",
       "lat": 52.4748118,
-      "lon": -1.8835547
+      "lon": -1.8835547,
+      "insta": "https://www.instagram.com/oldcrownbham/"
     }
   ]
 }
