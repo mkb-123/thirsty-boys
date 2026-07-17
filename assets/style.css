@@ -101,12 +101,12 @@ h1 span {
   align-items: center;
   flex: 1 1 0;
   min-width: 0;
-  padding: 0.45rem 0.3rem;
-  border-radius: 12px;
+  padding: 0.7rem 0.35rem;
+  border-radius: 14px;
   transition: background 0.2s ease;
 }
 .cd-num {
-  font-size: clamp(1.6rem, 6vw, 2.4rem);
+  font-size: clamp(2rem, 7.5vw, 2.9rem);
   font-weight: 900;
   color: var(--amber-2);
   font-variant-numeric: tabular-nums;
@@ -660,8 +660,9 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
   text-align: center;
   position: relative;
 }
-.lb-card.leader { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
-.lb-crown { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 1.4rem; }
+.lb-card.leader { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); padding-top: 1.8rem; }
+/* Crown sits INSIDE the card (was overflowing above it) */
+.lb-crown { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); font-size: 1.25rem; line-height: 1; }
 .lb-name { font-weight: 800; font-size: 0.95rem; }
 .lb-units { font-size: 1.9rem; font-weight: 900; color: var(--amber-2); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .lb-units-lab { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }

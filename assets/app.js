@@ -623,7 +623,10 @@ function topName() {
 }
 /* Which tab opens by default depends on the trip phase. */
 function defaultTab() {
-  return new Date() > TRIP_END ? "recap" : "itinerary";
+  const now = new Date();
+  if (now > TRIP_END) return "recap";                       // after: the wrap-up
+  if (now >= TRIP_START) return "tracker";                  // live: land on Drinks
+  return "itinerary";                                       // before: the plan
 }
 
 /* ==========================================================================
