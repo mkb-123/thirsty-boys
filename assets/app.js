@@ -544,6 +544,7 @@ function renderCountdown() {
     blocks.forEach((bl, i) => { const l = bl.querySelector(".cd-lab"); if (l) l.textContent = labs[i]; bl.classList.remove("cd-leader"); });
     cap.textContent = TRIP.tagline || "";
     cap.classList.remove("live");
+    const cd = document.getElementById("countdown"); if (cd) cd.classList.remove("live");
   } else {
     // Trip's on (or done): the countdown becomes a live drink scoreboard.
     const rows = state.names.map((n, i) => ({ n, i, c: countFor(i) })).sort((a, b) => b.c - a.c);
@@ -558,6 +559,7 @@ function renderCountdown() {
     });
     cap.textContent = now <= TRIP_END ? "🍺 Live drink count — pace yourselves" : "🏁 Final tally. Legends, all of you.";
     cap.classList.add("live");
+    const cd = document.getElementById("countdown"); if (cd) cd.classList.add("live");
   }
 }
 

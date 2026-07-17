@@ -101,6 +101,9 @@ h1 span {
   align-items: center;
   flex: 1 1 0;
   min-width: 0;
+  padding: 0.45rem 0.3rem;
+  border-radius: 12px;
+  transition: background 0.2s ease;
 }
 .cd-num {
   font-size: clamp(1.6rem, 6vw, 2.4rem);
@@ -116,8 +119,26 @@ h1 span {
   color: var(--muted);
   margin-top: 0.35rem;
 }
+/* Live scoreboard: the leader gets a subtle amber card + ring + crown, with room
+   to breathe instead of a flat coloured-in block. */
+.cd-block.cd-leader {
+  background: linear-gradient(180deg, rgba(244, 169, 51, 0.22), rgba(244, 169, 51, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(244, 169, 51, 0.5);
+}
 .cd-block.cd-leader .cd-num { color: #fff; }
-.cd-block.cd-leader { background: rgba(244, 169, 51, 0.18); border-radius: 10px; }
+.cd-block.cd-leader .cd-lab { color: var(--amber-2); }
+.countdown.live .cd-block.cd-leader .cd-lab::before { content: "👑 "; }
+/* Names (not day/hr labels) sit in the label slot during the trip — keep them on
+   one line so the row stays tidy no matter the name length. */
+.countdown.live .cd-lab {
+  text-transform: none;      /* names read better in normal case + fit the column */
+  letter-spacing: 0;
+  font-size: 0.62rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cd-caption { color: var(--muted); margin-top: 0.9rem; font-size: 0.9rem; }
 .cd-caption.live { color: var(--green); font-weight: 700; }
 
