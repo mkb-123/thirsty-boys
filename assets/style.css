@@ -101,12 +101,12 @@ h1 span {
   align-items: center;
   flex: 1 1 0;
   min-width: 0;
-  padding: 0.7rem 0.35rem;
-  border-radius: 14px;
+  padding: 1rem 0.4rem;
+  border-radius: 16px;
   transition: background 0.2s ease;
 }
 .cd-num {
-  font-size: clamp(2rem, 7.5vw, 2.9rem);
+  font-size: clamp(2.6rem, 9.5vw, 3.6rem);
   font-weight: 900;
   color: var(--amber-2);
   font-variant-numeric: tabular-nums;
@@ -133,7 +133,7 @@ h1 span {
 .countdown.live .cd-lab {
   text-transform: none;      /* names read better in normal case + fit the column */
   letter-spacing: 0;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
