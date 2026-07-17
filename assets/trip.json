@@ -167,7 +167,8 @@
           "menu": "https://1000trades.org.uk/food/",
           "lat": 52.485183,
           "lon": -1.91144,
-          "insta": "https://www.instagram.com/1000tradesjq/"
+          "insta": "https://www.instagram.com/1000tradesjq/",
+          "intensity": 0.9
         },
         {
           "t": "14:00",
@@ -205,7 +206,8 @@
           "menu": "https://alfredworks.co.uk/food-partners/",
           "lat": 52.4753,
           "lon": -1.883757,
-          "insta": "https://www.instagram.com/alfred_works/"
+          "insta": "https://www.instagram.com/alfred_works/",
+          "intensity": 0.85
         },
         {
           "t": "20:00",

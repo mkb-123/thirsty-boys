@@ -1835,6 +1835,7 @@ function bingoNotify() {
    weight each future half-hour by how boozy the itinerary is then, calibrate
    against drinks-per-weighted-hour actually logged so far, and integrate. */
 function stopIntensity(s) {
+  if (s && typeof s.intensity === "number") return s.intensity;         // per-stop override (trip.json)
   const e = (s && s.emoji) || "";
   const has = (set) => set.some((x) => e.indexOf(x) >= 0);
   if (has(["🍛"])) return 1.0;                                          // BYOB curry
