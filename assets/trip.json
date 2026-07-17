@@ -81,6 +81,17 @@
           "lon": -1.912536
         },
         {
+          "t": "15:00",
+          "iso": "2026-07-17T15:01",
+          "emoji": "🍺",
+          "title": "The Queens Head",
+          "desc": "Impromptu stop — we ended up here. Cheeky one before the Airbnb.",
+          "tag": "walkin",
+          "map": "The Queens Head Farm Street Birmingham",
+          "lat": 52.4959557,
+          "lon": -1.9131703
+        },
+        {
           "t": "16:15",
           "iso": "2026-07-17T16:15",
           "emoji": "🍺",
