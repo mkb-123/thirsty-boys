@@ -614,6 +614,51 @@
       "id": "rain",
       "emoji": "🌧️",
       "t": "Rain (obviously)"
+    },
+    {
+      "id": "slang",
+      "emoji": "💬",
+      "t": "Someone says 'bab', 'bostin' or 'our kid'"
+    },
+    {
+      "id": "spaghetti",
+      "emoji": "🍝",
+      "t": "Spaghetti Junction"
+    },
+    {
+      "id": "ozzy",
+      "emoji": "🦇",
+      "t": "An Ozzy / Black Sabbath reference"
+    },
+    {
+      "id": "cadbury",
+      "emoji": "🍫",
+      "t": "A Cadbury / chocolate mention"
+    },
+    {
+      "id": "floozie",
+      "emoji": "⛲",
+      "t": "The Floozie in the Jacuzzi fountain"
+    },
+    {
+      "id": "tram",
+      "emoji": "🚋",
+      "t": "A West Midlands Metro tram"
+    },
+    {
+      "id": "crane",
+      "emoji": "🏗️",
+      "t": "A crane / building site (it's always Brum)"
+    },
+    {
+      "id": "dog",
+      "emoji": "🐕",
+      "t": "A dog in a pub"
+    },
+    {
+      "id": "fryup",
+      "emoji": "🍳",
+      "t": "A full English before noon"
     }
   ],
   "pubs": [
