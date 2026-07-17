@@ -1030,6 +1030,8 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .bet-yourcall { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 0.55rem 0.75rem; }
 .bet-yourcall b { color: var(--ink); }
 .bet-yourcall .btn-ghost { margin: 0; padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+.bet-submit { display: block; width: 100%; margin-top: 0.6rem; }
+.reveal-all { display: block; width: 100%; margin: 0 0 1rem; }
 
 .bet-scoreboard {
   background: var(--card);

@@ -1079,8 +1079,15 @@ function renderBets() {
   // Sunday's "first out of bed" near the end, whole-trip totals last.
   const orderedBets = BETS;
 
+  // Bulk "reveal everything that's been settled" — reveals every bet that has an
+  // outcome logged but isn't revealed yet (one password prompt for the lot).
+  const settledUnrevealed = BETS.filter((bt) => { const bb = getBet(bt.id); return !bb.revealed && bb.result !== "" && bb.result != null; });
+  const revealAll = settledUnrevealed.length
+    ? `<button class="btn-add reveal-all" id="bets-reveal-all">👁 Reveal all ${settledUnrevealed.length} settled bet${settledUnrevealed.length === 1 ? "" : "s"}</button>`
+    : "";
+
   const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = scoreboard + myProg + deckWrap(orderedBets.map((bet) => {
+  wrap.innerHTML = scoreboard + myProg + revealAll + deckWrap(orderedBets.map((bet) => {
     const b = getBet(bet.id);
     const callCount = Object.keys(b.calls).length;
     const mineIn = claimed && b.calls[me] != null && b.calls[me] !== "";
@@ -1133,7 +1140,7 @@ function renderBets() {
              state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
              `</select>`
           : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
-        callZone = ctl;
+        callZone = `${ctl}<button class="btn-add bet-submit" data-bet="${bet.id}">${mineIn ? "✅ Update call" : "✅ Submit call"}</button>`;
       } else {
         // Keep the pick itself hidden (even from you at a glance) — tap Edit to see/change it.
         callZone = `<div class="bet-yourcall"><span>🔒 Your call's locked in</span>
@@ -1154,14 +1161,24 @@ function renderBets() {
     return `<div class="bet-card ${cardCls}">${mark}<p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
   }).join(""), "bets-deck");
 
+  // Picking/typing saves silently as a safety net; the card stays on the picker
+  // so the explicit "Submit call" button is what locks it in and collapses it.
+  function saveCall(id, v) {
+    const b = getBet(id);
+    if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
+    else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
+    state.bets[id] = b;
+    save();
+  }
   wrap.querySelectorAll("[data-bet-call]").forEach((el) =>
-    el.addEventListener("change", () => {
-      const id = el.dataset.betCall, b = getBet(id);
-      const v = el.value;
-      if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
-      else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); betEditCall.delete(id); }
-      state.bets[id] = b;
-      save();
+    el.addEventListener("change", () => saveCall(el.dataset.betCall, el.value))
+  );
+  wrap.querySelectorAll(".bet-submit").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.bet;
+      const el = wrap.querySelector('[data-bet-call="' + id + '"]');
+      if (el) saveCall(id, el.value);   // read the current value (covers text inputs that never blurred)
+      betEditCall.delete(id);
       renderBets();
     })
   );
@@ -1188,6 +1205,14 @@ function renderBets() {
       b.revealed = true; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", true); renderBets();
     })
   );
+  const revealAllBtn = document.getElementById("bets-reveal-all");
+  if (revealAllBtn) revealAllBtn.addEventListener("click", () => {
+    if (!settledUnrevealed.length) return;
+    if (!confirmReveal(`all ${settledUnrevealed.length} settled bets' calls`)) return;
+    settledUnrevealed.forEach((bt) => { const b = getBet(bt.id); b.revealed = true; state.bets[bt.id] = b; rtSet("bets/" + bt.id + "/revealed", true); });
+    save();
+    renderBets();
+  });
   wrap.querySelectorAll(".bet-reopen").forEach((btn) =>
     btn.addEventListener("click", () => {
       const id = btn.dataset.bet, b = getBet(id);
