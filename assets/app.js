@@ -23,8 +23,12 @@ const DRINKS = [
   { id: "cocktail", label: "Cocktail", emoji: "🍸" },
   { id: "shot",     label: "Shot",     emoji: "🍶" },
   { id: "whiskey",  label: "Whiskey",  emoji: "🥃" },
-  { id: "soft",     label: "Soft",     emoji: "🧃" },
+  { id: "soft",     label: "Soft",     emoji: "🧃", soft: true },
+  { id: "coffee",   label: "Coffee",   emoji: "☕", soft: true },
 ];
+// Soft drinks & coffee are tracked but DON'T count toward the drinking total.
+const BOOZE = DRINKS.filter((d) => !d.soft);
+const SOFT = DRINKS.filter((d) => d.soft);
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
 async function loadTrip() {
@@ -441,11 +445,16 @@ window.addEventListener("online", () => { if (!syncRef) initSync(); refreshSyncS
 window.addEventListener("offline", () => { connected = false; refreshSyncStatus(); });
 
 /* ---------- HELPERS ---------- */
-function countFor(i) {
+function countFor(i) {   // the drinking count — BOOZE only (soft/coffee excluded)
   const tally = state.tallies[i] || {};
-  return DRINKS.reduce((sum, d) => sum + (tally[d.id] || 0), 0);
+  return BOOZE.reduce((sum, d) => sum + (tally[d.id] || 0), 0);
+}
+function softCountFor(i) {   // soft drinks + coffees, tracked separately
+  const tally = state.tallies[i] || {};
+  return SOFT.reduce((sum, d) => sum + (tally[d.id] || 0), 0);
 }
 function drinkById(id) { return DRINKS.find((d) => d.id === id); }
+function isSoft(id) { const d = drinkById(id); return !!(d && d.soft); }
 
 /* ==========================================================================
    RENDER: ITINERARY
@@ -607,7 +616,7 @@ function renderTripMode() {
   for (const s of flat) { if (new Date(s.iso) <= now) cur = s; else { next = s; break; } }
   const nowTxt = cur ? `${cur.emoji} ${escapeHtml(cur.title)}` : "warming up…";
   const nextTxt = next ? `${next.emoji} ${escapeHtml(next.title)} · ${next.t}` : "last one 🎉";
-  const log = (state.log || []).filter((e) => e && e.ts);
+  const log = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
   const lastHour = log.filter((e) => Date.now() - e.ts <= 3600000).length;
   live.innerHTML =
     `<div class="hl-nownext"><span class="hl-seg"><b>NOW</b> ${nowTxt}</span><span class="hl-seg hl-next"><b>NEXT</b> ${nextTxt}</span></div>` +
@@ -1897,8 +1906,9 @@ function renderStats() {
   const byDrink = {};
   (state.tallies || []).forEach((t) => { if (t) Object.keys(t).forEach((k) => { byDrink[k] = (byDrink[k] || 0) + (t[k] || 0); }); });
 
-  // Time-based numbers from the timestamped log.
-  const log = (state.log || []).filter((e) => e && e.ts);
+  // Time-based numbers from the timestamped log — BOOZE only, so soft drinks /
+  // coffees never inflate the pace, rate, projection or chart.
+  const log = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
   const firstTs = log.length ? Math.min.apply(null, log.map((e) => e.ts)) : null;
   const lastHour = log.filter((e) => now - e.ts <= 3600000).length;
   // Floor the window at 1h so the first few drinks don't extrapolate to a silly
@@ -1943,8 +1953,25 @@ function renderStats() {
       return `<div class="stat-row"><span class="sr-name">${escapeHtml(r.n)}</span><span class="sr-c">${r.c}</span><span class="sr-pace">${pace.toFixed(1)}/hr</span></div>`;
     }).join("");
 
-  const dbreak = DRINKS.filter((d) => (byDrink[d.id] || 0) > 0).map((d) => `<span class="db-chip">${d.emoji} ${byDrink[d.id]}</span>`).join("");
+  const dbreak = BOOZE.filter((d) => (byDrink[d.id] || 0) > 0).map((d) => `<span class="db-chip">${d.emoji} ${byDrink[d.id]}</span>`).join("");
   const chart = drinkChartSvg(log, now, firstTs, proj.points);
+
+  // Separate soft-drink & coffee tracker — kept out of the total on purpose.
+  const softTotal = SOFT.reduce((s, d) => s + (byDrink[d.id] || 0), 0);
+  let softBlock = "";
+  if (softTotal > 0) {
+    const softTiles = SOFT.filter((d) => (byDrink[d.id] || 0) > 0)
+      .map((d) => `<div class="soft-tile"><div class="st-v">${byDrink[d.id]}</div><div class="st-k">${d.emoji} ${escapeHtml(d.label)}</div></div>`).join("");
+    const softRows = state.names.map((n, i) => ({ n, c: softCountFor(i) })).filter((r) => r.c > 0)
+      .sort((a, b) => b.c - a.c)
+      .map((r) => `<div class="soft-row"><span>${escapeHtml(r.n)}</span><span>${r.c}</span></div>`).join("");
+    softBlock =
+      `<div class="soft-track">
+         <div class="soft-head">☕ Soft &amp; coffee <span class="soft-sub">— stays hydrated, doesn't count</span></div>
+         <div class="soft-tiles">${softTiles}</div>
+         ${softRows ? `<div class="soft-rows">${softRows}</div>` : ""}
+       </div>`;
+  }
 
   wrap.innerHTML =
     `<div class="stat-tiles">${tiles.join("")}</div>` +
@@ -1952,7 +1979,8 @@ function renderStats() {
       ? chart +
         `<div class="stat-break">${dbreak}</div>
          <div class="stat-rows"><div class="stat-rows-head">Pace per man</div>${rows}</div>`
-      : `<p class="stat-empty">No drinks logged yet — the stats wake up on the first round. 🍺</p>`);
+      : (softTotal > 0 ? "" : `<p class="stat-empty">No drinks logged yet — the stats wake up on the first round. 🍺</p>`)) +
+    softBlock;
 }
 
 /* Drinks over time as an inline SVG line chart. Two modes (toggle in the title):

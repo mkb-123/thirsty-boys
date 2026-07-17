@@ -1177,6 +1177,16 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .st-sub { color: var(--ink); font-weight: 800; }
 .stat-break { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0 0.4rem; }
 .db-chip { background: var(--card-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.3rem 0.65rem; font-weight: 800; font-size: 0.85rem; }
+
+/* Soft-drink & coffee tracker — deliberately separate from the boozy total. */
+.soft-track { margin-top: 1.2rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.05rem; }
+.soft-head { font-size: 0.95rem; font-weight: 900; margin-bottom: 0.7rem; }
+.soft-sub { font-weight: 600; color: var(--muted); font-size: 0.8rem; }
+.soft-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem; }
+.soft-tile { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.6rem; text-align: center; }
+.soft-rows { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; margin-top: 0.7rem; }
+.soft-row { display: flex; gap: 0.35rem; font-size: 0.82rem; color: var(--muted); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.25rem 0.5rem; }
+.soft-row span:last-child { color: var(--ink); font-weight: 800; }
 .stat-rows { margin-top: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 .stat-rows-head { padding: 0.6rem 0.9rem; font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); border-bottom: 1px solid var(--line); }
 .stat-row { display: flex; align-items: baseline; gap: 0.6rem; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line); }
