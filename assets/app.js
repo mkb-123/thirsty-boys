@@ -1924,12 +1924,18 @@ function projectDrinks(logTs, firstTs, now) {
   // already a hard ceiling.
   const crew = Math.max(1, (state.names || []).length);
   const perW = Math.min(blended, 2.5 * crew);
-  const maxTotal = Math.max(N, crew * 30);   // and never project beyond a sane trip ceiling
+  const maxTotal = Math.max(N, crew * 40);   // safety backstop only — should rarely bind now
+  // Fatigue taper: nobody holds their opening pace for a whole weekend. Weight
+  // the hours just ahead at full pace and fade the far-off ones, so the number
+  // stays realistic AND keeps moving with each new drink (instead of pinning at
+  // the cap). Pace roughly halves ~every 14h you look ahead.
+  const TAU = 14 * 3600000;
   const points = [];
   let cum = N; const step = 1800000;
   for (let t = now; t < tripEnd; t += step) {
     const seg = Math.min(step, tripEnd - t) / 3600000;
-    cum = Math.min(maxTotal, cum + perW * intensityAt(t, flat) * seg);
+    const fatigue = Math.exp(-(t - now) / TAU);
+    cum = Math.min(maxTotal, cum + perW * fatigue * intensityAt(t, flat) * seg);
     points.push({ t: Math.min(t + step, tripEnd), c: cum });
   }
   return { projected: Math.round(cum), points: points };
