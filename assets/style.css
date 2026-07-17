@@ -1203,6 +1203,18 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
   text-align: center;
 }
 .stat-tile.hot { border-color: rgba(244, 169, 51, 0.5); background: rgba(244, 169, 51, 0.08); }
+/* Live "vs pace" momentum badge */
+.stat-tile .pace-v { font-size: 1.15rem; }
+.stat-tile.pace-hot { border-color: rgba(230, 103, 103, 0.55); background: rgba(230, 103, 103, 0.10); }
+.stat-tile.pace-hot .pace-v { color: #ff8a5c; }
+.stat-tile.pace-on { border-color: rgba(75, 191, 135, 0.45); background: rgba(75, 191, 135, 0.08); }
+.stat-tile.pace-on .pace-v { color: var(--green); }
+.stat-tile.pace-cool { border-color: rgba(57, 135, 229, 0.45); background: rgba(57, 135, 229, 0.08); }
+.stat-tile.pace-cool .pace-v { color: #6fb0ff; }
+.hl-pace { font-weight: 800; }
+.hl-pace.pace-hot { color: #ff8a5c; }
+.hl-pace.pace-on { color: var(--green); }
+.hl-pace.pace-cool { color: #6fb0ff; }
 .st-v { font-size: 1.9rem; font-weight: 900; color: var(--amber-2); line-height: 1; }
 .st-k { font-size: 0.74rem; font-weight: 700; color: var(--muted); margin-top: 0.35rem; }
 .st-sub { color: var(--ink); font-weight: 800; }

@@ -614,8 +614,10 @@ function renderTripMode() {
   live.classList.remove("hidden");
   const log = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
   const lastHour = log.filter((e) => Date.now() - e.ts <= 3600000).length;
+  const pace = paceState(Date.now());
+  const paceSeg = pace ? `<span class="hl-pace pace-${pace.cls}">${pace.label}</span>` : "";
   live.innerHTML =
-    `<div class="hl-stats"><span>🍺 ${total}</span><span>👑 ${escapeHtml(topName())}</span><span>🔥 ${lastHour} last hr</span></div>`;
+    `<div class="hl-stats"><span>🍺 ${total}</span><span>👑 ${escapeHtml(topName())}</span><span>🔥 ${lastHour} last hr</span>${paceSeg}</div>`;
 }
 function topName() {
   const rows = state.names.map((n, i) => ({ n, c: countFor(i) })).sort((a, b) => b.c - a.c);
@@ -1941,6 +1943,25 @@ function projectDrinks(logTs, firstTs, now) {
   return { projected: Math.round(cum), points: points };
 }
 
+/* Live momentum: recent drinking rate (last 90 min) vs the trip-so-far average.
+   Answers "are we going harder or easing off right now?" Returns null until
+   there's enough history to be meaningful. */
+function paceState(now) {
+  const bl = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
+  const ts = bl.map((e) => e.ts).sort((a, b) => a - b);
+  const n = ts.length;
+  if (n < 3) return null;
+  const elapsedH = (now - ts[0]) / 3600000;
+  if (elapsedH < 1.2) return null;                       // too early to compare
+  const avg = n / elapsedH;                               // drinks/hour, whole trip so far
+  const winH = 1.5;
+  const recentRate = bl.filter((e) => now - e.ts <= winH * 3600000).length / winH;
+  const ratio = recentRate / Math.max(0.4, avg);
+  if (ratio >= 1.25) return { label: "🔥 Running hot", cls: "hot", ratio };
+  if (ratio <= 0.6) return { label: "🐢 Easing off", cls: "cool", ratio };
+  return { label: "🍺 On pace", cls: "on", ratio };
+}
+
 function renderStats() {
   const wrap = document.getElementById("stats-wrap");
   if (!wrap) return;
@@ -1990,6 +2011,8 @@ function renderStats() {
     `<div class="stat-tile"><div class="st-v">${bigN || 0}</div><div class="st-k">Biggest hour${bigN ? `<br><span class="st-sub">${escapeHtml(bigHour)}</span>` : ""}</div></div>`,
   ];
   if (ts.length >= 2) tiles.push(`<div class="stat-tile"><div class="st-v">${dryLabel}</div><div class="st-k">Longest dry spell</div></div>`);
+  const pace = paceState(now);
+  if (pace) tiles.push(`<div class="stat-tile pace-${pace.cls}"><div class="st-v pace-v">${pace.label}</div><div class="st-k">Right now vs your average</div></div>`);
   if (projected != null) tiles.push(`<div class="stat-tile hot"><div class="st-v">${projected}</div><div class="st-k">Projected by Sun</div></div>`);
 
   const rows = state.names.map((n, i) => ({ n, i, c: totals[i] }))
