@@ -312,6 +312,11 @@ function rtAdd(path, delta) {                 // additive count change (± n)
   if (rtLive()) { try { syncRef.child(path).transaction((v) => Math.max(0, (v || 0) + delta)); return; } catch (e) { /* fall through */ } }
   enqueue({ op: "add", path: path, delta: delta });
 }
+function rtClaim(path, value) {               // set only if empty — first writer wins
+  if (applyingRemote) return;
+  if (rtLive()) { try { syncRef.child(path).transaction((v) => (v == null ? value : v)); return; } catch (e) { /* fall through */ } }
+  enqueue({ op: "claim", path: path, value: value });
+}
 function seedRemote() {                        // full-room overwrite (reset / first seed)
   const snapshot = JSON.parse(JSON.stringify(state));
   // Seed the log as keyed children (not an array) so later per-entry writes
@@ -338,6 +343,7 @@ function flushOutbox() {
       if (o.op === "set") syncRef.child(o.path).set(o.value);
       else if (o.op === "remove") syncRef.child(o.path).remove();
       else if (o.op === "add") syncRef.child(o.path).transaction((v) => Math.max(0, (v || 0) + o.delta));
+      else if (o.op === "claim") syncRef.child(o.path).transaction((v) => (v == null ? o.value : v));
       else if (o.op === "seedroot") syncRef.set(o.value);
     } catch (e) { failed.push(o); }
   });
@@ -1671,7 +1677,9 @@ function renderBingo() {
       if (state.bingo[id] != null) { delete state.bingo[id]; rtRemove("bingo/" + id); }
       else {
         const who = (me != null && !Number.isNaN(me)) ? me : 0;
-        state.bingo[id] = who; rtSet("bingo/" + id, who);
+        // First to spot keeps the credit: claim only lands if the square is
+        // still empty; a snapshot then corrects us if someone pipped us to it.
+        state.bingo[id] = who; rtClaim("bingo/" + id, who);
         const r = cell.getBoundingClientRect();
         burstConfetti(r.left + r.width / 2, r.top + r.height / 2, 10);
       }
