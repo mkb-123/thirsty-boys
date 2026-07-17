@@ -455,6 +455,36 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
   -webkit-tap-highlight-color: transparent;
 }
 .fab-beer:active { transform: scale(0.93); }
+.fab-beer.open { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(244,169,51,0.25), var(--shadow); }
+
+/* Quick-add fan menu above the FAB */
+.fab-menu {
+  position: fixed;
+  right: calc(0.9rem + env(safe-area-inset-right));
+  bottom: calc(0.9rem + 58px + 0.7rem + env(safe-area-inset-bottom));
+  z-index: 200;
+  width: min(290px, 80vw);
+  background: rgba(15, 18, 32, 0.97);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.8rem;
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: fabpop 0.12s ease-out;
+}
+@keyframes fabpop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area-inset-bottom)); }
+.fab-menu-title { font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; text-align: center; }
+.fab-menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+.fab-drink {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--card-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.6rem; cursor: pointer; color: var(--ink); font-weight: 700; font-size: 0.9rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.fab-drink:active { transform: scale(0.96); }
+.fd-emoji { font-size: 1.35rem; flex: 0 0 auto; }
 
 /* ---------- WHOSE ROUND ---------- */
 .round-result { text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--amber-2); min-height: 1.3em; margin: 0.4rem 0 0; }

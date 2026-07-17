@@ -2260,6 +2260,48 @@ function maybeShowA2HS() {
 }
 setTimeout(maybeShowA2HS, 2500);
 
+/* ---------- QUICK-ADD — the floating 🍺 fans out a drink picker so you can log
+   one in a tap or two from anywhere, without hopping to the Drinks tab. ---------- */
+(function quickAdd() {
+  const fab = document.getElementById("fab-beer");
+  if (!fab) return;
+  let menu = null;
+  function close() {
+    if (menu) { menu.remove(); menu = null; }
+    fab.setAttribute("aria-expanded", "false");
+    fab.classList.remove("open");
+    document.removeEventListener("click", onDoc, true);
+  }
+  function onDoc(e) { if (menu && !menu.contains(e.target) && e.target !== fab) close(); }
+  function open() {
+    menu = document.createElement("div");
+    menu.className = "fab-menu";
+    menu.innerHTML =
+      `<div class="fab-menu-title">Add a drink for ${escapeHtml(state.names[me] || "you")}</div>` +
+      `<div class="fab-menu-grid">` +
+      DRINKS.map((d) => `<button class="fab-drink" data-drink="${d.id}" aria-label="Add ${escapeAttr(d.label)}"><span class="fd-emoji">${d.emoji}</span><span class="fd-lab">${escapeHtml(d.label)}</span></button>`).join("") +
+      `</div>`;
+    document.body.appendChild(menu);
+    fab.setAttribute("aria-expanded", "true");
+    fab.classList.add("open");
+    menu.querySelectorAll(".fab-drink").forEach((btn) =>
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        addDrinkFor(me, btn.dataset.drink);
+        const r = btn.getBoundingClientRect();
+        burstConfetti(r.left + r.width / 2, r.top, 12);
+        close();
+      })
+    );
+    setTimeout(() => document.addEventListener("click", onDoc, true), 0);
+  }
+  fab.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!hasClaimed()) { openWhoamiModal(); return; }   // need to know who you are first
+    if (menu) close(); else open();
+  });
+})();
+
 /* ---------- PULL-TO-REFRESH — pull down at the top to force a resync. ---------- */
 function doPullRefresh() {
   flushOutbox();
