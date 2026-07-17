@@ -2043,6 +2043,18 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
   const spanX = Math.max(1, xEnd - xStart);
   const sx = (t) => padL + (Math.min(Math.max(t, xStart), xEnd) - xStart) / spanX * (W - padL - padR);
   const sy = (c) => H - padB - (c / ymax) * (H - padT - padB);
+  // Midnight day-dividers + labels so the flat overnight stretches (the model
+  // floors 3–11am while everyone's asleep) read as nights, not glitches.
+  let dayGuides = "";
+  if (projecting) {
+    const first = new Date(xStart); first.setHours(24, 0, 0, 0);
+    for (let t = first.getTime(); t < xEnd; t += 86400000) {
+      const gx = sx(t).toFixed(1);
+      const lab = new Date(t).toLocaleDateString([], { weekday: "short" });
+      dayGuides += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${H - padB}" class="chart-day"/>` +
+        `<text x="${gx}" y="${(padT - 5).toFixed(1)}" text-anchor="middle" class="chart-day-lab">${lab}</text>`;
+    }
+  }
   let d = `M ${sx(xStart).toFixed(1)} ${sy(0).toFixed(1)}`;
   valid.forEach((e, i) => { d += ` L ${sx(e.ts).toFixed(1)} ${sy(i + 1).toFixed(1)}`; });
   const nowX = sx(now).toFixed(1), nowY = sy(N).toFixed(1);
@@ -2061,6 +2073,7 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
       <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
       <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
       <text x="${padL}" y="${(sy(ymax) - 4).toFixed(1)}" class="chart-ymax">${ymax}</text>
+      ${dayGuides}
       <path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${proj}
       <circle cx="${nowX}" cy="${nowY}" r="3.5" fill="var(--amber-2)"/>

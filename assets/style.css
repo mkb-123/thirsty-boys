@@ -1236,6 +1236,8 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .chart-ymax { fill: var(--muted); font-size: 9px; font-weight: 700; }
 .chart-now { fill: var(--amber-2); font-size: 11px; font-weight: 900; }
 .chart-proj { fill: var(--amber); font-size: 10px; font-weight: 800; opacity: 0.85; }
+.chart-day { stroke: rgba(255, 255, 255, 0.09); stroke-width: 1; }
+.chart-day-lab { fill: var(--muted); font-size: 8px; font-weight: 700; }
 .chart-x { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.68rem; font-weight: 700; margin-top: 0.1rem; }
 .chart-title { display: flex; align-items: center; gap: 0.4rem; }
 .chart-actions { margin-left: auto; display: flex; align-items: center; gap: 0.35rem; flex: 0 0 auto; }
