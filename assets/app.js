@@ -1074,10 +1074,10 @@ function renderBets() {
     BETS.filter((bt) => { const bb = getBet(bt.id); return bb.calls[me] != null && bb.calls[me] !== ""; }).length,
     BETS.length, "called", "call") : "";
 
-  // Sort the ones still needing YOUR call to the front (stable within groups):
-  // 0 = not called yet, 1 = called, 2 = revealed/locked.
-  const betRank = (bet) => { const b = getBet(bet.id); return b.revealed ? 2 : (b.calls[me] != null && b.calls[me] !== "" ? 1 : 0); };
-  const orderedBets = claimed ? BETS.map((b, i) => [b, i]).sort((x, y) => (betRank(x[0]) - betRank(y[0])) || (x[1] - y[1])).map((p) => p[0]) : BETS;
+  // Bets are listed in the chronological order of the weekend (see trip.json),
+  // so swiping through them mirrors how the day unfolds — TOCA before disc golf,
+  // Sunday's "first out of bed" near the end, whole-trip totals last.
+  const orderedBets = BETS;
 
   const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
   wrap.innerHTML = scoreboard + myProg + deckWrap(orderedBets.map((bet) => {
@@ -1122,16 +1122,32 @@ function renderBets() {
         <p class="award-status">🤙 ${callCount}/${total} called${hasResult ? " · result logged 🔒" : ""}</p>`;
     } else {
       const mine = b.calls[me];
-      const ctl = bet.type === "person"
-        ? `<select class="award-select" data-bet-call="${bet.id}">
-             <option value="">— call it —</option>` +
-           state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
-           `</select>`
-        : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
-      body = `${ctl}
-        <p class="award-status">🤙 ${callCount}/${total} called${mine != null && mine !== "" ? " · your call is in 🔒" : ""}</p>
-        <div class="bet-result pre-reveal"><label>✅ Actual result <span class="bet-result-hint">— log it now, calls stay secret</span></label>${resultCtl}</div>
-        ${hasResult ? `<p class="bet-locked">🔒 Result logged — hits stay hidden until you reveal</p>` : ""}
+      const editing = betEditCall.has(bet.id);
+      // CALL ZONE — show the picker until you've called; then collapse it to a
+      // tidy "your call" line with an Edit button (re-opens the picker).
+      let callZone;
+      if (!mineIn || editing) {
+        const ctl = bet.type === "person"
+          ? `<select class="award-select" data-bet-call="${bet.id}">
+               <option value="">— call it —</option>` +
+             state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+             `</select>`
+          : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
+        callZone = ctl;
+      } else {
+        const mineTxt = bet.type === "person" ? escapeHtml(state.names[mine] || "?") : escapeHtml(String(mine));
+        callZone = `<div class="bet-yourcall"><span>🔒 Your call: <b>${mineTxt}</b></span>
+          <button class="btn-ghost bet-editcall" data-bet="${bet.id}">✏️ Edit call</button></div>`;
+      }
+      // OUTCOME ZONE — only appears when you ask for it (or a result's logged).
+      const showOutcome = betEnterOutcome.has(bet.id) || hasResult;
+      const outcomeZone = showOutcome
+        ? `<div class="bet-result pre-reveal"><label>✅ Actual result <span class="bet-result-hint">— logged; calls stay secret</span></label>${resultCtl}
+             ${hasResult ? `<p class="bet-locked">🔒 Result logged — hits hidden until you reveal</p>` : ""}</div>`
+        : `<button class="btn-ghost bet-enteroutcome" data-bet="${bet.id}">🏁 Enter outcome</button>`;
+      body = `${callZone}
+        <p class="award-status">🤙 ${callCount}/${total} called</p>
+        ${outcomeZone}
         <button class="btn-ghost bet-reveal" data-bet="${bet.id}">👁 Reveal calls</button>`;
     }
 
@@ -1143,11 +1159,17 @@ function renderBets() {
       const id = el.dataset.betCall, b = getBet(id);
       const v = el.value;
       if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
-      else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
+      else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); betEditCall.delete(id); }
       state.bets[id] = b;
       save();
       renderBets();
     })
+  );
+  wrap.querySelectorAll(".bet-editcall").forEach((btn) =>
+    btn.addEventListener("click", () => { betEditCall.add(btn.dataset.bet); renderBets(); })
+  );
+  wrap.querySelectorAll(".bet-enteroutcome").forEach((btn) =>
+    btn.addEventListener("click", () => { betEnterOutcome.add(btn.dataset.bet); renderBets(); })
   );
   wrap.querySelectorAll("[data-bet-result]").forEach((el) =>
     el.addEventListener("change", () => {
@@ -1958,6 +1980,10 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
 /* Tap-to-explain panel describing the projection model (persists across the
    1s re-render via modelInfoOpen). */
 let modelInfoOpen = false;
+// Per-bet UI toggles (device-local, not synced): which bets currently show the
+// call editor, and which show the outcome editor.
+const betEditCall = new Set();
+const betEnterOutcome = new Set();
 function modelInfoHtml() {
   return `<div class="model-info${modelInfoOpen ? " open" : ""}" id="model-info">
     <div class="mi-h">📊 How “Projected by Sun” is worked out</div>
