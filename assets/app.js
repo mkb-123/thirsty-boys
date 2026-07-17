@@ -1135,8 +1135,8 @@ function renderBets() {
           : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
         callZone = ctl;
       } else {
-        const mineTxt = bet.type === "person" ? escapeHtml(state.names[mine] || "?") : escapeHtml(String(mine));
-        callZone = `<div class="bet-yourcall"><span>🔒 Your call: <b>${mineTxt}</b></span>
+        // Keep the pick itself hidden (even from you at a glance) — tap Edit to see/change it.
+        callZone = `<div class="bet-yourcall"><span>🔒 Your call's locked in</span>
           <button class="btn-ghost bet-editcall" data-bet="${bet.id}">✏️ Edit call</button></div>`;
       }
       // OUTCOME ZONE — only appears when you ask for it (or a result's logged).
