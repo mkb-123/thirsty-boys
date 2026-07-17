@@ -21,6 +21,7 @@ const DRINKS = [
   { id: "half",     label: "Half",     emoji: "🥛" },
   { id: "wine",     label: "Wine",     emoji: "🍷" },
   { id: "cocktail", label: "Cocktail", emoji: "🍸" },
+  { id: "gandt",    label: "G&T",      emoji: "🍹" },
   { id: "shot",     label: "Shot",     emoji: "🍶" },
   { id: "whiskey",  label: "Whiskey",  emoji: "🥃" },
   { id: "soft",     label: "Soft",     emoji: "🧃", soft: true },
