@@ -1277,6 +1277,104 @@ function awardWinner(id) {
   const w = state.names.map((n, i) => ({ n, i })).filter((x) => (tally[x.i] || 0) === max);
   return w.length === 1 ? w[0].n : w.map((x) => x.n).join(" & ");
 }
+/* ==========================================================================
+   BEEF & BRAGGING — funny stats mined from the settled bets + revealed awards.
+   Vote-based stats ONLY count REVEALED awards so nothing secret leaks early.
+   ========================================================================== */
+function braggingData() {
+  const correct = betScores();                          // right calls per person (settled bets)
+  const called = state.names.map(() => 0);              // bets each person actually called
+  BETS.forEach((bet) => {
+    const b = getBet(bet.id);
+    if (!b.revealed || b.result === "" || b.result == null) return;
+    Object.keys(b.calls).forEach((v) => { if (b.calls[v] != null && b.calls[v] !== "") called[Number(v)]++; });
+  });
+  const received = state.names.map(() => 0);            // award votes received
+  const self = state.names.map(() => 0);                // self-votes
+  const perVoter = state.names.map(() => ({}));         // voter -> {nominee: count}
+  let revealedAwards = 0;
+  AWARDS.forEach((a) => {
+    const d = getAward(a.id);
+    if (!d.revealed) return;
+    revealedAwards++;
+    Object.keys(d.votes).forEach((v) => {
+      const voter = Number(v), nominee = Number(d.votes[v]);
+      if (state.names[nominee] == null) return;
+      received[nominee]++;
+      perVoter[voter][nominee] = (perVoter[voter][nominee] || 0) + 1;
+      if (voter === nominee) self[voter]++;
+    });
+  });
+  const nSettled = BETS.filter((bet) => { const b = getBet(bet.id); return b.revealed && b.result !== "" && b.result != null; }).length;
+  return { correct, called, received, self, perVoter, revealedAwards, nSettled };
+}
+/* names tied at the max (or min) of a numeric array → { names:[], val } */
+function extremeNames(arr, wantMax) {
+  const vals = arr.slice();
+  const target = wantMax ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
+  const names = state.names.filter((_, i) => vals[i] === target);
+  return { names, val: target };
+}
+function renderBragging() {
+  const el = document.getElementById("bragging");
+  if (!el) return;
+  const d = braggingData();
+  const rows = [];
+
+  // 🎯 Who's got the most bets right — a compact ranked line answers "how many did anyone get right".
+  if (d.nSettled > 0) {
+    const order = state.names.map((n, i) => ({ n, c: d.correct[i], t: d.called[i] }))
+      .sort((a, b) => b.c - a.c);
+    const best = extremeNames(d.correct, true);
+    if (best.val > 0) rows.push(`<div class="brag-row"><span class="brag-emoji">🎯</span><span class="brag-txt"><b>Sharpest caller:</b> ${escapeHtml(best.names.join(" & "))} — ${best.val} right</span></div>`);
+    rows.push(`<div class="brag-mini">${order.map((r) => `<span>${escapeHtml(r.n)} <b>${r.c}</b>${r.t ? `/${r.t}` : ""}</span>`).join("")}</div>`);
+    // 🤡 fewest right (only worth showing once a few bets are settled)
+    if (d.nSettled >= 3) {
+      const worst = extremeNames(d.correct, false);
+      if (worst.val < best.val) rows.push(`<div class="brag-row"><span class="brag-emoji">🤡</span><span class="brag-txt"><b>Worst tipster:</b> ${escapeHtml(worst.names.join(" & "))} — ${worst.val} right</span></div>`);
+    }
+  }
+
+  // Vote-based gossip (revealed awards only).
+  if (d.revealedAwards > 0) {
+    const magnet = extremeNames(d.received, true);
+    if (magnet.val > 0) rows.push(`<div class="brag-row"><span class="brag-emoji">🧲</span><span class="brag-txt"><b>Vote magnet:</b> ${escapeHtml(magnet.names.join(" & "))} — ${magnet.val} vote${magnet.val === 1 ? "" : "s"}</span></div>`);
+    const flower = extremeNames(d.received, false);
+    if (flower.val < magnet.val) rows.push(`<div class="brag-row"><span class="brag-emoji">🌵</span><span class="brag-txt"><b>Wallflower:</b> ${escapeHtml(flower.names.join(" & "))} — ${flower.val} vote${flower.val === 1 ? "" : "s"}</span></div>`);
+
+    // 💘 who backs who the most — strongest voter→nominee pairing (excluding self).
+    let bestPair = null;
+    d.perVoter.forEach((tallies, voter) => {
+      Object.keys(tallies).forEach((nom) => {
+        const nominee = Number(nom), c = tallies[nom];
+        if (voter === nominee) return;
+        if (!bestPair || c > bestPair.c) bestPair = { voter, nominee, c };
+      });
+    });
+    if (bestPair && bestPair.c >= 2) rows.push(`<div class="brag-row"><span class="brag-emoji">💘</span><span class="brag-txt"><b>Predictable:</b> ${escapeHtml(state.names[bestPair.voter])} keeps backing ${escapeHtml(state.names[bestPair.nominee])} (×${bestPair.c})</span></div>`);
+
+    // 🪞 biggest ego — most self-votes.
+    const ego = extremeNames(d.self, true);
+    if (ego.val >= 2) rows.push(`<div class="brag-row"><span class="brag-emoji">🪞</span><span class="brag-txt"><b>Big ego:</b> ${escapeHtml(ego.names.join(" & "))} voted for themselves ×${ego.val}</span></div>`);
+
+    // 🗳️ who each man backs most — the full "who votes for who" breakdown.
+    const backing = state.names.map((n, voter) => {
+      const tallies = d.perVoter[voter];
+      const keys = Object.keys(tallies);
+      if (!keys.length) return null;
+      const top = keys.map((k) => ({ i: Number(k), c: tallies[k] })).sort((a, b) => b.c - a.c)[0];
+      return `<div class="brag-back"><span>${escapeHtml(n)}</span><span>→ ${escapeHtml(state.names[top.i])} ×${top.c}</span></div>`;
+    }).filter(Boolean).join("");
+    if (backing) rows.push(`<div class="brag-sub">🗳️ Who backs who</div><div class="brag-backs">${backing}</div>`);
+  }
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="brag-card"><h3 class="brag-h">🎭 Beef &amp; Bragging</h3><p class="brag-empty">Settle a few bets and reveal some awards — the gossip unlocks here. 🍿</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="brag-card"><h3 class="brag-h">🎭 Beef &amp; Bragging</h3>${rows.join("")}</div>`;
+}
+
 function recapData() {
   const rows = state.names.map((n, i) => ({ n, i, c: countFor(i) })).sort((a, b) => b.c - a.c);
   const total = rows.reduce((s, r) => s + r.c, 0);
@@ -1950,7 +2048,7 @@ function safe(fn) {
 }
 function render() {
   [renderWhoami, renderLeaderboard, renderTracker, renderLog, renderBets, renderAwards,
-   renderBingo, renderPubs, renderRound, renderStats, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
+   renderBingo, renderPubs, renderRound, renderStats, renderBragging, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
 }
 
 function tick() {

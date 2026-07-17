@@ -263,6 +263,22 @@ body.has-a2hs .net-pop { bottom: calc(7.3rem + env(safe-area-inset-bottom)); }
 .net-pop-title { font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.5rem; }
 .net-pop .roster { display: flex; flex-direction: column; gap: 0.4rem; }
 
+/* ---------- BEEF & BRAGGING (funny stats) ---------- */
+.bragging { margin-top: 1.2rem; }
+.brag-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.05rem; }
+.brag-h { margin: 0 0 0.7rem; font-size: 1rem; font-weight: 900; }
+.brag-row { display: flex; gap: 0.55rem; align-items: baseline; padding: 0.3rem 0; }
+.brag-emoji { font-size: 1.1rem; flex: 0 0 auto; }
+.brag-txt { font-size: 0.92rem; line-height: 1.35; }
+.brag-mini { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; margin: 0.15rem 0 0.5rem; font-size: 0.82rem; color: var(--muted); }
+.brag-mini b { color: var(--ink); }
+.brag-sub { margin: 0.8rem 0 0.4rem; font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.brag-backs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.8rem; }
+.brag-back { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.85rem; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.35rem 0.55rem; }
+.brag-back span:last-child { color: var(--amber-2); font-weight: 700; white-space: nowrap; }
+.brag-empty { color: var(--muted); font-size: 0.9rem; margin: 0; }
+@media (max-width: 420px) { .brag-backs { grid-template-columns: 1fr; } }
+
 /* ---------- PUBS ON THE BENCH ---------- */
 .pubs-map {
   border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
