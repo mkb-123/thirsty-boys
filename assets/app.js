@@ -139,8 +139,18 @@ function normalizeState(s) {
     Object.keys(s.tallies).forEach((k) => { const i = Number(k); if (!isNaN(i) && i >= 0 && i < n) arr[i] = s.tallies[k] || {}; });
   }
   s.tallies = arr;
-  // log / quotes → arrays
-  if (!Array.isArray(s.log)) s.log = s.log ? Object.keys(s.log).map((k) => s.log[k]) : [];
+  // log → array of {id,who,drink,ts}. Firebase stores entries as keyed children
+  // (so concurrent logs merge); the key IS the entry id. Coerce either shape,
+  // backfill an id for any legacy entry, and sort chronologically since object
+  // key order isn't guaranteed.
+  if (Array.isArray(s.log)) {
+    s.log = s.log.filter(Boolean).map((e, i) => (e && e.id != null) ? e : Object.assign({ id: "legacy-" + (e && e.ts ? e.ts : "0") + "-" + i }, e));
+  } else if (s.log && typeof s.log === "object") {
+    s.log = Object.keys(s.log).map((k) => Object.assign({ id: k }, s.log[k]));
+  } else {
+    s.log = [];
+  }
+  s.log.sort((a, b) => (a.ts || 0) - (b.ts || 0));
   if (!Array.isArray(s.quotes)) s.quotes = s.quotes ? Object.keys(s.quotes).map((k) => s.quotes[k]) : [];
   // present → object { index: lastSeen }
   if (Array.isArray(s.present)) { const o = {}; s.present.forEach((v, i) => { if (v != null) o[i] = v; }); s.present = o; }
@@ -304,6 +314,11 @@ function rtAdd(path, delta) {                 // additive count change (± n)
 }
 function seedRemote() {                        // full-room overwrite (reset / first seed)
   const snapshot = JSON.parse(JSON.stringify(state));
+  // Seed the log as keyed children (not an array) so later per-entry writes
+  // merge with it instead of fighting an array shape.
+  const logObj = {};
+  (state.log || []).forEach((e) => { if (e && e.id != null) logObj[e.id] = { who: e.who, drink: e.drink, ts: e.ts }; });
+  snapshot.log = logObj;
   // A whole-state write already captures every local edit, so any queued
   // deltas are now redundant — clearing them prevents a double-count on flush.
   if (rtLive()) { try { syncRef.set(snapshot); outbox = []; saveOutbox(); return; } catch (e) { /* fall through */ } }
@@ -818,19 +833,27 @@ function renderCrew() {
 /* ==========================================================================
    ACTIONS
    ========================================================================== */
+// Unique id for each log entry so it can be written as its OWN child in
+// Firebase — concurrent logs then merge instead of clobbering the whole array.
+let logSeq = 0;
+function newLogId() { return Date.now().toString(36) + "-" + (logSeq++).toString(36) + "-" + Math.random().toString(36).slice(2, 7); }
+function logAdd(entry) {
+  state.log.push(entry);
+  if (state.log.length > 400) state.log = state.log.slice(-400);
+  // Granular child write — never overwrites another device's entries.
+  rtSet("log/" + entry.id, { who: entry.who, drink: entry.drink, ts: entry.ts });
+}
 function addDrink(i) { addDrinkFor(i, selectedDrink); }   // "quick add for me" path
 function addDrinkFor(i, id) {
   if (!id) id = selectedDrink;
   const prevLeader = currentLeader();
   state.tallies[i] = state.tallies[i] || {};
   state.tallies[i][id] = (state.tallies[i][id] || 0) + 1;
-  state.log.push({ who: i, drink: id, ts: Date.now() });
-  if (state.log.length > 400) state.log = state.log.slice(-400);
+  logAdd({ id: newLogId(), who: i, drink: id, ts: Date.now() });
   save();
-  // Count as a delta so simultaneous taps both land (online) or queue safely
-  // (offline); log written whole.
+  // Both the count (delta) and the log entry (its own child) are concurrency-safe
+  // online, and queue safely offline.
   rtAdd("tallies/" + i + "/" + id, 1);
-  rtSet("log", state.log);
   render();
   // Celebrate: small burst from the button; big fanfare when the crown changes.
   const btn = document.querySelector('.person-drink[data-i="' + i + '"][data-drink="' + id + '"]') || document.querySelector('.person-add[data-i="' + i + '"]');
@@ -859,7 +882,7 @@ function undoLast() {
   if (t && t[entry.drink]) t[entry.drink] -= 1;
   save();
   rtAdd("tallies/" + entry.who + "/" + entry.drink, -1);
-  rtSet("log", state.log);
+  if (entry.id != null) rtRemove("log/" + entry.id);
   render();
 }
 
@@ -874,16 +897,18 @@ function adminAdjust(i, drinkId, delta) {
   if (next === cur) return;                     // nothing to do (already 0)
   state.tallies[i][drinkId] = next;
   if (delta > 0) {
-    state.log.push({ who: i, drink: drinkId, ts: Date.now() });
-    if (state.log.length > 400) state.log = state.log.slice(-400);
+    logAdd({ id: newLogId(), who: i, drink: drinkId, ts: Date.now() });
   } else {
     for (let k = state.log.length - 1; k >= 0; k--) {
-      if (state.log[k].who === i && state.log[k].drink === drinkId) { state.log.splice(k, 1); break; }
+      if (state.log[k].who === i && state.log[k].drink === drinkId) {
+        const removed = state.log.splice(k, 1)[0];
+        if (removed && removed.id != null) rtRemove("log/" + removed.id);
+        break;
+      }
     }
   }
   save();
   rtAdd("tallies/" + i + "/" + drinkId, next - cur);
-  rtSet("log", state.log);
   render();
 }
 function toggleAdmin() {
