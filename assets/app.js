@@ -572,8 +572,9 @@ function renderCountdown() {
       if (lab) lab.textContent = r.n;
       bl.classList.toggle("cd-leader", maxC > 0 && r.c === maxC);
     });
-    cap.textContent = now <= TRIP_END ? "🍺 Live drink count — pace yourselves" : "🏁 Final tally. Legends, all of you.";
-    cap.classList.add("live");
+    // The scoreboard speaks for itself — no green caption cluttering the hero.
+    cap.textContent = now <= TRIP_END ? "" : "🏁 Final tally. Legends, all of you.";
+    cap.classList.toggle("live", now > TRIP_END);
     const cd = document.getElementById("countdown"); if (cd) cd.classList.add("live");
   }
 }
@@ -606,20 +607,14 @@ function renderTripMode() {
     }
     return;
   }
-  // During the trip: LIVE hero with the day, now/next, and live stats.
+  // During the trip: LIVE hero with just the live stats. Now/Next lives in the
+  // fixed bottom bar, so it isn't duplicated up here.
   if (kicker) kicker.textContent = "🔴 LIVE · " + now.toLocaleDateString([], { weekday: "long" });
   if (!live) return;
   live.classList.remove("hidden");
-  const flat = [];
-  ITINERARY.forEach((d) => d.stops.forEach((s) => flat.push(s)));
-  let cur = null, next = null;
-  for (const s of flat) { if (new Date(s.iso) <= now) cur = s; else { next = s; break; } }
-  const nowTxt = cur ? `${cur.emoji} ${escapeHtml(cur.title)}` : "warming up…";
-  const nextTxt = next ? `${next.emoji} ${escapeHtml(next.title)} · ${next.t}` : "last one 🎉";
   const log = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
   const lastHour = log.filter((e) => Date.now() - e.ts <= 3600000).length;
   live.innerHTML =
-    `<div class="hl-nownext"><span class="hl-seg"><b>NOW</b> ${nowTxt}</span><span class="hl-seg hl-next"><b>NEXT</b> ${nextTxt}</span></div>` +
     `<div class="hl-stats"><span>🍺 ${total}</span><span>👑 ${escapeHtml(topName())}</span><span>🔥 ${lastHour} last hr</span></div>`;
 }
 function topName() {
