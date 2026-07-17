@@ -1088,6 +1088,16 @@ function renderBets() {
     const mark = b.revealed ? `<span class="mine-mark revealed">👁 Revealed</span>`
       : (!claimed ? "" : (mineIn ? `<span class="mine-mark done">✅ Called</span>` : `<span class="mine-mark todo">◻️ Your call needed</span>`));
     let body;
+    // The actual result can be logged at ANY time — settle it the moment it
+    // happens on the trip. Revealing only controls whether everyone's CALLS
+    // are shown, so the same result control appears before and after reveal.
+    const resultCtl = bet.type === "person"
+      ? `<select class="award-select" data-bet-result="${bet.id}">
+           <option value="">— what actually happened —</option>` +
+         state.names.map((n, i) => `<option value="${i}" ${String(b.result) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+         `</select>`
+      : `<input type="text" class="bet-result-input" data-bet-result="${bet.id}" value="${escapeAttr(b.result || "")}" placeholder="actual result…" maxlength="40" />`;
+    const hasResult = b.result !== "" && b.result != null;
 
     if (b.revealed) {
       // Everyone's calls on the table + settle the result
@@ -1096,7 +1106,7 @@ function renderBets() {
         const callTxt = call == null || call === ""
           ? `<span class="bet-nocall">no call</span>`
           : bet.type === "person" ? escapeHtml(state.names[call] || "?") : escapeHtml(String(call));
-        const hit = b.result !== "" && b.result != null && (
+        const hit = hasResult && (
           bet.type === "person" ? Number(call) === Number(b.result)
           : String(call || "").trim().toLowerCase() === String(b.result).trim().toLowerCase());
         return `<div class="bet-call-row ${hit ? "hit" : ""}">
@@ -1104,18 +1114,12 @@ function renderBets() {
           <span class="bet-callval">${callTxt}${hit ? " ✅" : ""}</span>
         </div>`;
       }).join("");
-      const resultCtl = bet.type === "person"
-        ? `<select class="award-select" data-bet-result="${bet.id}">
-             <option value="">— what actually happened —</option>` +
-           state.names.map((n, i) => `<option value="${i}" ${String(b.result) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
-           `</select>`
-        : `<input type="text" class="bet-result-input" data-bet-result="${bet.id}" value="${escapeAttr(b.result || "")}" placeholder="actual result…" maxlength="40" />`;
       body = `${rows}
         <div class="bet-result"><label>✅ Actual result</label>${resultCtl}</div>
         <button class="btn-ghost bet-reopen" data-bet="${bet.id}">↩ Re-open calls</button>`;
     } else if (!claimed) {
       body = `<p class="award-hint">👆 Claim who you are (top of the Drinks tab) to make your call.</p>
-        <p class="award-status">🤙 ${callCount}/${total} called</p>`;
+        <p class="award-status">🤙 ${callCount}/${total} called${hasResult ? " · result logged 🔒" : ""}</p>`;
     } else {
       const mine = b.calls[me];
       const ctl = bet.type === "person"
@@ -1126,6 +1130,8 @@ function renderBets() {
         : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
       body = `${ctl}
         <p class="award-status">🤙 ${callCount}/${total} called${mine != null && mine !== "" ? " · your call is in 🔒" : ""}</p>
+        <div class="bet-result pre-reveal"><label>✅ Actual result <span class="bet-result-hint">— log it now, calls stay secret</span></label>${resultCtl}</div>
+        ${hasResult ? `<p class="bet-locked">🔒 Result logged — hits stay hidden until you reveal</p>` : ""}
         <button class="btn-ghost bet-reveal" data-bet="${bet.id}">👁 Reveal calls</button>`;
     }
 
@@ -1167,6 +1173,7 @@ function renderBets() {
     })
   );
   wireDeck("bets-deck", prevScroll);
+  safe(renderBragging);   // keep the funny-stats card in sync with settled bets
 }
 
 /* ==========================================================================
@@ -1262,6 +1269,7 @@ function renderAwards() {
     })
   );
   wireDeck("awards-deck", prevScroll);
+  safe(renderBragging);   // keep the funny-stats card in sync with revealed awards
 }
 
 /* ==========================================================================

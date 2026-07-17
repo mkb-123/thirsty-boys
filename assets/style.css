@@ -1025,6 +1025,8 @@ body.has-nownext .fab-beer { bottom: calc(4.2rem + env(safe-area-inset-bottom));
 .bet-pick input:focus, .bet-result input:focus { outline: none; border-color: var(--amber); }
 .bet-result { margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 0.25rem; }
 .bet-result label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); font-weight: 800; }
+.bet-result-hint { text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 600; }
+.bet-locked { font-size: 0.78rem; color: var(--amber-2); font-weight: 700; margin: 0.5rem 0 0; }
 
 .bet-scoreboard {
   background: var(--card);
