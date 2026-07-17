@@ -1853,13 +1853,21 @@ function flatStopsSorted() {
   return f.sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
 }
 function intensityAt(ts, flat) {
-  const h = new Date(ts).getHours();
-  if (h >= 3 && h < 11) return 0.05;                    // dead hours — asleep
   let active = null;
   for (let i = 0; i < flat.length; i++) {
     if (new Date(flat[i].iso).getTime() <= ts) active = flat[i]; else break;
   }
-  return active ? stopIntensity(active) : 0;
+  if (!active) return 0;
+  const base = stopIntensity(active);
+  // Small-hours sleep floor — but only while coasting on the PREVIOUS night's
+  // stop. If the itinerary kicks off something in the morning (disc golf,
+  // brunch) you're up, so use that stop instead of pretending you're asleep.
+  const h = new Date(ts).getHours();
+  if (h >= 3 && h < 11) {
+    const sh = new Date(active.iso).getHours();
+    if (!(sh >= 3 && sh < 11)) return Math.min(base, 0.05);
+  }
+  return base;
 }
 function weightedHours(from, to, flat) {
   if (to <= from) return 0;
@@ -2046,6 +2054,7 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
   // Midnight day-dividers + labels so the flat overnight stretches (the model
   // floors 3–11am while everyone's asleep) read as nights, not glitches.
   let dayGuides = "";
+  let sleepBands = "";
   if (projecting) {
     const first = new Date(xStart); first.setHours(24, 0, 0, 0);
     for (let t = first.getTime(); t < xEnd; t += 86400000) {
@@ -2054,6 +2063,23 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
       dayGuides += `<line x1="${gx}" y1="${padT}" x2="${gx}" y2="${H - padB}" class="chart-day"/>` +
         `<text x="${gx}" y="${(padT - 5).toFixed(1)}" text-anchor="middle" class="chart-day-lab">${lab}</text>`;
     }
+    // Shade the "asleep" stretches so the flat bits read as kip, not a glitch.
+    const flatS = flatStopsSorted();
+    let bandStart = null;
+    const closeBand = (endT) => {
+      if (bandStart == null) return;
+      const x1 = sx(bandStart), x2 = sx(endT);
+      if (x2 - x1 > 3) {
+        sleepBands += `<rect x="${x1.toFixed(1)}" y="${padT}" width="${(x2 - x1).toFixed(1)}" height="${(H - padB - padT).toFixed(1)}" class="chart-sleep"/>`;
+        if (x2 - x1 > 20) sleepBands += `<text x="${((x1 + x2) / 2).toFixed(1)}" y="${(H - padB - 6).toFixed(1)}" text-anchor="middle" class="chart-sleep-lab">💤</text>`;
+      }
+      bandStart = null;
+    };
+    for (let t = xStart; t < xEnd; t += 1800000) {
+      if (intensityAt(t, flatS) <= 0.06) { if (bandStart == null) bandStart = t; }
+      else closeBand(t);
+    }
+    closeBand(xEnd);
   }
   let d = `M ${sx(xStart).toFixed(1)} ${sy(0).toFixed(1)}`;
   valid.forEach((e, i) => { d += ` L ${sx(e.ts).toFixed(1)} ${sy(i + 1).toFixed(1)}`; });
@@ -2073,6 +2099,7 @@ function drinkChartSvg(log, now, firstTs, projPoints) {
       <line x1="${padL}" y1="${sy(0).toFixed(1)}" x2="${W - padR}" y2="${sy(0).toFixed(1)}" class="chart-axis"/>
       <line x1="${padL}" y1="${sy(ymax).toFixed(1)}" x2="${W - padR}" y2="${sy(ymax).toFixed(1)}" class="chart-grid"/>
       <text x="${padL}" y="${(sy(ymax) - 4).toFixed(1)}" class="chart-ymax">${ymax}</text>
+      ${sleepBands}
       ${dayGuides}
       <path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${proj}
