@@ -820,6 +820,7 @@ function renderLog() {
     const when = dt.toLocaleDateString([], { weekday: "short" }) + " " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     return `<li><span class="log-who">${d ? d.emoji : "🍺"} ${escapeHtml(state.names[e.who] || "?")} — ${d ? d.label : escapeHtml(String(e.drink))}</span><span class="log-when">${escapeHtml(when)}</span></li>`;
   }).join("");
+  drinkNotify();     // buzz + banner every phone when a new drink lands
 }
 
 /* ==========================================================================
@@ -1825,6 +1826,31 @@ function bingoNotify() {
   bigBanner(`🎲 <b>${escapeHtml(who)}</b> spotted: ${item.emoji} ${escapeHtml(item.t)}`);
 }
 
+/* Buzz + banner every phone when someone logs a drink. Fires only for a SINGLE
+   new entry (a live round → notify; many at once is a bulk load/sync → stay
+   quiet), and not for your own (you already get the confetti). */
+let seenDrinks = {};
+function drinkSnapshot() {
+  const cur = {};
+  (state.log || []).forEach((e) => { if (e && e.id != null) cur[e.id] = 1; });
+  return cur;
+}
+function drinkNotify() {
+  const cur = drinkSnapshot();
+  const fresh = Object.keys(cur).filter((id) => !seenDrinks[id]);
+  seenDrinks = cur;
+  if (fresh.length !== 1) return;                    // 0 = nothing new, >1 = bulk sync
+  const e = (state.log || []).find((x) => x && x.id === fresh[0]);
+  if (!e || e.who === me) return;                    // skip your own (you saw the confetti)
+  const who = state.names[e.who];
+  const d = drinkById(e.drink);
+  if (who == null || !d) return;
+  const tail = isSoft(e.drink) ? "" : " · " + countFor(e.who);
+  buzz([40, 30, 40]);
+  pop();
+  bigBanner(`${d.emoji} <b>${escapeHtml(who)}</b> just had a ${escapeHtml(d.label)}${tail}`);
+}
+
 /* ==========================================================================
    RENDER: LIVE STATS — computed from the drink tallies + timestamped log.
    Totals come from the tallies (authoritative); pace/biggest-hour/projection
@@ -2439,6 +2465,7 @@ async function boot() {
   outbox = loadOutbox();     // resume any edits parked while offline last time
   lastRoundTs = (state.round && state.round.ts) || 0;  // don't re-celebrate an old verdict on load
   seenBingo = bingoSnapshot();                         // don't re-announce already-spotted squares
+  seenDrinks = drinkSnapshot();                         // ditto for drinks already in the log
   applyLegacyRenames();      // rebrand old default names before first paint
   me = loadMe();
   selectedDrink = loadSelectedDrink();
