@@ -104,6 +104,18 @@
           "insta": "https://www.instagram.com/wellyrealale/"
         },
         {
+          "t": "16:30",
+          "iso": "2026-07-17T16:30",
+          "emoji": "🎸",
+          "title": "The Flapper",
+          "desc": "Canalside music boozer — impromptu stop, we ended up here.",
+          "tag": "walkin",
+          "map": "The Flapper Kingston Row Birmingham",
+          "lat": 52.4804611,
+          "lon": -1.9120379,
+          "intensity": 1.2
+        },
+        {
           "t": "17:30",
           "iso": "2026-07-17T17:30",
           "emoji": "🎯",
