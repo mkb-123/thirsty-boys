@@ -1879,12 +1879,19 @@ function projectDrinks(logTs, firstTs, now) {
   const recentDrinks = logTs.filter((t) => t >= recentFrom).length;
   const recentW = weightedHours(recentFrom, now, flat);
   const recentPerW = recentW > 0.3 ? recentDrinks / recentW : null;
-  const perW = (recentPerW != null && recentDrinks >= 2) ? (0.6 * recentPerW + 0.4 * overallPerW) : overallPerW;
+  const blended = (recentPerW != null && recentDrinks >= 2) ? (0.6 * recentPerW + 0.4 * overallPerW) : overallPerW;
+  // Cap the pace so a tiny elapsed window (e.g. a couple of early-morning drinks
+  // that land in the floored "asleep" hours) can't calibrate to an absurd rate
+  // and project a silly number. ~2.5 drinks/person per full-intensity hour is
+  // already a hard ceiling.
+  const crew = Math.max(1, (state.names || []).length);
+  const perW = Math.min(blended, 2.5 * crew);
+  const maxTotal = Math.max(N, crew * 30);   // and never project beyond a sane trip ceiling
   const points = [];
   let cum = N; const step = 1800000;
   for (let t = now; t < tripEnd; t += step) {
     const seg = Math.min(step, tripEnd - t) / 3600000;
-    cum += perW * intensityAt(t, flat) * seg;
+    cum = Math.min(maxTotal, cum + perW * intensityAt(t, flat) * seg);
     points.push({ t: Math.min(t + step, tripEnd), c: cum });
   }
   return { projected: Math.round(cum), points: points };
