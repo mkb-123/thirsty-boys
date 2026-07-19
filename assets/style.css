@@ -1330,7 +1330,12 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .recap-lb-row .rc-rank { width: 1.5rem; color: var(--muted); }
 .recap-lb-row .rc-who { flex: 1; }
 .recap-lb-row .rc-n { color: var(--amber-2); font-variant-numeric: tabular-nums; }
-.recap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.recap-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.9rem; }
+.recap-break { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; margin-bottom: 0.7rem; }
+.rc-chip { background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.6rem; font-size: 0.82rem; font-weight: 800; }
+.rc-chip.soft { color: var(--muted); }
+.recap-days { display: flex; justify-content: center; gap: 0.9rem; margin-bottom: 0.9rem; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+.recap-days b { color: var(--amber-2); font-size: 1rem; }
 .recap-stat { background: var(--bg-2); border-radius: 12px; padding: 0.7rem 0.4rem; text-align: center; }
 .recap-stat .rc-v { font-size: 1.3rem; font-weight: 900; color: var(--amber-2); }
 .recap-stat .rc-k { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; margin-top: 0.15rem; }

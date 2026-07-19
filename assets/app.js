@@ -1516,14 +1516,54 @@ function renderBragging() {
 function recapData() {
   const rows = state.names.map((n, i) => ({ n, i, c: countFor(i) })).sort((a, b) => b.c - a.c);
   const total = rows.reduce((s, r) => s + r.c, 0);
+  const crew = state.names.length || 1;
+  const perHead = total / crew;
   const maxC = Math.max(0, ...rows.map((r) => r.c));
   const thirstiest = maxC > 0 ? rows.filter((r) => r.c === maxC).map((r) => r.n).join(" & ") : null;
-  const scores = betScores();
-  const maxS = Math.max(0, ...scores);
-  const pundit = maxS > 0 ? state.names.map((n, i) => ({ n, s: scores[i] })).filter((x) => x.s === maxS).map((x) => x.n).join(" & ") : null;
-  const bingoN = BINGO.filter((x) => state.bingo && state.bingo[x.id] != null).length;
+
+  // Per-drink group totals → breakdown chips + group favourite + hydration.
+  const byDrink = {};
+  (state.tallies || []).forEach((t) => { if (t) Object.keys(t).forEach((k) => { byDrink[k] = (byDrink[k] || 0) + (t[k] || 0); }); });
+  const boozeBreak = BOOZE.filter((dk) => byDrink[dk.id] > 0).map((dk) => ({ emoji: dk.emoji, n: byDrink[dk.id] })).sort((a, b) => b.n - a.n);
+  const favBooze = boozeBreak[0] ? { emoji: boozeBreak[0].emoji, n: boozeBreak[0].n } : null;
+  const softTotal = SOFT.reduce((s, dk) => s + (byDrink[dk.id] || 0), 0);
+
+  // Time-based (booze log): biggest single hour + per-day split.
+  const blog = (state.log || []).filter((e) => e && e.ts && !isSoft(e.drink));
+  const buckets = {}, perDay = {};
+  blog.forEach((e) => {
+    const dt = new Date(e.ts);
+    const hk = dt.toLocaleDateString([], { weekday: "short" }) + " " + String(dt.getHours()).padStart(2, "0") + ":00";
+    buckets[hk] = (buckets[hk] || 0) + 1;
+    const dk = dt.toLocaleDateString([], { weekday: "short" });
+    perDay[dk] = (perDay[dk] || 0) + 1;
+  });
+  let bigHour = "", bigN = 0;
+  Object.keys(buckets).forEach((k) => { if (buckets[k] > bigN) { bigN = buckets[k]; bigHour = k; } });
+  const days = ["Fri", "Sat", "Sun"].filter((d) => perDay[d]).map((d) => ({ d, n: perDay[d] }));
+
+  // Bets: most correct (pundit) + best accuracy (oracle).
+  const bstats = betStats();
+  const maxS = Math.max(0, ...bstats.correct);
+  const pundit = maxS > 0 ? state.names.filter((n, i) => bstats.correct[i] === maxS).join(" & ") : null;
+  const elig = state.names.map((n, i) => ({ n, acc: bstats.called[i] ? bstats.correct[i] / bstats.called[i] : 0, t: bstats.called[i] })).filter((x) => x.t >= 2 && x.acc > 0);
+  const oracle = elig.length ? elig.sort((a, b) => b.acc - a.acc)[0] : null;
+
+  // Awards: winners + most-voted-for (vote magnet), from revealed awards only.
   const awards = AWARDS.map((a) => ({ title: a.title, w: awardWinner(a.id) })).filter((x) => x.w);
-  return { rows, total, maxC, thirstiest, maxS, pundit, bingoN, awards };
+  const received = state.names.map(() => 0);
+  AWARDS.forEach((a) => { const dd = getAward(a.id); if (!dd.revealed) return; Object.values(dd.votes).forEach((nom) => { if (state.names[nom] != null) received[nom]++; }); });
+  const maxV = Math.max(0, ...received);
+  const voteMagnet = maxV > 0 ? state.names.filter((n, i) => received[i] === maxV).join(" & ") : null;
+
+  // Bingo: total + top spotter.
+  const bingoN = BINGO.filter((x) => state.bingo && state.bingo[x.id] != null).length;
+  const bingoBy = {};
+  Object.keys(state.bingo || {}).forEach((id) => { const w = state.bingo[id]; if (w != null) bingoBy[w] = (bingoBy[w] || 0) + 1; });
+  let bingoTop = null, bingoTopN = 0;
+  Object.keys(bingoBy).forEach((w) => { if (bingoBy[w] > bingoTopN) { bingoTopN = bingoBy[w]; bingoTop = state.names[w]; } });
+
+  return { rows, total, perHead, maxC, thirstiest, boozeBreak, favBooze, softTotal, bigHour, bigN, days, maxS, pundit, oracle, awards, voteMagnet, maxV, bingoN, bingoTop, bingoTopN };
 }
 function renderRecap() {
   const el = document.getElementById("recap-card");
@@ -1545,12 +1585,19 @@ function renderRecap() {
       `<div class="recap-lb-row"><span class="rc-rank">${medal[i] || (i + 1) + "."}</span><span class="rc-who">${escapeHtml(r.n)}</span><span class="rc-n">${r.c}</span></div>`).join("")}</div>
      <div class="recap-stats">
        <div class="recap-stat"><div class="rc-v">${d.total}</div><div class="rc-k">Total drinks</div></div>
+       <div class="recap-stat"><div class="rc-v">${d.perHead.toFixed(1)}</div><div class="rc-k">Per head</div></div>
+       <div class="recap-stat"><div class="rc-v">${d.bigN || 0}</div><div class="rc-k">Biggest hour</div></div>
        <div class="recap-stat"><div class="rc-v">${d.bingoN}/${BINGO.length}</div><div class="rc-k">Bingo spotted</div></div>
      </div>
+     ${d.boozeBreak.length ? `<div class="recap-break">${d.boozeBreak.map((x) => `<span class="rc-chip">${x.emoji} ${x.n}</span>`).join("")}${d.softTotal ? `<span class="rc-chip soft">🧃 ${d.softTotal}</span>` : ""}</div>` : ""}
+     ${d.days.length > 1 ? `<div class="recap-days">${d.days.map((x) => `<span><b>${x.n}</b> ${x.d}</span>`).join("")}</div>` : ""}
      <div class="recap-awards">
        ${d.pundit ? `<div class="rc-aw">🎯 Best pundit: <b>${escapeHtml(d.pundit)}</b> (${d.maxS} correct)</div>` : ""}
+       ${d.oracle ? `<div class="rc-aw">🔮 Sharpest odds: <b>${escapeHtml(d.oracle.n)}</b> (${Math.round(d.oracle.acc * 100)}%)</div>` : ""}
+       ${d.voteMagnet ? `<div class="rc-aw">🧲 Most voted-for: <b>${escapeHtml(d.voteMagnet)}</b> (${d.maxV})</div>` : ""}
+       ${d.bingoTop ? `<div class="rc-aw">🥏 Top spotter: <b>${escapeHtml(d.bingoTop)}</b> (${d.bingoTopN})</div>` : ""}
        ${d.awards.map((x) => `<div class="rc-aw">${escapeHtml(x.title)}: <b>${escapeHtml(x.w)}</b></div>`).join("")}
-       ${(!d.pundit && !d.awards.length) ? `<div class="recap-empty">Reveal some awards & settle bets and they'll show here 🏆</div>` : ""}
+       ${(!d.pundit && !d.awards.length && !d.bingoTop) ? `<div class="recap-empty">Log drinks, spot bingo, settle bets &amp; reveal awards — it all lands here 🏆</div>` : ""}
      </div>`;
 }
 function buildRecapText() {
@@ -1558,8 +1605,12 @@ function buildRecapText() {
   const lines = ["🍺 " + (TRIP.city || "") + " '" + (TRIP.year || "") + " — Thirsty Boys"];
   if (d.thirstiest) lines.push("👑 Thirstiest Boy: " + d.thirstiest + " (" + d.maxC + ")");
   lines.push("🍻 " + d.rows.map((r) => r.n + " " + r.c).join(" · "));
+  lines.push("📊 " + d.total + " total · " + d.perHead.toFixed(1) + " each" + (d.bigN ? " · biggest hour " + d.bigN : ""));
+  if (d.days.length > 1) lines.push("📅 " + d.days.map((x) => x.d + " " + x.n).join(" · "));
   if (d.pundit) lines.push("🎯 Best pundit: " + d.pundit + " (" + d.maxS + ")");
-  lines.push("🥏 Bingo: " + d.bingoN + "/" + BINGO.length);
+  if (d.oracle) lines.push("🔮 Sharpest odds: " + d.oracle.n + " (" + Math.round(d.oracle.acc * 100) + "%)");
+  if (d.voteMagnet) lines.push("🧲 Most voted-for: " + d.voteMagnet + " (" + d.maxV + ")");
+  lines.push("🥏 Bingo: " + d.bingoN + "/" + BINGO.length + (d.bingoTop ? " · top spotter " + d.bingoTop : ""));
   d.awards.forEach((x) => lines.push(x.title + ": " + x.w));
   return lines.join("\n");
 }
