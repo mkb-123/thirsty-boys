@@ -13,6 +13,7 @@ const SHELL = [
   "./assets/style.css?v=" + BUILD,
   "./assets/app.js?v=" + BUILD,
   "./assets/config.js?v=" + BUILD,
+  "./assets/trips.json?v=" + BUILD,
   "./assets/trip.json?v=" + BUILD,
   "./manifest.webmanifest",
   "./assets/icon-192.png",

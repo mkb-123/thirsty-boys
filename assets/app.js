@@ -33,9 +33,43 @@ const BOOZE = DRINKS.filter((d) => !d.soft);
 const SOFT = DRINKS.filter((d) => d.soft);
 const TITLES = { top: "👑 Thirstiest Boy", zero: "😇 Designated" };
 
-async function loadTrip() {
+/* Multiple trips can live side by side. assets/trips.json lists them; the
+   header dropdown switches between them. Each trip has its own houseCode, so
+   switching trip means a fresh room + local store — past trips stay intact. */
+const SELECTED_TRIP_KEY = "thirstyboys.trip.selected";
+const V = () => "?v=" + (window.TB_BUILD || "dev");
+
+async function loadTripRegistry() {
   try {
-    const r = await fetch("assets/trip.json?v=" + (window.TB_BUILD || "dev"), { cache: "no-cache" });
+    const r = await fetch("assets/trips.json" + V(), { cache: "no-cache" });
+    if (r.ok) {
+      const reg = await r.json();
+      if (reg && Array.isArray(reg.trips) && reg.trips.length) { reg.__fromFile = true; return reg; }
+    }
+  } catch (e) { /* fall through to single-trip back-compat */ }
+  // No registry (or unreadable): behave exactly like before — one trip.json.
+  return { default: null, trips: [{ id: "trip", label: "Trip", file: "assets/trip.json" }] };
+}
+/* Which trip to show: ?trip= in the URL wins (and is remembered), else the
+   last picked, else the registry default, else the first listed. */
+function pickTripId(reg) {
+  const ids = reg.trips.map((t) => t.id);
+  let want = null;
+  try { want = new URLSearchParams(location.search).get("trip"); } catch (e) { /* ignore */ }
+  if (want) { try { localStorage.setItem(SELECTED_TRIP_KEY, want); } catch (e) { /* ignore */ } }
+  if (!want) { try { want = localStorage.getItem(SELECTED_TRIP_KEY); } catch (e) { /* ignore */ } }
+  if (want && ids.includes(want)) return want;
+  if (reg.default && ids.includes(reg.default)) return reg.default;
+  return reg.trips[0].id;
+}
+async function loadTrip() {
+  const reg = await loadTripRegistry();
+  const id = pickTripId(reg);
+  window.__tripRegistry = reg;
+  window.__tripId = id;
+  const entry = reg.trips.find((t) => t.id === id) || reg.trips[0];
+  try {
+    const r = await fetch(entry.file + V(), { cache: "no-cache" });
     if (r.ok) return await r.json();
   } catch (e) { /* offline or missing — fall through to empty */ }
   return {};
@@ -2687,6 +2721,26 @@ function applyTripToDOM() {
     const wc = document.querySelector(".weather-cta");
     if (wc) wc.href = TRIP.weather.bbc;
   }
+  renderTripSwitcher();
+}
+/* Header dropdown to switch between the trips in assets/trips.json. Hidden
+   unless a real registry with trips is present. Switching reloads with
+   ?trip=<id> so the new trip's houseCode/store/room initialise cleanly. */
+function renderTripSwitcher() {
+  const wrap = document.getElementById("trip-switch");
+  const sel = document.getElementById("trip-switch-sel");
+  const reg = window.__tripRegistry;
+  if (!wrap || !sel || !reg || !reg.__fromFile || !reg.trips.length) return;
+  sel.innerHTML = reg.trips.map((t) =>
+    `<option value="${escapeHtml(t.id)}">${escapeHtml(t.label || t.id)}</option>`).join("");
+  sel.value = window.__tripId;
+  wrap.classList.remove("hidden");
+  if (sel.dataset.wired === "1") return;   // bind once
+  sel.dataset.wired = "1";
+  sel.addEventListener("change", () => {
+    try { localStorage.setItem(SELECTED_TRIP_KEY, sel.value); } catch (e) { /* ignore */ }
+    location.href = location.pathname + "?trip=" + encodeURIComponent(sel.value);
+  });
 }
 
 async function boot() {

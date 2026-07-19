@@ -1,0 +1,6 @@
+{
+  "default": "brum26",
+  "trips": [
+    { "id": "brum26", "label": "Birmingham '26 🍺", "file": "assets/trip.json" }
+  ]
+}
