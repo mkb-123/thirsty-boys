@@ -1650,11 +1650,64 @@ function buildRecapText() {
   d.awards.forEach((x) => lines.push(x.title + ": " + x.w));
   return lines.join("\n");
 }
+function loadHtml2Canvas() {
+  if (window.__h2c) return window.__h2c;
+  window.__h2c = new Promise((resolve, reject) => {
+    if (window.html2canvas) { resolve(window.html2canvas); return; }
+    const js = document.createElement("script");
+    js.src = "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js";
+    js.onload = () => window.html2canvas ? resolve(window.html2canvas) : reject(new Error("html2canvas missing"));
+    js.onerror = () => reject(new Error("html2canvas failed"));
+    document.head.appendChild(js);
+    setTimeout(() => reject(new Error("html2canvas timeout")), 8000);
+  });
+  return window.__h2c;
+}
+/* Render the recap card to a PNG blob (null if it can't). */
+async function recapImageBlob() {
+  const card = document.getElementById("recap-card");
+  if (!card || !card.offsetWidth) return null; // must be visible
+  const h2c = await loadHtml2Canvas();
+  const canvas = await h2c(card, {
+    backgroundColor: "#1c2138",
+    scale: Math.min(3, (window.devicePixelRatio || 1) * 1.5),
+    useCORS: true,
+    logging: false,
+  });
+  return await new Promise((res) => canvas.toBlob(res, "image/png"));
+}
 async function shareRecap() {
   const text = buildRecapText();
   const url = location.origin + location.pathname;
+  const fname = ((TRIP.city || "trip").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + (TRIP.year || "") + "-wrapped.png").replace(/-+/g, "-");
+  const title = (TRIP.city || "") + " '" + (TRIP.year || "");
+
+  // Preferred path: share/export a PICTURE of the recap card.
+  try {
+    toast("📸 Building your recap image…");
+    const blob = await recapImageBlob();
+    if (blob) {
+      const file = new File([blob], fname, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title, text }); return; }
+        catch (e) { if (e.name === "AbortError") return; /* else fall through to download */ }
+      }
+      // No file-share support (or it failed): download the PNG.
+      const dl = document.createElement("a");
+      dl.href = URL.createObjectURL(blob);
+      dl.download = fname;
+      document.body.appendChild(dl);
+      dl.click();
+      dl.remove();
+      setTimeout(() => URL.revokeObjectURL(dl.href), 4000);
+      toast("🖼️ Recap image saved — share it in the chat");
+      return;
+    }
+  } catch (e) { /* fall through to text share */ }
+
+  // Fallback: text + link (older browsers / image build failed).
   if (navigator.share) {
-    try { await navigator.share({ title: (TRIP.city || "") + " '" + (TRIP.year || ""), text, url }); return; }
+    try { await navigator.share({ title, text, url }); return; }
     catch (e) { if (e.name === "AbortError") return; }
   }
   try { await navigator.clipboard.writeText(text + "\n" + url); toast("📋 Recap copied — paste it in the chat"); }
