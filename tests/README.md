@@ -4,6 +4,14 @@ End-to-end checks for the Thirsty Boys PWA, driven by Playwright against a
 headless Chromium. They run the **real committed app** (a tiny server serves
 the repo root) — no build step, no staging copy.
 
+## Config validation (no browser)
+
+`node tests/validate.js` checks the trip config — `trips.json`, every trip
+file, `common.json`, the rules file — for parse errors, missing fields,
+duplicate ids, and house codes that don't match their registry id. It's pure
+Node (no install) and runs automatically on every push via
+`.github/workflows/validate.yml`, so a bad JSON edit fails loudly.
+
 ## Running
 
 ```bash

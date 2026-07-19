@@ -63,6 +63,32 @@ the dropdown shows and which file each trip loads:
 - `id` — must match the trip file's `houseCode`; it's also the `?trip=<id>` deep link.
 - `label` — what shows in the dropdown.
 
+> **Safety net:** every push is checked by a GitHub Action (`.github/workflows/validate.yml`
+> → `node tests/validate.js`). If an edit has a typo, a missing field, a duplicate
+> id, or a house code that doesn't match, the check goes **red** and tells you
+> what's wrong — so a bad edit is caught, not silently shipped. You can run the
+> same check yourself: `node tests/validate.js`.
+
+### Editing entirely in your browser (no laptop, no Claude)
+
+You never need to clone the repo or install anything — edit right on GitHub:
+
+1. Go to the file on **github.com** (e.g. `assets/trips/malta27.json`).
+2. Click the **pencil ✏️ icon** (top-right of the file) — "Edit this file".
+3. Make your change in the browser.
+4. Scroll down, **Commit changes** (a short message like "Malta dates"), commit
+   straight to the default branch.
+5. GitHub runs the validator; if it's green, the site redeploys in ~1–2 minutes.
+   If it's red, open the failed check to see exactly what to fix, then edit again.
+
+To **add** a file (a new trip), use **Add file → Create new file** on github.com,
+name it `assets/trips/<id>.json`, paste the contents (copy `_template.json`), and
+commit. Then edit `assets/trips.json` the same way to add its one registry line.
+
+Tip: keep JSON valid — every `"key": value` pair needs a comma after it *except
+the last one in a block*, and text goes in "double quotes". The validator will
+catch mistakes, but a JSON linter (or just copying the template) helps.
+
 ### Edit an existing trip
 
 Open its file (e.g. `assets/trip.json` or `assets/trips/malta27.json`) and change
