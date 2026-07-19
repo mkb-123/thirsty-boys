@@ -1099,6 +1099,20 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 }
 .bet-score { color: var(--muted); }
 .bet-score b { color: var(--amber-2); }
+/* Ranked bet standings block */
+.bet-scoreboard.bet-stats { display: block; }
+.bet-stats-h { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber-2); margin-bottom: 0.6rem; }
+.bet-stats-h span { color: var(--muted); font-weight: 700; letter-spacing: 0; text-transform: none; }
+.bet-stat-row { display: flex; align-items: center; gap: 0.55rem; padding: 0.28rem 0; }
+.bs-rank { flex: 0 0 1.4rem; text-align: center; font-weight: 800; }
+.bs-name { flex: 0 0 5.5rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; min-width: 30px; }
+.bs-bar { display: block; height: 100%; background: linear-gradient(90deg, var(--amber-2), var(--amber)); border-radius: 999px; }
+.bs-score { flex: 0 0 auto; font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+.bs-score b { color: var(--amber-2); font-size: 0.95rem; }
+.bs-score small { color: var(--muted); }
+.bet-supers { margin-top: 0.6rem; padding-top: 0.55rem; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+.bet-supers b { color: var(--ink); }
 .bet-result-input {
   width: 100%;
   background: var(--bg-2);

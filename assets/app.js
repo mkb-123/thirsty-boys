@@ -1103,20 +1103,53 @@ function betScores() {
   });
   return scores;
 }
+/* Richer bet stats: correct calls, how many settled bets each person actually
+   called (for accuracy), and how many bets are settled so far. */
+function betStats() {
+  const correct = betScores();
+  const called = state.names.map(() => 0);
+  let settled = 0;
+  BETS.forEach((bet) => {
+    const b = getBet(bet.id);
+    if (!(b.revealed && b.result !== "" && b.result != null)) return;
+    settled++;
+    Object.keys(b.calls).forEach((v) => { if (b.calls[v] != null && b.calls[v] !== "") called[Number(v)]++; });
+  });
+  return { correct, called, settled };
+}
 
 function renderBets() {
   const wrap = document.getElementById("bets-list");
   const claimed = hasClaimed();
   const total = state.names.length;
 
-  // Bragging-rights scoreboard (only once something's been settled)
-  const scores = betScores();
-  const anySettled = scores.some((s) => s > 0);
-  const scoreboard = anySettled
-    ? `<div class="bet-scoreboard">🏅 Correct calls: ` +
-      state.names.map((n, i) => `<span class="bet-score">${escapeHtml(n)} <b>${scores[i]}</b></span>`).join(" ") +
-      `</div>`
-    : "";
+  // Bet standings — ranked leaderboard with accuracy (only once bets settle).
+  const bs = betStats();
+  let scoreboard = "";
+  if (bs.settled > 0) {
+    const rows = state.names.map((n, i) => ({ n, c: bs.correct[i], t: bs.called[i], acc: bs.called[i] ? bs.correct[i] / bs.called[i] : 0 }))
+      .sort((a, b) => (b.c - a.c) || (b.acc - a.acc));
+    const medal = ["🥇", "🥈", "🥉"];
+    const maxC = Math.max(1, ...rows.map((r) => r.c));
+    const list = rows.map((r, idx) => `
+      <div class="bet-stat-row">
+        <span class="bs-rank">${medal[idx] || (idx + 1) + "."}</span>
+        <span class="bs-name">${escapeHtml(r.n)}</span>
+        <span class="bs-bar-wrap"><span class="bs-bar" style="width:${(r.c / maxC) * 100}%"></span></span>
+        <span class="bs-score"><b>${r.c}</b><small>/${r.t}</small>${r.t ? ` · ${Math.round(r.acc * 100)}%` : ""}</span>
+      </div>`).join("");
+    const elig = rows.filter((r) => r.t >= 2);
+    const oracle = elig.length ? elig.slice().sort((a, b) => (b.acc - a.acc) || (b.c - a.c))[0] : null;
+    const chancer = rows.slice().sort((a, b) => b.t - a.t)[0];
+    const supers = [];
+    if (oracle && oracle.acc > 0) supers.push(`🔮 Oracle: <b>${escapeHtml(oracle.n)}</b> ${Math.round(oracle.acc * 100)}%`);
+    if (chancer && chancer.t > 0) supers.push(`🎲 Most calls: <b>${escapeHtml(chancer.n)}</b> (${chancer.t})`);
+    scoreboard = `<div class="bet-scoreboard bet-stats">
+      <div class="bet-stats-h">🎯 Bet standings <span>· ${bs.settled} settled · right/called</span></div>
+      ${list}
+      ${supers.length ? `<div class="bet-supers">${supers.join(" · ")}</div>` : ""}
+    </div>`;
+  }
 
   // Your own progress: how many you've called vs still need to call.
   const myProg = claimed ? progressBar(
