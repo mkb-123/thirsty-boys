@@ -1,0 +1,12 @@
+{
+  "name": "thirsty-boys-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright end-to-end checks for the Thirsty Boys PWA",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.40.0"
+  }
+}
