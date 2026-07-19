@@ -1339,9 +1339,19 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .recap-stat { background: var(--bg-2); border-radius: 12px; padding: 0.7rem 0.4rem; text-align: center; }
 .recap-stat .rc-v { font-size: 1.3rem; font-weight: 900; color: var(--amber-2); }
 .recap-stat .rc-k { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; margin-top: 0.15rem; }
-.recap-awards { border-top: 1px dashed var(--line); padding-top: 0.8rem; }
-.recap-awards .rc-aw { font-size: 0.85rem; padding: 0.15rem 0; }
-.recap-awards .rc-aw b { color: var(--amber-2); }
+.recap-awards { border-top: 1px dashed var(--line); padding-top: 0.9rem; margin-top: 0.2rem; }
+.rc-aw-head { font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.6rem; }
+.rc-aw-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.rc-aw-card {
+  display: flex; align-items: center; gap: 0.7rem;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 0.55rem 0.75rem; min-width: 0;
+}
+.rc-aw-ico { font-size: 1.35rem; line-height: 1; flex: 0 0 auto; width: 1.6rem; text-align: center; }
+.rc-aw-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.rc-aw-lab { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); overflow-wrap: normal; }
+.rc-aw-win { font-size: 0.98rem; font-weight: 900; color: var(--amber-2); line-height: 1.15; overflow-wrap: normal; word-break: normal; }
+.rc-aw-det { font-size: 0.7rem; font-weight: 800; color: var(--muted); flex: 0 0 auto; text-align: right; white-space: nowrap; padding-left: 0.3rem; }
 .recap-empty { color: var(--muted); font-size: 0.85rem; text-align: center; }
 .recap-share { width: 100%; margin-top: 1rem; }
 
