@@ -45,13 +45,11 @@ window.THIRSTY_CONFIG = {
    In Realtime Database → Rules, paste this so only your house's data is
    readable/writable (still open, but scoped — fine for a mates' weekend):
 
-     {
-       "rules": {
-         "houses": {
-           "$code": { ".read": true, ".write": true }
-         }
-       }
-     }
+   The recommended rules live in database.rules.json at the repo root — they
+   keep every room readable but block writes to any trip listed in a `locked`
+   map, so a FINISHED trip can be frozen (add locked/<code> = true in the
+   console) and never accidentally overwritten. Paste that file's `rules` into
+   Realtime Database → Rules, or `firebase deploy --only database`.
 
    Test mode expires after ~30 days; these rules don't. For anything more
    serious you'd add Firebase Anonymous Auth, but that's overkill here.

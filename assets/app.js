@@ -13,6 +13,7 @@
 let TRIP = {};
 let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], BINGO = [], PUBS = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
+let TRIP_LOCKED = false;   // finished/archived trips are read-only (trip.json "locked": true)
 let STORE_KEY = "thirstyboys.trip.v1";
 let OUTBOX_KEY = "thirstyboys.trip.outbox";
 let HQ_ADDRESS = "";
@@ -83,9 +84,10 @@ async function loadTrip() {
   } catch (e) { /* offline or missing — fall through to empty */ }
   return {};
 }
-/* Common (reusable) bets first, then this trip's local bets. Same id in the
-   local set overrides the common one in place, so a trip can tweak a classic. */
-function mergeBets(common, local) {
+/* Common (reusable) items first, then this trip's local ones — for both bets
+   and bingo. Same id in the local set overrides the common one in place, so a
+   trip can tweak a classic; each item is tagged scope: "common" | "local". */
+function mergeCatalog(common, local) {
   const out = (common || []).map((b) => Object.assign({ scope: "common" }, b));
   (local || []).forEach((b) => {
     const i = out.findIndex((x) => x.id === b.id);
@@ -99,12 +101,14 @@ function applyTrip(t) {
   ITINERARY = TRIP.itinerary || [];
   CREW = (TRIP.crew || []).map((c) => ({ emoji: c.emoji, role: c.role }));
   DEFAULT_NAMES = (TRIP.crew || []).map((c) => c.name);
-  // Bets = the shared "classics" (assets/common.json) + this trip's own local
-  // bets (venues/activities in trip.json). A local bet with the same id as a
-  // classic overrides it in place; otherwise locals are appended.
-  BETS = mergeBets((window.__common && window.__common.bets) || [], TRIP.bets || []);
-  BINGO = TRIP.bingo || [];
+  // Bets & bingo = shared "classics" (assets/common.json) + this trip's own
+  // local ones (trip.json). A local item with the same id as a classic
+  // overrides it in place; otherwise locals are appended.
+  const common = window.__common || {};
+  BETS = mergeCatalog(common.bets || [], TRIP.bets || []);
+  BINGO = mergeCatalog(common.bingo || [], TRIP.bingo || []);
   PUBS = TRIP.pubs || [];
+  TRIP_LOCKED = !!TRIP.locked;   // archived trips: view-only, no new writes
   const d = TRIP.dates || {};
   TRIP_START = new Date((d.start || "1970-01-01T00:00") + ":00");
   TRIP_END = new Date((d.end || "1970-01-01T00:00") + ":00");
@@ -375,13 +379,31 @@ function rtClaim(path, value) {               // set only if empty — first wri
   if (rtLive()) { try { syncRef.child(path).transaction((v) => (v == null ? value : v)); return; } catch (e) { /* fall through */ } }
   enqueue({ op: "claim", path: path, value: value });
 }
-function seedRemote() {                        // full-room overwrite (reset / first seed)
-  const snapshot = JSON.parse(JSON.stringify(state));
-  // Seed the log as keyed children (not an array) so later per-entry writes
-  // merge with it instead of fighting an array shape.
+/* Snapshot of this trip's room in the same shape the DB stores (log as keyed
+   children), so it round-trips: re-importable via the archive/ instructions. */
+function roomSnapshot() {
+  const snap = JSON.parse(JSON.stringify(state));
   const logObj = {};
   (state.log || []).forEach((e) => { if (e && e.id != null) logObj[e.id] = { who: e.who, drink: e.drink, ts: e.ts }; });
-  snapshot.log = logObj;
+  snap.log = logObj;
+  return snap;
+}
+/* Download this trip's live data as JSON — a self-serve archive/record. */
+function exportRoom() {
+  try {
+    const blob = new Blob([JSON.stringify(roomSnapshot(), null, 2) + "\n"], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (window.__houseCode || "trip") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("📤 " + (TRIP.city || "Trip") + " data exported");
+  } catch (e) { toast("Couldn't export — try again"); }
+}
+function seedRemote() {                        // full-room overwrite (reset / first seed)
+  const snapshot = roomSnapshot();
   // A whole-state write already captures every local edit, so any queued
   // deltas are now redundant — clearing them prevents a double-count on flush.
   if (rtLive()) { try { syncRef.set(snapshot); outbox = []; saveOutbox(); return; } catch (e) { /* fall through */ } }
@@ -909,6 +931,14 @@ function renderCrew() {
 // Firebase — concurrent logs then merge instead of clobbering the whole array.
 let logSeq = 0;
 function newLogId() { return Date.now().toString(36) + "-" + (logSeq++).toString(36) + "-" + Math.random().toString(36).slice(2, 7); }
+/* Archived trips are read-only. Guards every write action so a finished trip's
+   data can't be changed by an accidental tap (the Firebase rules enforce this
+   server-side too — see database.rules.json). */
+function writeBlocked() {
+  if (!TRIP_LOCKED) return false;
+  toast("🔒 " + (TRIP.city || "This trip") + " is archived — read only");
+  return true;
+}
 function logAdd(entry) {
   state.log.push(entry);
   if (state.log.length > 400) state.log = state.log.slice(-400);
@@ -917,6 +947,7 @@ function logAdd(entry) {
 }
 function addDrink(i) { addDrinkFor(i, selectedDrink); }   // "quick add for me" path
 function addDrinkFor(i, id) {
+  if (writeBlocked()) return;
   if (!id) id = selectedDrink;
   const prevLeader = currentLeader();
   state.tallies[i] = state.tallies[i] || {};
@@ -938,6 +969,7 @@ function addDrinkFor(i, id) {
   }
 }
 function undoLast() {
+  if (writeBlocked()) return;
   // Undo YOUR own last drink if you've claimed a name; otherwise the last overall.
   let idx = -1;
   if (me != null && !Number.isNaN(me)) {
@@ -963,6 +995,7 @@ function undoLast() {
    so stats/undo stay consistent. Uses delta writes so it's sync-safe. */
 let adminUnlocked = false;
 function adminAdjust(i, drinkId, delta) {
+  if (writeBlocked()) return;
   state.tallies[i] = state.tallies[i] || {};
   const cur = state.tallies[i][drinkId] || 0;
   const next = Math.max(0, cur + delta);
@@ -1041,6 +1074,7 @@ function confirmReveal(what) {
 }
 
 function resetAll() {
+  if (writeBlocked()) return;
   const pw = prompt("This wipes ALL drinks & names for EVERYONE.\nEnter the reset password to confirm:");
   if (pw == null) return;                 // cancelled
   if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password — nothing was reset."); return; }
@@ -1302,6 +1336,7 @@ function renderBets() {
   // Picking/typing saves silently as a safety net; the card stays on the picker
   // so the explicit "Submit call" button is what locks it in and collapses it.
   function saveCall(id, v) {
+    if (writeBlocked()) return;
     const b = getBet(id);
     if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
     else { b.calls[me] = (BETS.find((x) => x.id === id).type === "person" && v !== "none") ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
@@ -1328,6 +1363,7 @@ function renderBets() {
   );
   wrap.querySelectorAll("[data-bet-result]").forEach((el) =>
     el.addEventListener("change", () => {
+      if (writeBlocked()) return;
       const id = el.dataset.betResult, b = getBet(id);
       b.result = el.value === "" ? "" : ((BETS.find((x) => x.id === id).type === "person" && el.value !== "none") ? Number(el.value) : el.value);
       state.bets[id] = b;
@@ -1338,6 +1374,7 @@ function renderBets() {
   );
   wrap.querySelectorAll(".bet-reveal").forEach((btn) =>
     btn.addEventListener("click", () => {
+      if (writeBlocked()) return;
       if (!confirmReveal("everyone's calls")) return;
       const id = btn.dataset.bet, b = getBet(id);
       b.revealed = true; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", true); renderBets();
@@ -1345,6 +1382,7 @@ function renderBets() {
   );
   const revealAllBtn = document.getElementById("bets-reveal-all");
   if (revealAllBtn) revealAllBtn.addEventListener("click", () => {
+    if (writeBlocked()) return;
     if (!settledUnrevealed.length) return;
     if (!confirmReveal(`all ${settledUnrevealed.length} settled bets' calls`)) return;
     settledUnrevealed.forEach((bt) => { const b = getBet(bt.id); b.revealed = true; state.bets[bt.id] = b; rtSet("bets/" + bt.id + "/revealed", true); });
@@ -1353,6 +1391,7 @@ function renderBets() {
   });
   wrap.querySelectorAll(".bet-reopen").forEach((btn) =>
     btn.addEventListener("click", () => {
+      if (writeBlocked()) return;
       const id = btn.dataset.bet, b = getBet(id);
       b.revealed = false; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", false); renderBets();
     })
@@ -1768,6 +1807,7 @@ function renderBingo() {
   }).join("");
   grid.querySelectorAll(".bingo-cell").forEach((cell) =>
     cell.addEventListener("click", () => {
+      if (writeBlocked()) return;
       const id = cell.dataset.bingo;
       state.bingo = state.bingo || {};
       if (state.bingo[id] != null) { delete state.bingo[id]; rtRemove("bingo/" + id); }
@@ -2410,6 +2450,7 @@ function renderNowNext() {
 
 document.getElementById("undo-btn").addEventListener("click", undoLast);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
+(function () { const b = document.getElementById("export-btn"); if (b) b.addEventListener("click", exportRoom); })();
 document.getElementById("spin-btn").addEventListener("click", spinRound);
 document.getElementById("admin-btn").addEventListener("click", toggleAdmin);
 document.getElementById("recap-share").addEventListener("click", shareRecap);
@@ -2583,6 +2624,28 @@ function applyTripToDOM() {
     if (wc) wc.href = TRIP.weather.bbc;
   }
   renderTripSwitcher();
+  applyLockedChrome();
+}
+/* Archived (read-only) trips: hide the quick-add FAB and show a banner so it's
+   obvious nothing can be changed. Writes are also guarded (writeBlocked) and
+   enforced server-side by the Firebase rules. */
+function applyLockedChrome() {
+  document.body.classList.toggle("trip-locked", TRIP_LOCKED);
+  const fab = document.getElementById("fab-beer");
+  if (fab) fab.style.display = TRIP_LOCKED ? "none" : "";
+  let banner = document.getElementById("readonly-banner");
+  if (TRIP_LOCKED) {
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "readonly-banner";
+      banner.className = "readonly-banner";
+      const main = document.querySelector("main");
+      if (main) main.insertBefore(banner, main.firstChild);
+    }
+    banner.textContent = "🔒 " + (TRIP.city || "This trip") + (TRIP.year ? " '" + TRIP.year : "") + " is archived — view only";
+  } else if (banner) {
+    banner.remove();
+  }
 }
 /* Header dropdown to switch between the trips in assets/trips.json. Hidden
    unless a real registry with trips is present. Switching reloads with

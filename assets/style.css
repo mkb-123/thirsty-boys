@@ -53,6 +53,13 @@ img, svg, canvas { max-width: 100%; height: auto; }
   border-bottom: 1px solid var(--line);
 }
 .hero-inner { max-width: 720px; margin: 0 auto; }
+.readonly-banner {
+  background: rgba(244, 169, 51, 0.14);
+  border: 1px solid rgba(244, 169, 51, 0.4);
+  color: var(--amber-2);
+  font-weight: 800; font-size: 0.85rem; text-align: center;
+  padding: 0.6rem 0.9rem; border-radius: 12px; margin-bottom: 1rem;
+}
 .trip-switch { display: flex; justify-content: center; margin-bottom: 1.1rem; }
 .trip-switch-sel {
   appearance: none; -webkit-appearance: none;

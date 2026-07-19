@@ -35,5 +35,15 @@
     { "id": "shots", "emoji": "🥃", "type": "text", "q": "Total shots ordered all weekend" },
     { "id": "ubers", "emoji": "🚕", "type": "text", "q": "Total Ubers taken all weekend" },
     { "id": "tab", "emoji": "💷", "type": "text", "q": "Biggest single bar tab (£)" }
+  ],
+  "bingo": [
+    { "id": "footy", "emoji": "👕", "t": "Someone in a football top" },
+    { "id": "stag", "emoji": "🥳", "t": "A stag or hen do" },
+    { "id": "pigeon", "emoji": "🐦", "t": "A pigeon stealing chips" },
+    { "id": "rain", "emoji": "🌧️", "t": "Rain (obviously)" },
+    { "id": "dog", "emoji": "🐕", "t": "A dog in a pub" },
+    { "id": "fryup", "emoji": "🍳", "t": "A full English before noon" },
+    { "id": "crane", "emoji": "🏗️", "t": "A crane / building site" },
+    { "id": "kebab", "emoji": "🥙", "t": "A lad demolishing a late-night kebab" }
   ]
 }

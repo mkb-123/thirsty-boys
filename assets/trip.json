@@ -5,6 +5,7 @@
   "datesLabel": "Fri 17 → Sun 19 July · Jewellery Quarter HQ",
   "footerLabel": "Birmingham · 17–19 July 2026",
   "houseCode": "brum26",
+  "locked": true,
   "dates": {
     "start": "2026-07-17T00:00",
     "end": "2026-07-19T13:00"
@@ -346,11 +347,6 @@
   ],
   "bingo": [
     {
-      "id": "villa",
-      "emoji": "🟣",
-      "t": "Someone in a Villa or Blues top"
-    },
-    {
       "id": "canal",
       "emoji": "🛶",
       "t": "A canal boat"
@@ -374,21 +370,6 @@
       "id": "brummie",
       "emoji": "🗣️",
       "t": "A proper thick Brummie accent"
-    },
-    {
-      "id": "stag",
-      "emoji": "🥳",
-      "t": "A stag or hen do"
-    },
-    {
-      "id": "pigeon",
-      "emoji": "🐦",
-      "t": "A pigeon stealing chips"
-    },
-    {
-      "id": "rain",
-      "emoji": "🌧️",
-      "t": "Rain (obviously)"
     },
     {
       "id": "slang",
@@ -419,21 +400,6 @@
       "id": "tram",
       "emoji": "🚋",
       "t": "A West Midlands Metro tram"
-    },
-    {
-      "id": "crane",
-      "emoji": "🏗️",
-      "t": "A crane / building site (it's always Brum)"
-    },
-    {
-      "id": "dog",
-      "emoji": "🐕",
-      "t": "A dog in a pub"
-    },
-    {
-      "id": "fryup",
-      "emoji": "🍳",
-      "t": "A full English before noon"
     }
   ],
   "pubs": [

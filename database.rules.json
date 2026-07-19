@@ -1,0 +1,17 @@
+{
+  "//": "Thirsty Boys — Realtime Database rules. Apply in Firebase console → Realtime Database → Rules (or `firebase deploy --only database`). Each trip's room (houses/<code>) stays publicly READABLE (the app + the recap need it), but is only WRITABLE while it isn't in the `locked` map. To archive a finished trip so its data can't be changed, add its code under `locked` in the console, e.g. locked/brum26 = true. The `locked` map is not client-writable, so a lock can't be lifted from a phone.",
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "houses": {
+      "$code": {
+        ".read": true,
+        ".write": "!root.child('locked').child($code).exists()"
+      }
+    },
+    "locked": {
+      ".read": true,
+      ".write": false
+    }
+  }
+}

@@ -25,39 +25,154 @@
     "end": "2027-06-13"
   },
   "crew": [
-    { "name": "Mr Finance", "emoji": "💰", "role": "The Money" },
-    { "name": "Big Ben", "emoji": "🔔", "role": "The Timekeeper" },
-    { "name": "The Director", "emoji": "🎬", "role": "Calls the Shots" },
-    { "name": "Dr Science", "emoji": "🔬", "role": "Dr Science" }
+    {
+      "name": "Mr Finance",
+      "emoji": "💰",
+      "role": "The Money"
+    },
+    {
+      "name": "Big Ben",
+      "emoji": "🔔",
+      "role": "The Timekeeper"
+    },
+    {
+      "name": "The Director",
+      "emoji": "🎬",
+      "role": "Calls the Shots"
+    },
+    {
+      "name": "Dr Science",
+      "emoji": "🔬",
+      "role": "Dr Science"
+    }
   ],
   "itinerary": [],
   "bets": [
-    { "id": "bluelagoon", "emoji": "🏝️", "type": "person", "q": "First into the Blue Lagoon (Comino)" },
-    { "id": "overboard", "emoji": "🛥️", "type": "person", "q": "First off the boat / overboard" },
-    { "id": "cisk", "emoji": "🍺", "type": "person", "q": "First to order a Cisk" },
-    { "id": "pastizzi", "emoji": "🥟", "type": "person", "q": "First to inhale a pastizzi" },
-    { "id": "gozo", "emoji": "⛴️", "type": "person", "q": "First to suggest 'let's do Gozo'" },
-    { "id": "valletta", "emoji": "🏛️", "type": "person", "q": "First to get lost in Valletta's steps" },
-    { "id": "casino", "emoji": "🎰", "type": "person", "q": "Biggest win (or loss) at the casino" },
-    { "id": "sunburn", "emoji": "🦞", "type": "person", "q": "First to properly burn (factor 50 or not)" }
+    {
+      "id": "bluelagoon",
+      "emoji": "🏝️",
+      "type": "person",
+      "q": "First into the Blue Lagoon (Comino)"
+    },
+    {
+      "id": "overboard",
+      "emoji": "🛥️",
+      "type": "person",
+      "q": "First off the boat / overboard"
+    },
+    {
+      "id": "cisk",
+      "emoji": "🍺",
+      "type": "person",
+      "q": "First to order a Cisk"
+    },
+    {
+      "id": "pastizzi",
+      "emoji": "🥟",
+      "type": "person",
+      "q": "First to inhale a pastizzi"
+    },
+    {
+      "id": "gozo",
+      "emoji": "⛴️",
+      "type": "person",
+      "q": "First to suggest 'let's do Gozo'"
+    },
+    {
+      "id": "valletta",
+      "emoji": "🏛️",
+      "type": "person",
+      "q": "First to get lost in Valletta's steps"
+    },
+    {
+      "id": "casino",
+      "emoji": "🎰",
+      "type": "person",
+      "q": "Biggest win (or loss) at the casino"
+    },
+    {
+      "id": "sunburn",
+      "emoji": "🦞",
+      "type": "person",
+      "q": "First to properly burn (factor 50 or not)"
+    }
   ],
   "bingo": [
-    { "id": "luzzu", "emoji": "🎣", "t": "A luzzu (painted fishing boat)" },
-    { "id": "cats", "emoji": "🐈", "t": "A Maltese cat colony" },
-    { "id": "festa", "emoji": "🎆", "t": "A village festa / fireworks" },
-    { "id": "church", "emoji": "⛪", "t": "A ludicrously ornate church" },
-    { "id": "yacht", "emoji": "🛥️", "t": "A superyacht in the harbour" },
-    { "id": "cisk", "emoji": "🍺", "t": "A Cisk in hand" },
-    { "id": "pastizzi", "emoji": "🥟", "t": "Pastizzi from a hole-in-the-wall" },
-    { "id": "cross", "emoji": "✝️", "t": "The Maltese cross on something" },
-    { "id": "karozzin", "emoji": "🐴", "t": "A karozzin (horse cart)" },
-    { "id": "gameofthrones", "emoji": "🎬", "t": "'This was in Game of Thrones / Gladiator'" },
-    { "id": "taxi", "emoji": "🚕", "t": "A dodgy taxi price" },
-    { "id": "crane", "emoji": "🏗️", "t": "Construction cranes everywhere" },
-    { "id": "swim", "emoji": "🏊", "t": "A cheeky swim off the rocks" },
-    { "id": "sunburnt", "emoji": "🦞", "t": "A lad the colour of a lobster" },
-    { "id": "maltese", "emoji": "🗣️", "t": "Someone attempts Maltese" },
-    { "id": "ferry", "emoji": "⛴️", "t": "The Gozo / Comino ferry" }
+    {
+      "id": "luzzu",
+      "emoji": "🎣",
+      "t": "A luzzu (painted fishing boat)"
+    },
+    {
+      "id": "cats",
+      "emoji": "🐈",
+      "t": "A Maltese cat colony"
+    },
+    {
+      "id": "festa",
+      "emoji": "🎆",
+      "t": "A village festa / fireworks"
+    },
+    {
+      "id": "church",
+      "emoji": "⛪",
+      "t": "A ludicrously ornate church"
+    },
+    {
+      "id": "yacht",
+      "emoji": "🛥️",
+      "t": "A superyacht in the harbour"
+    },
+    {
+      "id": "cisk",
+      "emoji": "🍺",
+      "t": "A Cisk in hand"
+    },
+    {
+      "id": "pastizzi",
+      "emoji": "🥟",
+      "t": "Pastizzi from a hole-in-the-wall"
+    },
+    {
+      "id": "cross",
+      "emoji": "✝️",
+      "t": "The Maltese cross on something"
+    },
+    {
+      "id": "karozzin",
+      "emoji": "🐴",
+      "t": "A karozzin (horse cart)"
+    },
+    {
+      "id": "gameofthrones",
+      "emoji": "🎬",
+      "t": "'This was in Game of Thrones / Gladiator'"
+    },
+    {
+      "id": "taxi",
+      "emoji": "🚕",
+      "t": "A dodgy taxi price"
+    },
+    {
+      "id": "swim",
+      "emoji": "🏊",
+      "t": "A cheeky swim off the rocks"
+    },
+    {
+      "id": "sunburnt",
+      "emoji": "🦞",
+      "t": "A lad the colour of a lobster"
+    },
+    {
+      "id": "maltese",
+      "emoji": "🗣️",
+      "t": "Someone attempts Maltese"
+    },
+    {
+      "id": "ferry",
+      "emoji": "⛴️",
+      "t": "The Gozo / Comino ferry"
+    }
   ],
   "pubs": []
 }

@@ -1,0 +1,37 @@
+{
+  "_comment": "TEMPLATE — copy to assets/trips/<id>.json, fill in, then add a line to assets/trips.json: { \"id\": \"<id>\", \"label\": \"<City> '<YY> 🍺\", \"file\": \"assets/trips/<id>.json\" }. The 34 classic bets and 8 classic bingo squares come from assets/common.json automatically — only put TRIP-LOCAL bets/bingo/pubs here. Set a unique houseCode (this is the shared Firebase room + reset password). Delete this _comment when done.",
+  "city": "City",
+  "year": "27",
+  "tagline": "Short hype line",
+  "datesLabel": "Fri 1 → Sun 3 Month",
+  "footerLabel": "City · 1–3 Month 2027",
+  "houseCode": "cityYY",
+  "locked": false,
+  "dates": { "start": "2027-01-01T12:00", "end": "2027-01-03T18:00" },
+  "hq": { "label": "HQ", "address": "", "mapsQuery": "", "lat": 0, "lon": 0 },
+  "weather": { "lat": 0, "lon": 0, "bbc": "https://www.bbc.co.uk/weather", "start": "2027-01-01", "end": "2027-01-03" },
+  "crew": [
+    { "name": "Mr Finance", "emoji": "💰", "role": "The Money" },
+    { "name": "Big Ben", "emoji": "🔔", "role": "The Timekeeper" },
+    { "name": "The Director", "emoji": "🎬", "role": "Calls the Shots" },
+    { "name": "Dr Science", "emoji": "🔬", "role": "Dr Science" }
+  ],
+  "itinerary": [
+    {
+      "name": "Friday",
+      "date": "1 Month",
+      "stops": [
+        { "t": "12:00", "iso": "2027-01-01T12:00", "emoji": "🚆", "title": "Arrive", "desc": "" }
+      ]
+    }
+  ],
+  "bets": [
+    { "id": "localbet1", "emoji": "🎯", "type": "person", "q": "A trip-specific bet (venue / activity)" }
+  ],
+  "bingo": [
+    { "id": "localbingo1", "emoji": "📍", "t": "A trip-specific bingo square" }
+  ],
+  "pubs": [
+    { "name": "", "emoji": "🍺", "area": "", "desc": "", "map": "", "lat": 0, "lon": 0 }
+  ]
+}
