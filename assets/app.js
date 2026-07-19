@@ -1083,17 +1083,22 @@ function getBet(id) {
 }
 
 /* Correct calls per person across all revealed, settled bets. */
+/* Did a call match the result? Handles the "none" (didn't happen / nobody) case. */
+function betHit(type, call, result) {
+  if (result === "" || result == null) return false;
+  if (type === "person") {
+    if (result === "none") return call === "none";        // both said it wouldn't happen
+    return call != null && call !== "" && call !== "none" && Number(call) === Number(result);
+  }
+  return String(call).trim().toLowerCase() === String(result).trim().toLowerCase();
+}
 function betScores() {
   const scores = state.names.map(() => 0);
   BETS.forEach((bet) => {
     const b = getBet(bet.id);
     if (!b.revealed || b.result === "" || b.result == null) return;
     Object.keys(b.calls).forEach((voter) => {
-      const call = b.calls[voter];
-      const hit = bet.type === "person"
-        ? Number(call) === Number(b.result)
-        : String(call).trim().toLowerCase() === String(b.result).trim().toLowerCase();
-      if (hit && scores[voter] != null) scores[Number(voter)]++;
+      if (betHit(bet.type, b.calls[voter], b.result) && scores[voter] != null) scores[Number(voter)]++;
     });
   });
   return scores;
@@ -1146,6 +1151,7 @@ function renderBets() {
       ? `<select class="award-select" data-bet-result="${bet.id}">
            <option value="">— what actually happened —</option>` +
          state.names.map((n, i) => `<option value="${i}" ${String(b.result) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+         `<option value="none" ${b.result === "none" ? "selected" : ""}>🚫 Didn't happen / nobody</option>` +
          `</select>`
       : `<input type="text" class="bet-result-input" data-bet-result="${bet.id}" value="${escapeAttr(b.result || "")}" placeholder="actual result…" maxlength="40" />`;
     const hasResult = b.result !== "" && b.result != null;
@@ -1156,10 +1162,9 @@ function renderBets() {
         const call = b.calls[i];
         const callTxt = call == null || call === ""
           ? `<span class="bet-nocall">no call</span>`
+          : call === "none" ? `🚫 Won't happen`
           : bet.type === "person" ? escapeHtml(state.names[call] || "?") : escapeHtml(String(call));
-        const hit = hasResult && (
-          bet.type === "person" ? Number(call) === Number(b.result)
-          : String(call || "").trim().toLowerCase() === String(b.result).trim().toLowerCase());
+        const hit = hasResult && betHit(bet.type, call, b.result);
         return `<div class="bet-call-row ${hit ? "hit" : ""}">
           <span class="bet-caller">${escapeHtml(n)}</span>
           <span class="bet-callval">${callTxt}${hit ? " ✅" : ""}</span>
@@ -1182,6 +1187,7 @@ function renderBets() {
           ? `<select class="award-select" data-bet-call="${bet.id}">
                <option value="">— call it —</option>` +
              state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("") +
+             `<option value="none" ${mine === "none" ? "selected" : ""}>🚫 Won't happen</option>` +
              `</select>`
           : `<input type="text" class="bet-result-input" data-bet-call="${bet.id}" value="${escapeAttr(mine == null ? "" : String(mine))}" placeholder="call it… (e.g. 2-1)" maxlength="30" />`;
         callZone = `${ctl}<button class="btn-add bet-submit" data-bet="${bet.id}">${mineIn ? "✅ Update call" : "✅ Submit call"}</button>`;
@@ -1210,7 +1216,7 @@ function renderBets() {
   function saveCall(id, v) {
     const b = getBet(id);
     if (v === "") { delete b.calls[me]; rtRemove("bets/" + id + "/calls/" + me); }
-    else { b.calls[me] = BETS.find((x) => x.id === id).type === "person" ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
+    else { b.calls[me] = (BETS.find((x) => x.id === id).type === "person" && v !== "none") ? Number(v) : v; rtSet("bets/" + id + "/calls/" + me, b.calls[me]); }
     state.bets[id] = b;
     save();
   }
@@ -1235,7 +1241,7 @@ function renderBets() {
   wrap.querySelectorAll("[data-bet-result]").forEach((el) =>
     el.addEventListener("change", () => {
       const id = el.dataset.betResult, b = getBet(id);
-      b.result = el.value === "" ? "" : (BETS.find((x) => x.id === id).type === "person" ? Number(el.value) : el.value);
+      b.result = el.value === "" ? "" : ((BETS.find((x) => x.id === id).type === "person" && el.value !== "none") ? Number(el.value) : el.value);
       state.bets[id] = b;
       save();
       rtSet("bets/" + id + "/result", b.result);
