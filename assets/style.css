@@ -1007,7 +1007,7 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
   overscroll-behavior-x: contain;
 }
 .deck::-webkit-scrollbar { display: none; }
-.deck > .bet-card, .deck > .award-card {
+.deck > .bet-card {
   scroll-snap-align: center;
   flex: 0 0 86%;            /* one card at a time, the next just peeking */
   max-width: 460px;
@@ -1044,7 +1044,7 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .mp-text b { color: var(--amber-2); }
 
 /* Per-card "done / to-do" state markers */
-.bet-card, .award-card { position: relative; }
+.bet-card { position: relative; }
 .mine-mark {
   display: inline-block;
   font-size: 0.68rem;
@@ -1058,8 +1058,8 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .mine-mark.done { background: rgba(75, 191, 135, 0.18); color: var(--green); }
 .mine-mark.todo { background: rgba(244, 169, 51, 0.18); color: var(--amber-2); }
 .mine-mark.revealed { background: var(--card-2); color: var(--muted); }
-.bet-card.mine-todo, .award-card.mine-todo { border-left: 3px solid var(--amber); }
-.bet-card.mine-done, .award-card.mine-done { border-left: 3px solid var(--green); }
+.bet-card.mine-todo { border-left: 3px solid var(--amber); }
+.bet-card.mine-done { border-left: 3px solid var(--green); }
 
 /* ---------- BETS ---------- */
 .bets { display: block; }
@@ -1151,16 +1151,7 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .bet-nocall { color: var(--muted); font-weight: 600; font-style: italic; }
 .bet-reveal, .bet-reopen { width: 100%; margin-top: 0.7rem; }
 
-/* ---------- AWARDS ---------- */
-.awards { display: block; }
-.award-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 1rem 1.15rem;
-}
-.award-title { font-weight: 800; margin: 0 0 0.7rem; }
-.award-winner { color: var(--amber-2); font-size: 1.05rem; font-weight: 800; margin: 0 0 0.6rem; }
+/* Bet call/result controls (legacy .award-* class names, reused by the bets UI) */
 .award-select {
   width: 100%;
   background: var(--bg-2);
@@ -1175,13 +1166,6 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 .award-select:focus { outline: none; border-color: var(--amber); }
 .award-status { color: var(--muted); font-size: 0.82rem; margin: 0.55rem 0 0.7rem; }
 .award-hint { color: var(--amber-2); font-size: 0.85rem; font-weight: 700; margin: 0 0 0.5rem; }
-.award-reveal, .award-reopen { width: 100%; }
-.award-result-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
-.award-res-name { flex: 0 0 34%; font-weight: 700; font-size: 0.85rem; }
-.award-bar-wrap { flex: 1; height: 10px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
-.award-bar { display: block; height: 100%; background: linear-gradient(90deg, var(--amber), var(--amber-2)); border-radius: 999px; }
-.award-count { flex: 0 0 auto; font-weight: 800; color: var(--amber-2); font-variant-numeric: tabular-nums; min-width: 1ch; text-align: right; }
-.award-voters { font-size: 0.72rem; color: var(--muted); margin: 0.1rem 0 0.3rem 34%; }
 
 /* ---------- CHECKLIST ---------- */
 .checklist { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 0.4rem; }

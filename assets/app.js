@@ -6,11 +6,12 @@
 
 /* ==========================================================================
    TRIP CONFIG — everything trip-specific lives in assets/trip.json.
-   Edit that one file (city, dates, crew, HQ, itinerary, bets, awards, bingo)
-   to reuse this whole app for another city/date. Loaded at startup.
+   Edit that one file (city, dates, crew, HQ, itinerary, local bets, bingo)
+   to reuse this whole app for another city/date. Cross-trip "classic" bets
+   live in assets/common.json. Loaded at startup.
    ========================================================================== */
 let TRIP = {};
-let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], AWARDS = [], BINGO = [], PUBS = [];
+let ITINERARY = [], CREW = [], DEFAULT_NAMES = [], BETS = [], BINGO = [], PUBS = [];
 let TRIP_START = new Date(0), TRIP_END = new Date(0);
 let STORE_KEY = "thirstyboys.trip.v1";
 let OUTBOX_KEY = "thirstyboys.trip.outbox";
@@ -62,6 +63,14 @@ function pickTripId(reg) {
   if (reg.default && ids.includes(reg.default)) return reg.default;
   return reg.trips[0].id;
 }
+/* Cross-trip shared config (currently the "classic" bets every trip reuses). */
+async function loadCommon() {
+  try {
+    const r = await fetch("assets/common.json" + V(), { cache: "no-cache" });
+    if (r.ok) return await r.json();
+  } catch (e) { /* fall through */ }
+  return {};
+}
 async function loadTrip() {
   const reg = await loadTripRegistry();
   const id = pickTripId(reg);
@@ -74,13 +83,26 @@ async function loadTrip() {
   } catch (e) { /* offline or missing — fall through to empty */ }
   return {};
 }
+/* Common (reusable) bets first, then this trip's local bets. Same id in the
+   local set overrides the common one in place, so a trip can tweak a classic. */
+function mergeBets(common, local) {
+  const out = (common || []).map((b) => Object.assign({ scope: "common" }, b));
+  (local || []).forEach((b) => {
+    const i = out.findIndex((x) => x.id === b.id);
+    const tagged = Object.assign({ scope: "local" }, b);
+    if (i >= 0) out[i] = tagged; else out.push(tagged);
+  });
+  return out;
+}
 function applyTrip(t) {
   TRIP = t || {};
   ITINERARY = TRIP.itinerary || [];
   CREW = (TRIP.crew || []).map((c) => ({ emoji: c.emoji, role: c.role }));
   DEFAULT_NAMES = (TRIP.crew || []).map((c) => c.name);
-  BETS = TRIP.bets || [];
-  AWARDS = TRIP.awards || [];
+  // Bets = the shared "classics" (assets/common.json) + this trip's own local
+  // bets (venues/activities in trip.json). A local bet with the same id as a
+  // classic overrides it in place; otherwise locals are appended.
+  BETS = mergeBets((window.__common && window.__common.bets) || [], TRIP.bets || []);
   BINGO = TRIP.bingo || [];
   PUBS = TRIP.pubs || [];
   const d = TRIP.dates || {};
@@ -159,7 +181,6 @@ function defaults() {
     tallies: DEFAULT_NAMES.map(() => ({})),
     log: [], // {who, drink, ts}
     bets: {},    // betId -> { calls: {voterIdx: value}, result, revealed }
-    awards: {},  // awardId -> { votes: {voterIdx: nomineeIdx}, revealed }
     quotes: [], // { text, who, ts }
     bingo: {},  // bingoId -> spotter index (synced)
     present: {}, // personIndex -> lastSeen ms (synced: who has joined)
@@ -196,10 +217,9 @@ function normalizeState(s) {
   // present → object { index: lastSeen }
   if (Array.isArray(s.present)) { const o = {}; s.present.forEach((v, i) => { if (v != null) o[i] = v; }); s.present = o; }
   else if (!s.present || typeof s.present !== "object") s.present = {};
-  // bingo / bets / awards → objects
+  // bingo / bets → objects
   if (!s.bingo || typeof s.bingo !== "object") s.bingo = {};
   if (!s.bets || typeof s.bets !== "object") s.bets = {};
-  if (!s.awards || typeof s.awards !== "object") s.awards = {};
   return s;
 }
 function load() {
@@ -1013,7 +1033,7 @@ function resetAll() {
   const pw = prompt("This wipes ALL drinks & names for EVERYONE.\nEnter the reset password to confirm:");
   if (pw == null) return;                 // cancelled
   if (pw.trim().toLowerCase() !== RESET_PASSWORD) { alert("Wrong password — nothing was reset."); return; }
-  // Full wipe: drinks, names, bets, awards, quotes and the presence roster.
+  // Full wipe: drinks, names, bets, quotes and the presence roster.
   state = defaults();
   markMePresent();          // keep whoever's holding this phone marked "in"
   save();
@@ -1331,117 +1351,10 @@ function renderBets() {
 }
 
 /* ==========================================================================
-   RENDER: AWARDS
-   ========================================================================== */
-/* Normalise an award to the blind-vote shape { votes: {voterIdx: nomineeIdx}, revealed } */
-function getAward(id) {
-  let a = state.awards[id];
-  if (a == null || typeof a !== "object") a = { votes: {}, revealed: false };
-  a.votes = a.votes || {};
-  return a;
-}
-
-function renderAwards() {
-  const wrap = document.getElementById("awards-list");
-  const claimed = hasClaimed();
-  const total = state.names.length;
-
-  const myProg = claimed ? progressBar(
-    AWARDS.filter((aw) => getAward(aw.id).votes[me] != null).length,
-    AWARDS.length, "voted", "vote") : "";
-
-  // Ones still needing YOUR vote first: 0 = not voted, 1 = voted, 2 = revealed.
-  const awardRank = (aw) => { const d = getAward(aw.id); return d.revealed ? 2 : (d.votes[me] != null ? 1 : 0); };
-  const orderedAwards = claimed ? AWARDS.map((a, i) => [a, i]).sort((x, y) => (awardRank(x[0]) - awardRank(y[0])) || (x[1] - y[1])).map((p) => p[0]) : AWARDS;
-
-  const prevScroll = (document.getElementById("awards-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = myProg + deckWrap(orderedAwards.map((a) => {
-    const data = getAward(a.id);
-    const voteCount = Object.keys(data.votes).length;
-    const tally = {};
-    Object.values(data.votes).forEach((n) => { tally[n] = (tally[n] || 0) + 1; });
-    const mineIn = claimed && data.votes[me] != null;
-    const cardCls = data.revealed ? "is-revealed" : (!claimed ? "" : (mineIn ? "mine-done" : "mine-todo"));
-    const mark = data.revealed ? `<span class="mine-mark revealed">👁 Revealed</span>`
-      : (!claimed ? "" : (mineIn ? `<span class="mine-mark done">✅ Voted</span>` : `<span class="mine-mark todo">◻️ Your vote needed</span>`));
-
-    let body;
-    if (data.revealed) {
-      const max = Math.max(0, ...state.names.map((_, i) => tally[i] || 0));
-      const winners = state.names.map((n, i) => ({ n, i })).filter((x) => max > 0 && (tally[x.i] || 0) === max);
-      const winLine = max <= 0
-        ? "No votes cast"
-        : winners.length > 1
-          ? `🤝 Tie: ${winners.map((w) => escapeHtml(w.n)).join(" & ")}`
-          : `🏆 ${escapeHtml(winners[0].n)}`;
-      const rows = state.names.map((n, i) => {
-        const c = tally[i] || 0;
-        return `
-          <div class="award-result-row">
-            <span class="award-res-name">${escapeHtml(n)}</span>
-            <span class="award-bar-wrap"><span class="award-bar" style="width:${max > 0 ? (c / max) * 100 : 0}%"></span></span>
-            <span class="award-count">${c}</span>
-          </div>`;
-      }).join("");
-      body = `<p class="award-winner">${winLine}</p>${rows}
-        <button class="btn-ghost award-reopen" data-award="${a.id}">↩ Re-open voting</button>`;
-    } else if (!claimed) {
-      body = `<p class="award-hint">👆 Claim who you are (top of the Drinks tab) to cast your vote.</p>
-        <p class="award-status">🗳️ ${voteCount}/${total} voted</p>`;
-    } else {
-      const mine = data.votes[me];
-      const options = `<option value="">— cast your vote —</option>` +
-        state.names.map((n, i) => `<option value="${i}" ${String(mine) === String(i) ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
-      body = `<select class="award-select" data-award="${a.id}">${options}</select>
-        <p class="award-status">🗳️ ${voteCount}/${total} voted${mine != null ? ` · your pick is in 🔒` : ""}</p>
-        <button class="btn-ghost award-reveal" data-award="${a.id}">👁 Reveal results</button>`;
-    }
-    return `<div class="award-card ${cardCls}">${mark}<p class="award-title">${a.title}</p>${body}</div>`;
-  }).join(""), "awards-deck");
-
-  wrap.querySelectorAll(".award-select").forEach((sel) =>
-    sel.addEventListener("change", () => {
-      const id = sel.dataset.award, a = getAward(id);
-      if (sel.value === "") { delete a.votes[me]; rtRemove("awards/" + id + "/votes/" + me); }
-      else { a.votes[me] = Number(sel.value); rtSet("awards/" + id + "/votes/" + me, a.votes[me]); }
-      state.awards[id] = a;
-      save();
-      renderAwards();
-    })
-  );
-  wrap.querySelectorAll(".award-reveal").forEach((b) =>
-    b.addEventListener("click", () => {
-      if (!confirmReveal("the award results")) return;
-      const id = b.dataset.award, a = getAward(id);
-      a.revealed = true; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", true); renderAwards();
-    })
-  );
-  wrap.querySelectorAll(".award-reopen").forEach((b) =>
-    b.addEventListener("click", () => {
-      const id = b.dataset.award, a = getAward(id);
-      a.revealed = false; state.awards[id] = a; save(); rtSet("awards/" + id + "/revealed", false); renderAwards();
-    })
-  );
-  wireDeck("awards-deck", prevScroll);
-  safe(renderBragging);   // keep the funny-stats card in sync with revealed awards
-}
-
-/* ==========================================================================
    RENDER: SUNDAY RECAP ("wrapped") + share
    ========================================================================== */
-function awardWinner(id) {
-  const a = getAward(id);
-  if (!a.revealed) return null;
-  const tally = {};
-  Object.values(a.votes).forEach((n) => { tally[n] = (tally[n] || 0) + 1; });
-  const max = Math.max(0, ...state.names.map((_, i) => tally[i] || 0));
-  if (max <= 0) return null;
-  const w = state.names.map((n, i) => ({ n, i })).filter((x) => (tally[x.i] || 0) === max);
-  return w.length === 1 ? w[0].n : w.map((x) => x.n).join(" & ");
-}
 /* ==========================================================================
-   BEEF & BRAGGING — funny stats mined from the settled bets + revealed awards.
-   Vote-based stats ONLY count REVEALED awards so nothing secret leaks early.
+   BEEF & BRAGGING — funny stats mined from the settled bets.
    ========================================================================== */
 function braggingData() {
   const correct = betScores();                          // right calls per person (settled bets)
@@ -1451,24 +1364,8 @@ function braggingData() {
     if (!b.revealed || b.result === "" || b.result == null) return;
     Object.keys(b.calls).forEach((v) => { if (b.calls[v] != null && b.calls[v] !== "") called[Number(v)]++; });
   });
-  const received = state.names.map(() => 0);            // award votes received
-  const self = state.names.map(() => 0);                // self-votes
-  const perVoter = state.names.map(() => ({}));         // voter -> {nominee: count}
-  let revealedAwards = 0;
-  AWARDS.forEach((a) => {
-    const d = getAward(a.id);
-    if (!d.revealed) return;
-    revealedAwards++;
-    Object.keys(d.votes).forEach((v) => {
-      const voter = Number(v), nominee = Number(d.votes[v]);
-      if (state.names[nominee] == null) return;
-      received[nominee]++;
-      perVoter[voter][nominee] = (perVoter[voter][nominee] || 0) + 1;
-      if (voter === nominee) self[voter]++;
-    });
-  });
   const nSettled = BETS.filter((bet) => { const b = getBet(bet.id); return b.revealed && b.result !== "" && b.result != null; }).length;
-  return { correct, called, received, self, perVoter, revealedAwards, nSettled };
+  return { correct, called, nSettled };
 }
 /* names tied at the max (or min) of a numeric array → { names:[], val } */
 function extremeNames(arr, wantMax) {
@@ -1497,41 +1394,8 @@ function renderBragging() {
     }
   }
 
-  // Vote-based gossip (revealed awards only).
-  if (d.revealedAwards > 0) {
-    const magnet = extremeNames(d.received, true);
-    if (magnet.val > 0) rows.push(`<div class="brag-row"><span class="brag-emoji">🧲</span><span class="brag-txt"><b>Vote magnet:</b> ${escapeHtml(magnet.names.join(" & "))} — ${magnet.val} vote${magnet.val === 1 ? "" : "s"}</span></div>`);
-    const flower = extremeNames(d.received, false);
-    if (flower.val < magnet.val) rows.push(`<div class="brag-row"><span class="brag-emoji">🌵</span><span class="brag-txt"><b>Wallflower:</b> ${escapeHtml(flower.names.join(" & "))} — ${flower.val} vote${flower.val === 1 ? "" : "s"}</span></div>`);
-
-    // 💘 who backs who the most — strongest voter→nominee pairing (excluding self).
-    let bestPair = null;
-    d.perVoter.forEach((tallies, voter) => {
-      Object.keys(tallies).forEach((nom) => {
-        const nominee = Number(nom), c = tallies[nom];
-        if (voter === nominee) return;
-        if (!bestPair || c > bestPair.c) bestPair = { voter, nominee, c };
-      });
-    });
-    if (bestPair && bestPair.c >= 2) rows.push(`<div class="brag-row"><span class="brag-emoji">💘</span><span class="brag-txt"><b>Predictable:</b> ${escapeHtml(state.names[bestPair.voter])} keeps backing ${escapeHtml(state.names[bestPair.nominee])} (×${bestPair.c})</span></div>`);
-
-    // 🪞 biggest ego — most self-votes.
-    const ego = extremeNames(d.self, true);
-    if (ego.val >= 2) rows.push(`<div class="brag-row"><span class="brag-emoji">🪞</span><span class="brag-txt"><b>Big ego:</b> ${escapeHtml(ego.names.join(" & "))} voted for themselves ×${ego.val}</span></div>`);
-
-    // 🗳️ who each man backs most — the full "who votes for who" breakdown.
-    const backing = state.names.map((n, voter) => {
-      const tallies = d.perVoter[voter];
-      const keys = Object.keys(tallies);
-      if (!keys.length) return null;
-      const top = keys.map((k) => ({ i: Number(k), c: tallies[k] })).sort((a, b) => b.c - a.c)[0];
-      return `<div class="brag-back"><span>${escapeHtml(n)}</span><span>→ ${escapeHtml(state.names[top.i])} ×${top.c}</span></div>`;
-    }).filter(Boolean).join("");
-    if (backing) rows.push(`<div class="brag-sub">🗳️ Who backs who</div><div class="brag-backs">${backing}</div>`);
-  }
-
   if (!rows.length) {
-    el.innerHTML = `<div class="brag-card"><h3 class="brag-h">🎭 Beef &amp; Bragging</h3><p class="brag-empty">Settle a few bets and reveal some awards — the gossip unlocks here. 🍿</p></div>`;
+    el.innerHTML = `<div class="brag-card"><h3 class="brag-h">🎭 Beef &amp; Bragging</h3><p class="brag-empty">Settle a few bets and reveal the calls — the gossip unlocks here. 🍿</p></div>`;
     return;
   }
   el.innerHTML = `<div class="brag-card"><h3 class="brag-h">🎭 Beef &amp; Bragging</h3>${rows.join("")}</div>`;
@@ -1573,13 +1437,6 @@ function recapData() {
   const elig = state.names.map((n, i) => ({ n, acc: bstats.called[i] ? bstats.correct[i] / bstats.called[i] : 0, t: bstats.called[i] })).filter((x) => x.t >= 2 && x.acc > 0);
   const oracle = elig.length ? elig.sort((a, b) => b.acc - a.acc)[0] : null;
 
-  // Awards: winners + most-voted-for (vote magnet), from revealed awards only.
-  const awards = AWARDS.map((a) => ({ title: a.title, w: awardWinner(a.id) })).filter((x) => x.w);
-  const received = state.names.map(() => 0);
-  AWARDS.forEach((a) => { const dd = getAward(a.id); if (!dd.revealed) return; Object.values(dd.votes).forEach((nom) => { if (state.names[nom] != null) received[nom]++; }); });
-  const maxV = Math.max(0, ...received);
-  const voteMagnet = maxV > 0 ? state.names.filter((n, i) => received[i] === maxV).join(" & ") : null;
-
   // Bingo: total + top spotter.
   const bingoN = BINGO.filter((x) => state.bingo && state.bingo[x.id] != null).length;
   const bingoBy = {};
@@ -1612,7 +1469,7 @@ function recapData() {
   const minC = rows.length ? Math.min(...rows.map((r) => r.c)) : 0;
   const woodenSpoon = (total > 0 && minC < maxC) ? state.names.filter((n, i) => countFor(i) === minC).join(" & ") : null;
 
-  return { rows, total, perHead, maxC, thirstiest, boozeBreak, favBooze, softTotal, bigHour, bigN, days, maxS, pundit, oracle, awards, voteMagnet, maxV, bingoN, bingoTop, bingoTopN,
+  return { rows, total, perHead, maxC, thirstiest, boozeBreak, favBooze, softTotal, bigHour, bigN, days, maxS, pundit, oracle, bingoN, bingoTop, bingoTopN,
     firstRound, lastStanding, phWho, phN, connoisseur, maxVar, hydrationHero, maxSoft, woodenSpoon, minC };
 }
 function renderRecap() {
@@ -1655,14 +1512,9 @@ function renderRecapAwards(d) {
   push("🥄", "Wooden spoon", d.woodenSpoon, d.minC != null ? d.minC + " drinks" : "");
   push("🎯", "Best pundit", d.pundit, d.maxS ? d.maxS + " correct" : "");
   push("🔮", "Sharpest odds", d.oracle && d.oracle.n, d.oracle ? Math.round(d.oracle.acc * 100) + "%" : "");
-  push("🧲", "Most voted-for", d.voteMagnet, d.maxV ? d.maxV + " votes" : "");
   push("🥏", "Top spotter", d.bingoTop, d.bingoTopN ? d.bingoTopN + " spotted" : "");
-  d.awards.forEach((x) => {
-    const m = String(x.title).match(/^\s*(\p{Emoji}️?|\S)?\s*(.*)$/u) || [];
-    push(m[1] || "🏆", (m[2] || x.title).trim(), x.w);
-  });
   if (!items.length) {
-    return `<div class="recap-awards"><div class="recap-empty">Log drinks, spot bingo, settle bets &amp; reveal awards — it all lands here 🏆</div></div>`;
+    return `<div class="recap-awards"><div class="recap-empty">Log drinks, spot bingo &amp; settle bets — it all lands here 🏆</div></div>`;
   }
   return `<div class="recap-awards">
     <div class="rc-aw-head">🏆 Superlatives</div>
@@ -1690,9 +1542,7 @@ function buildRecapText() {
   if (d.woodenSpoon) lines.push("🥄 Wooden spoon: " + d.woodenSpoon + " (" + d.minC + ")");
   if (d.pundit) lines.push("🎯 Best pundit: " + d.pundit + " (" + d.maxS + ")");
   if (d.oracle) lines.push("🔮 Sharpest odds: " + d.oracle.n + " (" + Math.round(d.oracle.acc * 100) + "%)");
-  if (d.voteMagnet) lines.push("🧲 Most voted-for: " + d.voteMagnet + " (" + d.maxV + ")");
   lines.push("🥏 Bingo: " + d.bingoN + "/" + BINGO.length + (d.bingoTop ? " · top spotter " + d.bingoTop : ""));
-  d.awards.forEach((x) => lines.push(x.title + ": " + x.w));
   return lines.join("\n");
 }
 function loadHtml2Canvas() {
@@ -2496,7 +2346,7 @@ function safe(fn) {
   try { fn(); } catch (e) { try { console.error("render error: " + (fn.name || "anon"), e); } catch (_) { /* ignore */ } }
 }
 function render() {
-  [renderWhoami, renderLeaderboard, renderTracker, renderLog, renderBets, renderAwards,
+  [renderWhoami, renderLeaderboard, renderTracker, renderLog, renderBets,
    renderBingo, renderPubs, renderRound, renderStats, renderBragging, renderAdminEditor, renderRecap, renderCrew].forEach(safe);
 }
 
@@ -2506,7 +2356,7 @@ function tick() {
 }
 
 /* ---------- TABBED VIEW: show one section at a time (no giant scroll) ---------- */
-const TAB_IDS = ["itinerary", "pubs", "tracker", "bets", "awards", "bingo", "stats", "recap", "crew"];
+const TAB_IDS = ["itinerary", "pubs", "tracker", "bets", "bingo", "stats", "recap", "crew"];
 function showTab(id) {
   if (TAB_IDS.indexOf(id) === -1) id = "itinerary";
   TAB_IDS.forEach((s) => { const el = document.getElementById(s); if (el) el.style.display = (s === id) ? "" : "none"; });
@@ -2744,6 +2594,7 @@ function renderTripSwitcher() {
 }
 
 async function boot() {
+  window.__common = await loadCommon();   // shared "classic" bets, merged in applyTrip
   applyTrip(await loadTrip());
   state = load();
   outbox = loadOutbox();     // resume any edits parked while offline last time

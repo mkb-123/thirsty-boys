@@ -296,160 +296,16 @@
   ],
   "bets": [
     {
-      "id": "round1",
-      "emoji": "💸",
-      "type": "person",
-      "q": "Who buys the first round"
-    },
-    {
-      "id": "photo",
-      "emoji": "📸",
-      "type": "person",
-      "q": "First to take a photo"
-    },
-    {
-      "id": "ai",
-      "emoji": "🤖",
-      "type": "person",
-      "q": "First to mention AI"
-    },
-    {
-      "id": "work",
-      "emoji": "💼",
-      "type": "person",
-      "q": "First to bring up work"
-    },
-    {
-      "id": "spill",
-      "emoji": "🫗",
-      "type": "person",
-      "q": "First to spill a drink"
-    },
-    {
-      "id": "soft",
-      "emoji": "🧃",
-      "type": "person",
-      "q": "First to order a soft drink"
-    },
-    {
-      "id": "onemore",
-      "emoji": "🍻",
-      "type": "person",
-      "q": "First to say 'one more?'"
-    },
-    {
       "id": "toca",
       "emoji": "🎯",
       "type": "person",
       "q": "TOCA Social champion"
     },
     {
-      "id": "innuendo",
-      "emoji": "😏",
-      "type": "person",
-      "q": "First to make a sexual innuendo"
-    },
-    {
       "id": "balti",
       "emoji": "🌶️",
       "type": "person",
       "q": "Orders the hottest balti"
-    },
-    {
-      "id": "never",
-      "emoji": "🙅",
-      "type": "person",
-      "q": "First to say 'never drinking again'"
-    },
-    {
-      "id": "argument",
-      "emoji": "🗣️",
-      "type": "person",
-      "q": "Starts the first daft argument"
-    },
-    {
-      "id": "phonehome",
-      "emoji": "📞",
-      "type": "person",
-      "q": "First to phone home / the missus"
-    },
-    {
-      "id": "emotional",
-      "emoji": "🥲",
-      "type": "person",
-      "q": "First to get emotional (happy tears count)"
-    },
-    {
-      "id": "toldoff",
-      "emoji": "🚫",
-      "type": "person",
-      "q": "First to get told off by staff or a bouncer"
-    },
-    {
-      "id": "lost",
-      "emoji": "🧭",
-      "type": "person",
-      "q": "First to get lost"
-    },
-    {
-      "id": "keys",
-      "emoji": "🔑",
-      "type": "person",
-      "q": "First to lose keys / wallet / phone"
-    },
-    {
-      "id": "missing",
-      "emoji": "👻",
-      "type": "person",
-      "q": "First to go missing for 10+ minutes"
-    },
-    {
-      "id": "battery",
-      "emoji": "🔋",
-      "type": "person",
-      "q": "First phone to die"
-    },
-    {
-      "id": "kebab",
-      "emoji": "🥙",
-      "type": "person",
-      "q": "First to order food after midnight"
-    },
-    {
-      "id": "fallover",
-      "emoji": "🤕",
-      "type": "person",
-      "q": "First to fall over"
-    },
-    {
-      "id": "asleepuber",
-      "emoji": "💤",
-      "type": "person",
-      "q": "First to fall asleep in an Uber"
-    },
-    {
-      "id": "sick",
-      "emoji": "🤮",
-      "type": "person",
-      "q": "First (if any) to be sick"
-    },
-    {
-      "id": "tapout",
-      "emoji": "😴",
-      "type": "person",
-      "q": "First man to tap out"
-    },
-    {
-      "id": "bed",
-      "emoji": "😴",
-      "type": "person",
-      "q": "First to bed"
-    },
-    {
-      "id": "snore",
-      "emoji": "😮‍💨",
-      "type": "person",
-      "q": "Loudest snorer at HQ"
     },
     {
       "id": "disc",
@@ -482,116 +338,10 @@
       "q": "First to grab the mic at Low Places"
     },
     {
-      "id": "shotround",
-      "emoji": "🥃",
-      "type": "person",
-      "q": "First to buy a round of shots"
-    },
-    {
-      "id": "laststand",
-      "emoji": "🏆",
-      "type": "person",
-      "q": "Last man standing Saturday night"
-    },
-    {
-      "id": "gohome",
-      "emoji": "🏠",
-      "type": "person",
-      "q": "First to suggest going home"
-    },
-    {
-      "id": "groupchat",
-      "emoji": "📱",
-      "type": "person",
-      "q": "Last to reply in the group chat"
-    },
-    {
-      "id": "sunday",
-      "emoji": "🥐",
-      "type": "person",
-      "q": "First out of bed on Sunday"
-    },
-    {
-      "id": "units",
-      "emoji": "🍺",
-      "type": "person",
-      "q": "Most drinks by Sunday"
-    },
-    {
-      "id": "totalpints",
-      "emoji": "🍺",
-      "type": "text",
-      "q": "Total pints across the group by Sunday"
-    },
-    {
-      "id": "shots",
-      "emoji": "🥃",
-      "type": "text",
-      "q": "Total shots ordered all weekend"
-    },
-    {
-      "id": "ubers",
-      "emoji": "🚕",
-      "type": "text",
-      "q": "Total Ubers taken all weekend"
-    },
-    {
-      "id": "tab",
-      "emoji": "💷",
-      "type": "text",
-      "q": "Biggest single bar tab (£)"
-    },
-    {
       "id": "canal",
       "emoji": "🛶",
       "type": "person",
       "q": "First to end up in (or nearly in) a canal"
-    }
-  ],
-  "awards": [
-    {
-      "id": "mvp",
-      "title": "🏆 MVP of the Weekend"
-    },
-    {
-      "id": "balti",
-      "title": "🌶️ Best Balti Order"
-    },
-    {
-      "id": "lost",
-      "title": "🧭 Most Lost"
-    },
-    {
-      "id": "honky",
-      "title": "🤠 Best Low Places Moment"
-    },
-    {
-      "id": "dancer",
-      "title": "🕺 Best Mover"
-    },
-    {
-      "id": "rounds",
-      "title": "💸 Biggest Round Buyer"
-    },
-    {
-      "id": "tight",
-      "title": "🤏 Never Got a Round In"
-    },
-    {
-      "id": "phone",
-      "title": "📱 Most Likely to Lose a Phone"
-    },
-    {
-      "id": "quote",
-      "title": "💬 Quote of the Weekend"
-    },
-    {
-      "id": "satam",
-      "title": "🥴 Worst State Saturday AM"
-    },
-    {
-      "id": "sunday",
-      "title": "🤢 Worst State Sunday AM"
     }
   ],
   "bingo": [
