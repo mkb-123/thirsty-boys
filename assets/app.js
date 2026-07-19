@@ -113,6 +113,7 @@ function applyTrip(t) {
   OUTBOX_KEY = "thirstyboys." + hc + ".outbox";
   window.__houseCode = hc;
   RESET_PASSWORD = hc.toLowerCase();
+  ME_KEY = "thirstyboys." + hc + ".me";   // identity is per-trip (different trips can have different crews)
   HQ_ADDRESS = (TRIP.hq && TRIP.hq.address) || "";
 }
 
@@ -120,12 +121,20 @@ function applyTrip(t) {
 let state;
 
 /* ---------- PER-DEVICE IDENTITY (who is holding THIS phone) ----------
-   Stored locally only — never synced, so each phone keeps its own "me". */
-const ME_KEY = "thirstyboys.me";
+   Stored locally only — never synced, so each phone keeps its own "me".
+   Scoped per-trip (set in applyTrip) so switching trips can mean a different
+   crew / a different you. */
+const LEGACY_ME_KEY = "thirstyboys.me";
+let ME_KEY = LEGACY_ME_KEY;
 let me;
 function loadMe() {
   try {
-    const v = localStorage.getItem(ME_KEY);
+    let v = localStorage.getItem(ME_KEY);
+    // One-time migration: adopt a pre-per-trip global "me" for this trip.
+    if (v === null && ME_KEY !== LEGACY_ME_KEY) {
+      const legacy = localStorage.getItem(LEGACY_ME_KEY);
+      if (legacy !== null) { v = legacy; localStorage.setItem(ME_KEY, legacy); }
+    }
     return v === null ? null : Number(v);
   } catch (e) { return null; }
 }
@@ -159,7 +168,9 @@ function clearMe() {
   if (old != null && state.present) delete state.present[old];  // mark "out"
   presencePushed = false;      // allow re-announcing after re-claim
   me = null;
-  try { localStorage.removeItem(ME_KEY); } catch (e) { /* ignore */ }
+  // Clear the per-trip key AND the legacy global, so a deliberate "change who I am"
+  // isn't silently undone by the legacy migration on the next load.
+  try { localStorage.removeItem(ME_KEY); localStorage.removeItem(LEGACY_ME_KEY); } catch (e) { /* ignore */ }
   save();
   if (old != null) rtRemove("present/" + old);
   render();

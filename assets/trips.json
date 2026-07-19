@@ -1,6 +1,7 @@
 {
   "default": "brum26",
   "trips": [
-    { "id": "brum26", "label": "Birmingham '26 🍺", "file": "assets/trip.json" }
+    { "id": "brum26", "label": "Birmingham '26 🍺", "file": "assets/trip.json" },
+    { "id": "malta27", "label": "Malta '27 🌴", "file": "assets/trips/malta27.json" }
   ]
 }
