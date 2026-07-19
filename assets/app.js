@@ -1563,7 +1563,33 @@ function recapData() {
   let bingoTop = null, bingoTopN = 0;
   Object.keys(bingoBy).forEach((w) => { if (bingoBy[w] > bingoTopN) { bingoTopN = bingoBy[w]; bingoTop = state.names[w]; } });
 
-  return { rows, total, perHead, maxC, thirstiest, boozeBreak, favBooze, softTotal, bigHour, bigN, days, maxS, pundit, oracle, awards, voteMagnet, maxV, bingoN, bingoTop, bingoTopN };
+  // First round of the weekend + who closed it out (last drink logged).
+  const sortedBooze = blog.slice().sort((a, b) => a.ts - b.ts);
+  const firstRound = sortedBooze.length ? state.names[sortedBooze[0].who] : null;
+  const lastStanding = sortedBooze.length ? state.names[sortedBooze[sortedBooze.length - 1].who] : null;
+
+  // Power hour — most drinks any one person put away in a single clock-hour.
+  const ph = {};
+  blog.forEach((e) => { const dt = new Date(e.ts); const k = e.who + "|" + dt.toLocaleDateString([], { weekday: "short" }) + dt.getHours(); ph[k] = (ph[k] || 0) + 1; });
+  let phWho = null, phN = 0;
+  Object.keys(ph).forEach((k) => { if (ph[k] > phN) { phN = ph[k]; phWho = state.names[Number(k.split("|")[0])]; } });
+
+  // The connoisseur — most different booze types tried.
+  const variety = state.names.map((_, i) => { const t = state.tallies[i] || {}; return BOOZE.filter((dk) => (t[dk.id] || 0) > 0).length; });
+  const maxVar = Math.max(0, ...variety);
+  const connoisseur = maxVar >= 3 ? state.names.filter((n, i) => variety[i] === maxVar).join(" & ") : null;
+
+  // Hydration hero — most soft drinks / coffees (the sensible one).
+  const softC = state.names.map((_, i) => softCountFor(i));
+  const maxSoft = Math.max(0, ...softC);
+  const hydrationHero = maxSoft > 0 ? state.names.filter((n, i) => softC[i] === maxSoft).join(" & ") : null;
+
+  // Wooden spoon — fewest drinks (the lightweight / designated one).
+  const minC = rows.length ? Math.min(...rows.map((r) => r.c)) : 0;
+  const woodenSpoon = (total > 0 && minC < maxC) ? state.names.filter((n, i) => countFor(i) === minC).join(" & ") : null;
+
+  return { rows, total, perHead, maxC, thirstiest, boozeBreak, favBooze, softTotal, bigHour, bigN, days, maxS, pundit, oracle, awards, voteMagnet, maxV, bingoN, bingoTop, bingoTopN,
+    firstRound, lastStanding, phWho, phN, connoisseur, maxVar, hydrationHero, maxSoft, woodenSpoon, minC };
 }
 function renderRecap() {
   const el = document.getElementById("recap-card");
@@ -1592,12 +1618,18 @@ function renderRecap() {
      ${d.boozeBreak.length ? `<div class="recap-break">${d.boozeBreak.map((x) => `<span class="rc-chip">${x.emoji} ${x.n}</span>`).join("")}${d.softTotal ? `<span class="rc-chip soft">🧃 ${d.softTotal}</span>` : ""}</div>` : ""}
      ${d.days.length > 1 ? `<div class="recap-days">${d.days.map((x) => `<span><b>${x.n}</b> ${x.d}</span>`).join("")}</div>` : ""}
      <div class="recap-awards">
+       ${d.phWho ? `<div class="rc-aw">⚡ Power hour: <b>${escapeHtml(d.phWho)}</b> (${d.phN} in an hour)</div>` : ""}
+       ${d.firstRound ? `<div class="rc-aw">🌅 First round in: <b>${escapeHtml(d.firstRound)}</b></div>` : ""}
+       ${d.lastStanding ? `<div class="rc-aw">🌙 Last drink standing: <b>${escapeHtml(d.lastStanding)}</b></div>` : ""}
+       ${d.connoisseur ? `<div class="rc-aw">🍹 The connoisseur: <b>${escapeHtml(d.connoisseur)}</b> (${d.maxVar} types)</div>` : ""}
+       ${d.hydrationHero ? `<div class="rc-aw">💧 Hydration hero: <b>${escapeHtml(d.hydrationHero)}</b> (${d.maxSoft})</div>` : ""}
+       ${d.woodenSpoon ? `<div class="rc-aw">🥄 Wooden spoon: <b>${escapeHtml(d.woodenSpoon)}</b> (${d.minC})</div>` : ""}
        ${d.pundit ? `<div class="rc-aw">🎯 Best pundit: <b>${escapeHtml(d.pundit)}</b> (${d.maxS} correct)</div>` : ""}
        ${d.oracle ? `<div class="rc-aw">🔮 Sharpest odds: <b>${escapeHtml(d.oracle.n)}</b> (${Math.round(d.oracle.acc * 100)}%)</div>` : ""}
        ${d.voteMagnet ? `<div class="rc-aw">🧲 Most voted-for: <b>${escapeHtml(d.voteMagnet)}</b> (${d.maxV})</div>` : ""}
        ${d.bingoTop ? `<div class="rc-aw">🥏 Top spotter: <b>${escapeHtml(d.bingoTop)}</b> (${d.bingoTopN})</div>` : ""}
        ${d.awards.map((x) => `<div class="rc-aw">${escapeHtml(x.title)}: <b>${escapeHtml(x.w)}</b></div>`).join("")}
-       ${(!d.pundit && !d.awards.length && !d.bingoTop) ? `<div class="recap-empty">Log drinks, spot bingo, settle bets &amp; reveal awards — it all lands here 🏆</div>` : ""}
+       ${(!d.pundit && !d.awards.length && !d.bingoTop && !d.phWho) ? `<div class="recap-empty">Log drinks, spot bingo, settle bets &amp; reveal awards — it all lands here 🏆</div>` : ""}
      </div>`;
 }
 function buildRecapText() {
@@ -1607,6 +1639,10 @@ function buildRecapText() {
   lines.push("🍻 " + d.rows.map((r) => r.n + " " + r.c).join(" · "));
   lines.push("📊 " + d.total + " total · " + d.perHead.toFixed(1) + " each" + (d.bigN ? " · biggest hour " + d.bigN : ""));
   if (d.days.length > 1) lines.push("📅 " + d.days.map((x) => x.d + " " + x.n).join(" · "));
+  if (d.phWho) lines.push("⚡ Power hour: " + d.phWho + " (" + d.phN + ")");
+  if (d.connoisseur) lines.push("🍹 Connoisseur: " + d.connoisseur + " (" + d.maxVar + " types)");
+  if (d.hydrationHero) lines.push("💧 Hydration hero: " + d.hydrationHero + " (" + d.maxSoft + ")");
+  if (d.woodenSpoon) lines.push("🥄 Wooden spoon: " + d.woodenSpoon + " (" + d.minC + ")");
   if (d.pundit) lines.push("🎯 Best pundit: " + d.pundit + " (" + d.maxS + ")");
   if (d.oracle) lines.push("🔮 Sharpest odds: " + d.oracle.n + " (" + Math.round(d.oracle.acc * 100) + "%)");
   if (d.voteMagnet) lines.push("🧲 Most voted-for: " + d.voteMagnet + " (" + d.maxV + ")");
