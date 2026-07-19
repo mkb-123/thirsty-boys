@@ -1,6 +1,7 @@
 /* ==========================================================================
-   Thirsty Boys — Birmingham '26
-   Itinerary, live-now, countdown & drink tracker (localStorage-backed)
+   Thirsty Boys — a reskinnable lads'-weekend PWA
+   Itinerary, live-now, countdown & drink tracker (localStorage-backed).
+   Everything trip-specific lives in assets/trip.json — see below.
    ========================================================================== */
 
 /* ==========================================================================
@@ -55,6 +56,7 @@ function applyTrip(t) {
   STORE_KEY = "thirstyboys." + hc + ".v1";
   OUTBOX_KEY = "thirstyboys." + hc + ".outbox";
   window.__houseCode = hc;
+  RESET_PASSWORD = hc.toLowerCase();
   HQ_ADDRESS = (TRIP.hq && TRIP.hq.address) || "";
 }
 
@@ -178,20 +180,6 @@ function save() {
   // Local cache only. Remote writes are granular (see rtSet/rtAdd) so two
   // phones acting at once never clobber each other's whole state.
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
-}
-
-/* One-off rename that also reaches the already-seeded shared room: crew names
-   live in synced state, so changing the default alone wouldn't update a room
-   that was seeded under the old name. Idempotent — once the new name has
-   propagated there's no "Mitul" left to match. Scoped to this trip's room. */
-const LEGACY_RENAMES = { Mitul: "Mr Finance", Director: "The Director" };
-function applyLegacyRenames() {
-  if (window.__houseCode !== "brum26") return;
-  let changed = false;
-  state.names.forEach((n, i) => {
-    if (LEGACY_RENAMES[n]) { state.names[i] = LEGACY_RENAMES[n]; rtSet("names/" + i, state.names[i]); changed = true; }
-  });
-  if (changed) save();
 }
 
 /* ==========================================================================
@@ -974,7 +962,9 @@ function renderAdminEditor() {
   );
 }
 
-const RESET_PASSWORD = "brum26";
+/* The admin/reveal password is simply the house code — one word to remember,
+   and it rotates automatically each trip (set in applyTrip). */
+let RESET_PASSWORD = "reset";
 
 /* Password gate for irreversible "reveal to everyone" actions. Same password
    as reset so there's only one to remember. Returns true if OK to proceed. */
@@ -1953,8 +1943,9 @@ function loadLeaflet() {
 }
 function pubMapPoints() { return PUBS.filter((p) => p.lat != null && p.lon != null); }
 function googleAllPinsUrl(pts) {
+  const city = TRIP.city ? " " + TRIP.city : "";
   return "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent(pts.map((p) => p.name + " Birmingham").join(" OR "));
+    encodeURIComponent(pts.map((p) => p.name + city).join(" OR "));
 }
 /* Build the container + fallback link once (not rebuilt every render). */
 function renderPubsMap() {
@@ -2450,7 +2441,7 @@ async function fetchWeather() {
     // Don't clobber a good forecast we already painted on a transient blip —
     // only show the fallback if the strip is still empty/loading.
     if (!el.querySelector(".wx-day")) {
-      el.innerHTML = `<span class="muted">🌦️ Birmingham forecast — tap BBC for the latest</span>`;
+      el.innerHTML = `<span class="muted">🌦️ ${escapeHtml(TRIP.city || "Weather")} forecast — tap BBC for the latest</span>`;
     }
   }
 }
@@ -2661,6 +2652,15 @@ function applyTripToDOM() {
   document.title = "Thirsty Boys — " + city + (year ? " '" + year : "");
   const h1 = document.querySelector(".hero h1");
   if (h1) h1.innerHTML = escapeHtml(city.toUpperCase()) + (year ? ` <span>'${escapeHtml(year)}</span>` : "");
+  // Bingo heading + share/SEO description follow the city too.
+  const bingoTitle = document.getElementById("bingo-title");
+  if (bingoTitle) bingoTitle.textContent = (TRIP.city ? city + " " : "") + "Bingo";
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) {
+    const crew = (TRIP.crew || []).map((c) => c.name).join(", ");
+    meta.setAttribute("content",
+      (crew ? crew + " take " + city + ". " : "") + (TRIP.datesLabel || "Live itinerary, drink tracker, bets & bingo."));
+  }
   const dates = document.querySelector(".hero .dates");
   if (dates && TRIP.datesLabel) dates.textContent = TRIP.datesLabel;
   const foot = document.querySelector(".footer .muted");
@@ -2696,7 +2696,6 @@ async function boot() {
   lastRoundTs = (state.round && state.round.ts) || 0;  // don't re-celebrate an old verdict on load
   seenBingo = bingoSnapshot();                         // don't re-announce already-spotted squares
   seenDrinks = drinkSnapshot();                         // ditto for drinks already in the log
-  applyLegacyRenames();      // rebrand old default names before first paint
   me = loadMe();
   selectedDrink = loadSelectedDrink();
   applyTripToDOM();

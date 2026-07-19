@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f1220" />
-  <title>Thirsty Boys — Birmingham '26</title>
-  <meta name="description" content="Mr Finance, Big Ben, The Director & Mr Science take Birmingham. 17–19 July." />
+  <title>Thirsty Boys</title>
+  <meta name="description" content="Live itinerary, drink tracker, bets & bingo for the lads' weekend." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>" />
 
   <!-- Add to Home Screen / PWA -->
@@ -58,19 +58,19 @@
       <div class="hq-card">
         <div class="hq-icon">🏠</div>
         <div class="hq-body">
-          <div class="hq-label">HQ · Airbnb</div>
-          <div class="hq-addr">9 Sloane Street, Birmingham, B1 3DZ</div>
+          <div class="hq-label">HQ</div>
+          <div class="hq-addr"></div>
         </div>
         <div class="hq-actions">
-          <a class="hq-btn hq-walk" href="https://www.google.com/maps/dir/?api=1&destination=9%20Sloane%20Street%20Birmingham%20B1%203DZ&travelmode=walking" target="_blank" rel="noopener">🧭 Walk home</a>
+          <a class="hq-btn hq-walk" href="#" target="_blank" rel="noopener">🧭 Walk home</a>
           <a class="hq-btn" id="hq-uber" href="https://m.uber.com/ul/?action=setPickup&pickup=my_location" target="_blank" rel="noopener">🚕 Uber home</a>
           <button class="hq-btn ghost" id="hq-copy">📋 Copy address</button>
         </div>
       </div>
 
       <div class="weather-strip">
-        <div class="weather-days" id="weather-days"><span class="muted">🌦️ Loading Birmingham forecast…</span></div>
-        <a class="weather-cta" href="https://www.bbc.co.uk/weather/2655603" target="_blank" rel="noopener">BBC →</a>
+        <div class="weather-days" id="weather-days"><span class="muted">🌦️ Loading forecast…</span></div>
+        <a class="weather-cta" href="https://www.bbc.co.uk/weather" target="_blank" rel="noopener">BBC →</a>
       </div>
       <div class="find-now">
         <a class="food-now" id="food-now" href="https://www.google.com/maps/search/?api=1&query=best%20rated%20restaurants%20open%20now%20near%20me" target="_blank" rel="noopener">🍔 Find food</a>
@@ -126,9 +126,9 @@
       <div class="awards" id="awards-list"></div>
     </section>
 
-    <!-- BIRMINGHAM BINGO -->
+    <!-- BINGO -->
     <section id="bingo" class="section">
-      <h2 class="section-title">Birmingham Bingo</h2>
+      <h2 class="section-title" id="bingo-title">Bingo</h2>
       <p class="section-sub">Spot it, tap it, claim it. First to spot each one gets the credit. <span id="bingo-progress"></span></p>
       <div class="bingo-grid" id="bingo-grid"></div>
     </section>
@@ -180,7 +180,7 @@
 
   <footer class="footer">
     <p>🍺 Stay hydrated (with water too). Drink responsibly, lads.</p>
-    <p class="muted">Built for the Thirsty Boys · Birmingham 17–19 July 2026</p>
+    <p class="muted">Built for the Thirsty Boys</p>
     <button class="btn-ghost danger reset-bottom" id="reset-btn">Reset the whole weekend</button>
     <p class="muted reset-note">Wipes drinks &amp; names for everyone — password required.</p>
   </footer>
