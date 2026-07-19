@@ -24,7 +24,9 @@
    public; access is controlled by database rules, not by hiding these keys.
    ========================================================================== */
 window.THIRSTY_CONFIG = {
-  // Everyone on the trip sets this to the SAME word.
+  // FALLBACK ONLY. Each trip now carries its own houseCode in its trip file
+  // (assets/trip.json / assets/trips/*.json), and THAT is the room every phone
+  // shares for that trip. This value is used only if a trip file has none.
   houseCode: "brum26",
 
   // Paste your Firebase web config here. Leave apiKey/databaseURL blank to

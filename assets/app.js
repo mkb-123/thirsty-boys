@@ -464,7 +464,10 @@ async function initSync() {
     return;
   }
   const cfg = window.THIRSTY_CONFIG;
-  const code = (cfg.houseCode || "default").replace(/[.#$/\[\]]/g, "_");
+  // The ACTIVE TRIP's house code owns the room — NOT config.js's houseCode
+  // (which is a single global fallback). Otherwise every trip would sync to the
+  // same room and, e.g., Malta would show Birmingham's data.
+  const code = (window.__houseCode || cfg.houseCode || "default").replace(/[.#$/\[\]]/g, "_");
   try {
     if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg.firebase);
     syncRef = firebase.database().ref("houses/" + code);
@@ -492,7 +495,6 @@ async function initSync() {
       // normaliseState coerces everything back to the shapes the app expects.
       state = normalizeState(Object.assign(defaults(), remote));
       applyingRemote = false;
-      applyLegacyRenames();     // rebrand any old default name in the shared room
       save();     // remote is now the local truth too (outbox still holds any un-synced edits)
       // Any edits made while offline are in the outbox — push them now so this
       // snapshot's overwrite doesn't lose them.
@@ -1245,10 +1247,10 @@ function renderBets() {
     BETS.filter((bt) => { const bb = getBet(bt.id); return bb.calls[me] != null && bb.calls[me] !== ""; }).length,
     BETS.length, "called", "call") : "";
 
-  // Bets are listed in the chronological order of the weekend (see trip.json),
-  // so swiping through them mirrors how the day unfolds — TOCA before disc golf,
-  // Sunday's "first out of bed" near the end, whole-trip totals last.
-  const orderedBets = BETS;
+  // Bets group into two swipe decks: this trip's own bets first (venues /
+  // activities), then the reusable "classics". Keeps each within its own order.
+  const localBets = BETS.filter((bt) => bt.scope === "local");
+  const classicBets = BETS.filter((bt) => bt.scope !== "local");
 
   // Bulk "reveal everything that's been settled" — reveals every bet that has an
   // outcome logged but isn't revealed yet (one password prompt for the lot).
@@ -1258,7 +1260,8 @@ function renderBets() {
     : "";
 
   const prevScroll = (document.getElementById("bets-deck") || {}).scrollLeft || 0;
-  wrap.innerHTML = scoreboard + myProg + revealAll + deckWrap(orderedBets.map((bet) => {
+  const prevScrollLocal = (document.getElementById("bets-deck-local") || {}).scrollLeft || 0;
+  const cardHtml = (bet) => {
     const b = getBet(bet.id);
     const callCount = Object.keys(b.calls).length;
     const mineIn = claimed && b.calls[me] != null && b.calls[me] !== "";
@@ -1331,7 +1334,13 @@ function renderBets() {
     }
 
     return `<div class="bet-card ${cardCls}">${mark}<p class="bet-q"><span class="emoji">${bet.emoji}</span> ${bet.q}</p>${body}</div>`;
-  }).join(""), "bets-deck");
+  };
+  const section = (title, sub, list, id) => list.length
+    ? `<h3 class="bets-group-h">${title} <span>${sub}</span></h3>` + deckWrap(list.map(cardHtml).join(""), id)
+    : "";
+  wrap.innerHTML = scoreboard + myProg + revealAll
+    + section("📍 This trip", (TRIP.city || "") + " specials", localBets, "bets-deck-local")
+    + section("🍻 Classics", "every trip", classicBets, "bets-deck");
 
   // Picking/typing saves silently as a safety net; the card stays on the picker
   // so the explicit "Submit call" button is what locks it in and collapses it.
@@ -1396,6 +1405,7 @@ function renderBets() {
       b.revealed = false; state.bets[id] = b; save(); rtSet("bets/" + id + "/revealed", false); renderBets();
     })
   );
+  wireDeck("bets-deck-local", prevScrollLocal);
   wireDeck("bets-deck", prevScroll);
   safe(renderBragging);   // keep the funny-stats card in sync with settled bets
 }

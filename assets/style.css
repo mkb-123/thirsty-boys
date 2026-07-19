@@ -1070,6 +1070,12 @@ body.has-nownext .fab-menu { bottom: calc(4.2rem + 58px + 0.7rem + env(safe-area
 
 /* ---------- BETS ---------- */
 .bets { display: block; }
+.bets-group-h {
+  font-size: 0.95rem; font-weight: 900; margin: 1.3rem 0 0.6rem;
+  display: flex; align-items: baseline; gap: 0.5rem;
+}
+.bets-group-h:first-of-type { margin-top: 0.4rem; }
+.bets-group-h span { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .bet-card {
   background: var(--card);
   border: 1px solid var(--line);

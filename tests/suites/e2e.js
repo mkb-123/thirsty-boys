@@ -144,9 +144,9 @@ const clockScript = (iso) => `(function(){ var FAKE = new (window.Date)("${iso}"
   ok("'First to mention AI' bet present", await page.evaluate(() => document.getElementById("bets-deck").textContent.includes("First to mention AI")));
   // Swipe deck: bets live in a horizontal snap-scroller, not a long vertical list
   ok("bets render inside a swipe deck", await page.locator("#bets-deck.deck").count() === 1);
-  ok("deck cards are children of the deck", await page.evaluate(() => document.querySelectorAll("#bets-deck > .bet-card").length) === 42);
+  ok("deck cards are children of the decks (42 across both)", await page.evaluate(() => document.querySelectorAll(".deck > .bet-card").length) === 42);
   ok("deck is horizontally scrollable", await page.evaluate(() => { const d = document.getElementById("bets-deck"); return d.scrollWidth > d.clientWidth + 10; }));
-  ok("deck counter shows position / total", /\/\s*42/.test(await page.evaluate(() => document.getElementById("bets-deck-count").textContent)));
+  ok("deck counter shows position / total", /\/\s*\d+/.test(await page.evaluate(() => document.getElementById("bets-deck-count").textContent)));
   // Next arrow advances the deck
   const beforeScroll = await page.evaluate(() => document.getElementById("bets-deck").scrollLeft);
   await page.locator('.deck-arrow[data-deck="bets-deck"][data-dir="1"]').click();
@@ -163,8 +163,9 @@ const clockScript = (iso) => `(function(){ var FAKE = new (window.Date)("${iso}"
   ok("called bet flips to 'Called' + done state", await page.evaluate(() => { const c = [...document.querySelectorAll("#bets-deck .bet-card")].find((x) => x.textContent.includes("tap out")); return c.classList.contains("mine-done") && /called/i.test(c.textContent); }));
   ok("bets progress bar advances to 1 called", /You've called\s*1\s*\/\s*42/.test(await page.evaluate(() => document.querySelector("#bets .mine-progress .mp-text").textContent)));
   // Bets are grouped: shared "classics" first, then this trip's LOCAL bets.
-  ok("classic bets come before local trip bets (Total pints before TOCA)", await page.evaluate(() => { const cards = [...document.querySelectorAll("#bets-deck > .bet-card")]; const idx = (q) => cards.findIndex((c) => c.textContent.includes(q)); return idx("Total pints") > -1 && idx("TOCA Social") > -1 && idx("Total pints") < idx("TOCA Social"); }));
-  ok("local bets keep their order (TOCA before disc golf)", await page.evaluate(() => { const cards = [...document.querySelectorAll("#bets-deck > .bet-card")]; const idx = (q) => cards.findIndex((c) => c.textContent.includes(q)); return idx("TOCA Social") > -1 && idx("Disc golf") > idx("TOCA Social"); }));
+  ok("bets split into a 'This trip' deck and a 'Classics' deck", await page.evaluate(() => !!document.getElementById("bets-deck-local") && !!document.getElementById("bets-deck")));
+  ok("local bets live in the 'This trip' deck, in order (TOCA before disc golf)", await page.evaluate(() => { const cards = [...document.querySelectorAll("#bets-deck-local > .bet-card")]; const idx = (q) => cards.findIndex((c) => c.textContent.includes(q)); return idx("TOCA Social") > -1 && idx("Disc golf") > idx("TOCA Social"); }));
+  ok("classics deck holds classic bets (Total pints) and excludes local ones (no TOCA)", await page.evaluate(() => { const t = document.getElementById("bets-deck").textContent; return t.includes("Total pints") && !t.includes("TOCA Social"); }));
   // After calling, the picker collapses to a "your call" line with Edit + Enter-outcome buttons
   ok("called bet hides the picker + the pick itself, shows Edit call", await page.evaluate(() => { const c = [...document.querySelectorAll("#bets-deck .bet-card")].find((x) => x.textContent.includes("tap out")); return !c.querySelector('[data-bet-call="tapout"]') && !!c.querySelector(".bet-editcall") && /locked in/i.test(c.textContent) && !/The Director/.test(c.textContent); }));
   ok("outcome hidden until 'Enter outcome' is tapped", await page.evaluate(() => { const c = [...document.querySelectorAll("#bets-deck .bet-card")].find((x) => x.textContent.includes("tap out")); return !c.querySelector('[data-bet-result="tapout"]') && !!c.querySelector(".bet-enteroutcome"); }));
